@@ -1,11 +1,59 @@
 @import "tailwindcss";
 
+/*
+ * Dark Mode (OLED) direction for a code tool: deep ink canvas, green reserved
+ * for "run"-shaped actions. Tokens are semantic so components never hold raw hex.
+ */
+@theme {
+  --color-canvas: #0b1120;
+  --color-surface: #111a2e;
+  --color-raised: #172036;
+  --color-line: #1f2a44;
+  --color-line-strong: #2d3b5c;
+  --color-ink: #f8fafc;
+  --color-muted: #a7b4c7;
+  --color-faint: #8096ae;
+  --color-accent: #22c55e;
+  --color-accent-hover: #4ade80;
+  --color-accent-ink: #052e16;
+  --color-danger: #ef4444;
+  --color-warn: #fbbf24;
+
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Dense/dashboard spacing rhythm. */
+  --radius-panel: 0.75rem;
+}
+
 html,
 body {
   height: 100%;
 }
 
-/* Sandpack fills its pane. */
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+/* One visible focus treatment everywhere, never removed. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 30%, transparent);
+}
+
+/* Slim scrollbars so dense panes do not lose width to chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Sandpack fills its pane and inherits our surface, not its own. */
 .sp-wrapper,
 .sp-layout,
 .sp-stack {
@@ -15,4 +63,20 @@ body {
 .sp-layout {
   border: none !important;
   border-radius: 0 !important;
+  background: var(--color-surface) !important;
+}
+
+.sp-preview-container {
+  background: #ffffff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

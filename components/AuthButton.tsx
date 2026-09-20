@@ -44,7 +44,7 @@ export function AuthButton({
       <div className="relative">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="grid h-7 w-7 place-items-center overflow-hidden rounded-full border border-neutral-700 bg-neutral-800 text-[11px] font-medium text-neutral-300 transition hover:border-neutral-600"
+          className="grid h-8 w-8 cursor-pointer place-items-center overflow-hidden rounded-full border border-line bg-raised text-[11px] font-medium text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
           title={user.email}
           aria-label={`Signed in as ${user.email}`}
         >
@@ -56,12 +56,12 @@ export function AuthButton({
           )}
         </button>
         {open && (
-          <div className="absolute right-0 top-9 z-20 w-56 rounded-lg border border-neutral-800 bg-neutral-900 p-1 shadow-xl">
-            <p className="truncate px-2.5 py-2 text-[11px] text-neutral-500">{user.email}</p>
+          <div className="absolute right-0 top-10 z-30 w-60 rounded-xl border border-line bg-raised p-1 shadow-2xl shadow-black/40">
+            <p className="truncate px-2.5 py-2 font-mono text-[11px] text-faint">{user.email}</p>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-md px-2.5 py-1.5 text-left text-xs text-neutral-300 transition hover:bg-neutral-800"
+                className="w-full cursor-pointer rounded-md px-2.5 py-2 text-left text-xs text-muted transition-colors duration-200 hover:bg-surface hover:text-ink"
               >
                 Sign out
               </button>
@@ -76,17 +76,17 @@ export function AuthButton({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="rounded-md border border-neutral-800 bg-neutral-900 px-2.5 py-1 text-xs text-neutral-300 transition hover:border-neutral-700 hover:text-neutral-100"
+        className="h-8 cursor-pointer rounded-md border border-line bg-raised px-3 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
       >
         Sign in
       </button>
       {open && (
-        <div className="absolute right-0 top-8 z-20 w-56 rounded-lg border border-neutral-800 bg-neutral-900 p-1 shadow-xl">
-          <p className="px-2.5 py-2 text-[11px] leading-snug text-neutral-500">
+        <div className="absolute right-0 top-10 z-30 w-64 rounded-xl border border-line bg-raised p-1 shadow-2xl shadow-black/40">
+          <p className="px-2.5 py-2 text-[11px] leading-snug text-faint">
             Sign in to keep your projects. Generating works either way.
           </p>
           {available.length === 0 && (
-            <p className="px-2.5 py-1.5 text-[11px] leading-snug text-amber-400/90">
+            <p className="px-2.5 py-1.5 text-[11px] leading-snug text-warn">
               No OAuth provider is enabled on this Supabase project yet. Enable GitHub or
               Google under Authentication &rarr; Providers.
             </p>
@@ -96,12 +96,12 @@ export function AuthButton({
               key={p.id}
               onClick={() => signIn(p.id)}
               disabled={busy !== null}
-              className="w-full rounded-md px-2.5 py-1.5 text-left text-xs text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-50"
+              className="w-full cursor-pointer rounded-md px-2.5 py-2 text-left text-xs text-muted transition-colors duration-200 hover:bg-surface hover:text-ink disabled:opacity-50"
             >
               {busy === p.id ? `Opening ${p.label}…` : `Continue with ${p.label}`}
             </button>
           ))}
-          {error && <p className="px-2.5 py-1.5 text-[11px] text-red-400">{error}</p>}
+          {error && <p className="px-2.5 py-1.5 text-[11px] text-danger">{error}</p>}
         </div>
       )}
     </div>

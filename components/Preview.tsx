@@ -27,10 +27,12 @@ export function Preview({
   code,
   generation,
   tab,
+  deviceWidth,
 }: {
   code: string;
   generation: number;
   tab: "preview" | "code";
+  deviceWidth: number | null;
 }) {
   return (
     <SandpackProvider
@@ -45,14 +47,27 @@ export function Preview({
       customSetup={{ dependencies: SANDPACK_DEPENDENCIES }}
       options={{ recompileMode: "delayed", recompileDelay: 500 }}
     >
-      <div className="h-full w-full [&_.sp-wrapper]:h-full [&_.sp-stack]:h-full">
+      <div className="h-full w-full">
         <div className={tab === "preview" ? "h-full" : "hidden"}>
-          <SandpackPreview
-            showNavigator={false}
-            showRefreshButton
-            showOpenInCodeSandbox
-            style={{ height: "100%" }}
-          />
+          {/* Device widths letterbox the frame rather than scaling it, so the
+              generated component hits its real Tailwind breakpoints. */}
+          <div className="flex h-full w-full justify-center overflow-hidden bg-canvas">
+            <div
+              className="h-full w-full transition-[max-width] duration-300 ease-out"
+              style={
+                deviceWidth
+                  ? { maxWidth: `${deviceWidth}px`, borderInline: "1px solid var(--color-line)" }
+                  : undefined
+              }
+            >
+              <SandpackPreview
+                showNavigator={false}
+                showRefreshButton
+                showOpenInCodeSandbox
+                style={{ height: "100%" }}
+              />
+            </div>
+          </div>
         </div>
         <div className={tab === "code" ? "h-full" : "hidden"}>
           <SandpackCodeEditor
