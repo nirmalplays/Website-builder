@@ -38,7 +38,8 @@ export const SANDPACK_DEPENDENCIES: Record<string, string> = {
   "lucide-react": "1.47.0",
 };
 
-export const MAX_OUTPUT_TOKENS = 8192;
+// Full-page website templates run long; 8k truncated them mid-JSX.
+export const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 32768);
 
 // How many prior turns to send back with an edit. More context is not the bottleneck today.
 export const HISTORY_TURNS = 3;

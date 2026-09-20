@@ -8,6 +8,7 @@
  */
 
 export const CATEGORIES = [
+  "Websites",
   "Apps and Games",
   "Landing Pages",
   "Components",
@@ -18,6 +19,11 @@ export type Category = (typeof CATEGORIES)[number];
 
 /** Abstract wireframe drawn on the card. No image assets to ship or break. */
 export type PreviewKind =
+  | "website"
+  | "gallery"
+  | "article"
+  | "menu"
+  | "listing"
   | "dashboard"
   | "landing"
   | "pricing"
@@ -39,6 +45,141 @@ export type Template = {
 };
 
 export const TEMPLATES: Template[] = [
+  {
+    id: "agency-site",
+    title: "Creative Agency",
+    blurb: "Hero, services, work, contact",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete creative agency website as one page: sticky nav with logo and links, a bold hero with a headline and two CTAs, a services grid of six cards with icons, a selected work gallery of six projects, a team row with four people, a client logo strip, a testimonial, and a footer with columns and social links",
+  },
+  {
+    id: "restaurant-site",
+    title: "Restaurant",
+    blurb: "Menu, hours, reservations",
+    category: "Websites",
+    preview: "menu",
+    prompt:
+      "A complete restaurant website as one page: nav with a Reserve button, a full-bleed hero with the restaurant name and tagline, an about section, a menu with three courses and prices, a chef highlight, opening hours, a reservation form with date, time and party size, a location block with address, and a footer",
+  },
+  {
+    id: "real-estate-site",
+    title: "Real Estate",
+    blurb: "Listings, search, agents",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete real estate website as one page: nav, a hero with a property search bar for location, price and bedrooms, a featured listings grid of six property cards with photo, price, beds, baths and square footage, a neighbourhoods section, an agents row, a testimonial, a mortgage calculator teaser, and a footer",
+  },
+  {
+    id: "portfolio-site",
+    title: "Developer Portfolio",
+    blurb: "About, projects, resume",
+    category: "Websites",
+    preview: "profile",
+    prompt:
+      "A complete personal developer portfolio as one page: minimal nav, a hero with name, role and short intro, an about section with a photo placeholder, a skills grid, a projects list of five entries with description and tech tags, a work experience timeline, and a contact section with email and social links",
+  },
+  {
+    id: "ecommerce-site",
+    title: "Online Store",
+    blurb: "Storefront, cart, categories",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete e-commerce storefront as one page: nav with search and a cart badge, a promotional hero banner, category tiles, a best sellers product grid of eight items with price and rating, a sale banner, a customer reviews row, a newsletter signup, and a footer with payment icons",
+  },
+  {
+    id: "blog-site",
+    title: "Blog & Magazine",
+    blurb: "Featured post, grid, sidebar",
+    category: "Websites",
+    preview: "article",
+    prompt:
+      "A complete blog homepage as one page: nav with categories, a featured post hero with image placeholder and excerpt, a grid of nine article cards with category tag, title, author and read time, a sidebar with popular posts and tags, pagination, a newsletter block, and a footer",
+  },
+  {
+    id: "conference-site",
+    title: "Conference",
+    blurb: "Speakers, schedule, tickets",
+    category: "Websites",
+    preview: "calendar",
+    prompt:
+      "A complete conference website as one page: nav with a Get tickets button, a hero with event name, date, city and countdown, an about section, a speakers grid of eight people with photo placeholders, a three-track agenda by time slot, ticket tiers with prices, sponsors logos, an FAQ accordion, and a footer",
+  },
+  {
+    id: "gym-site",
+    title: "Fitness Studio",
+    blurb: "Classes, trainers, membership",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete fitness studio website as one page: nav, a high-energy hero with a join CTA, a class schedule table by weekday, a trainers row of four with specialities, membership pricing tiers, a transformation results section, a testimonial slider layout, a free trial form, and a footer",
+  },
+  {
+    id: "clinic-site",
+    title: "Medical Clinic",
+    blurb: "Services, doctors, booking",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete medical clinic website as one page: nav with a phone number, a reassuring hero with an appointment CTA, a services grid of six specialities with icons, a doctors row with credentials, opening hours, an insurance accepted strip, patient testimonials, an appointment booking form, and a footer with map placeholder",
+  },
+  {
+    id: "travel-site",
+    title: "Travel Agency",
+    blurb: "Destinations, packages, booking",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete travel agency website as one page: nav, a hero with a destination search, a popular destinations gallery of six cards with country and price from, tour packages with duration and inclusions, a why choose us row, traveller reviews with star ratings, a newsletter for deals, and a footer",
+  },
+  {
+    id: "photography-site",
+    title: "Photography",
+    blurb: "Gallery, services, enquiry",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete photography portfolio website as one page: minimal nav, a full-bleed hero image placeholder with the photographer name, a masonry gallery of nine images, a services and packages section with prices, an about the photographer block, client testimonials, an enquiry form with event type and date, and a minimal footer",
+  },
+  {
+    id: "nonprofit-site",
+    title: "Nonprofit",
+    blurb: "Mission, impact, donate",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete nonprofit website as one page: nav with a prominent Donate button, a mission hero, an impact statistics row with four large numbers, programmes grid of four, a story section with a beneficiary quote, a donation block with preset amounts and a custom field, volunteer signup, partner logos, and a footer",
+  },
+  {
+    id: "startup-site",
+    title: "Startup Launch",
+    blurb: "Product, features, waitlist",
+    category: "Websites",
+    preview: "landing",
+    prompt:
+      "A complete startup launch website as one page: nav, a hero with product name, one-line pitch and an email waitlist field, a problem and solution section, a features grid of six with icons, a how it works three-step flow, an early access pricing preview, founder bios, an FAQ, and a footer",
+  },
+  {
+    id: "course-site",
+    title: "Online Course",
+    blurb: "Curriculum, instructor, enroll",
+    category: "Websites",
+    preview: "article",
+    prompt:
+      "A complete online course landing page as one page: nav with an Enroll button, a hero with course title, outcome promise and rating, what you will learn checklist, a curriculum accordion of eight modules with lesson counts, an instructor bio with credentials, student testimonials, pricing with a money-back guarantee, an FAQ, and a footer",
+  },
+  {
+    id: "saas-site",
+    title: "SaaS Product",
+    blurb: "Full marketing site",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete SaaS marketing website as one page: sticky nav with links and a Start free trial button, a hero with headline, subheadline, CTA and a product screenshot placeholder, a logo cloud, a features section alternating text and visuals, an integrations grid, a three-tier pricing table with an annual toggle, customer testimonials with avatars, a final CTA band, and a footer with four link columns",
+  },
   {
     id: "analytics-dashboard",
     title: "Analytics Dashboard",
@@ -149,14 +290,24 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-/** Quick-start chips under the composer. Shuffled so the set feels alive. */
+/** Look a template up by id, so chips never break when the list is reordered. */
+export function templateById(id: string): Template | undefined {
+  return TEMPLATES.find((t) => t.id === id);
+}
+
+/** Quick-start chips under the composer. Rotated by the shuffle button. */
 export const QUICK_STARTS: { label: string; prompt: string }[] = [
-  { label: "Contact form", prompt: TEMPLATES[3].prompt },
-  { label: "Memory game", prompt: TEMPLATES[7].prompt },
-  { label: "Pricing page", prompt: TEMPLATES[1].prompt },
-  { label: "Data table", prompt: TEMPLATES[5].prompt },
-  { label: "Chat interface", prompt: TEMPLATES[6].prompt },
-  { label: "Finance dashboard", prompt: TEMPLATES[10].prompt },
-  { label: "Booking calendar", prompt: TEMPLATES[8].prompt },
-  { label: "Product grid", prompt: TEMPLATES[4].prompt },
-];
+  "saas-site",
+  "restaurant-site",
+  "memory-game",
+  "portfolio-site",
+  "pricing-page",
+  "ecommerce-site",
+  "chat-app",
+  "conference-site",
+  "data-table",
+  "photography-site",
+]
+  .map((id) => templateById(id))
+  .filter((t): t is Template => Boolean(t))
+  .map((t) => ({ label: t.title, prompt: t.prompt }));

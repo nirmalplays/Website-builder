@@ -218,7 +218,114 @@ function Profile() {
   );
 }
 
+
+function Website() {
+  return (
+    <div className="flex h-full flex-col gap-1 p-2">
+      <div className="flex items-center justify-between rounded-sm bg-line/60 px-1.5 py-1">
+        <div className="h-1 w-5 rounded-[1px] bg-ink/50" />
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-1 w-3 rounded-[1px] bg-line-strong" />
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-col items-center justify-center gap-1 rounded-sm bg-line/40 py-2.5">
+        <div className={`h-1.5 w-1/2 ${bar}`} />
+        <div className={`h-1 w-1/3 ${soft}`} />
+        <div className="mt-0.5 h-2 w-10 rounded-sm bg-ink/60" />
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-4 rounded-sm bg-line/50" />
+        ))}
+      </div>
+      <div className="mt-auto flex gap-1 rounded-sm bg-line/40 p-1">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-1 flex-1 rounded-[1px] bg-line-strong" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Gallery() {
+  return (
+    <div className="grid h-full grid-cols-3 gap-1 p-2">
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        <div
+          key={i}
+          className={`rounded-[2px] ${i % 4 === 0 ? "bg-line-strong/70" : "bg-line/60"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Article() {
+  return (
+    <div className="flex h-full gap-1.5 p-2">
+      <div className="flex flex-1 flex-col gap-1">
+        <div className="h-8 rounded-sm bg-line/60" />
+        <div className={`h-1.5 w-3/4 ${bar}`} />
+        <div className={`h-1 w-full ${soft}`} />
+        <div className={`h-1 w-5/6 ${soft}`} />
+        <div className="mt-auto grid grid-cols-2 gap-1">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-4 rounded-sm bg-line/50" />
+          ))}
+        </div>
+      </div>
+      <div className="flex w-1/4 flex-col gap-1">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`h-2 rounded-sm bg-line/50`} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Menu() {
+  return (
+    <div className="flex h-full flex-col gap-1.5 p-2.5">
+      <div className="h-6 rounded-sm bg-line/60" />
+      <div className="space-y-1">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-baseline gap-1">
+            <div className={`h-1 ${soft}`} style={{ width: `${34 - i * 4}%` }} />
+            <div className="h-px flex-1 bg-line-strong/60" />
+            <div className="h-1 w-3 rounded-[1px] bg-line-strong" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-auto h-3 w-14 self-center rounded-sm bg-ink/60" />
+    </div>
+  );
+}
+
+function Listing() {
+  return (
+    <div className="flex h-full flex-col gap-1.5 p-2">
+      <div className="h-3 rounded-full bg-line/70" />
+      <div className="grid flex-1 grid-cols-2 gap-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-col gap-1 rounded-sm bg-line/50 p-1">
+            <div className="flex-1 rounded-[2px] bg-line-strong/60" />
+            <div className={`h-1 w-1/2 ${bar}`} />
+            <div className={`h-[3px] w-3/4 ${soft}`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const KINDS: Record<PreviewKind, () => React.JSX.Element> = {
+  website: Website,
+  gallery: Gallery,
+  article: Article,
+  menu: Menu,
+  listing: Listing,
   dashboard: Dashboard,
   landing: Landing,
   pricing: Pricing,

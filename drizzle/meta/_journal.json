@@ -29,6 +29,13 @@
       "when": 1789917048812,
       "tag": "0003_usage_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789919384942,
+      "tag": "0004_project_public",
+      "breakpoints": true
     }
   ]
 }

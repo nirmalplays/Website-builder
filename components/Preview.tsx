@@ -6,6 +6,7 @@ import {
   SandpackCodeEditor,
 } from "@codesandbox/sandpack-react";
 import { SANDPACK_DEPENDENCIES } from "@/lib/config";
+import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 
 // Tailwind comes from the play CDN inside the sandbox, so generated classes just work.
 const INDEX_HTML = `<!DOCTYPE html>
@@ -28,11 +29,17 @@ export function Preview({
   generation,
   tab,
   deviceWidth,
+  onFix,
+  fixing,
+  onErrorChange,
 }: {
   code: string;
   generation: number;
   tab: "preview" | "code";
   deviceWidth: number | null;
+  onFix: (message: string) => void;
+  fixing: boolean;
+  onErrorChange: (message: string | null) => void;
 }) {
   return (
     <SandpackProvider
@@ -48,7 +55,8 @@ export function Preview({
       options={{ recompileMode: "delayed", recompileDelay: 500 }}
     >
       <div className="h-full w-full">
-        <div className={tab === "preview" ? "h-full" : "hidden"}>
+        <div className={tab === "preview" ? "relative h-full" : "hidden"}>
+          <PreviewErrorOverlay onFix={onFix} fixing={fixing} onErrorChange={onErrorChange} />
           {/* Device widths letterbox the frame rather than scaling it, so the
               generated component hits its real Tailwind breakpoints. */}
           <div className="flex h-full w-full justify-center overflow-hidden bg-canvas">

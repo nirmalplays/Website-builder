@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Preview } from "./Preview";
 
 const DEVICES = [
@@ -30,6 +31,57 @@ function CopyButton({ code }: { code: string }) {
   );
 }
 
+function IconButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="grid h-7 w-7 cursor-pointer place-items-center rounded-md border border-line text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        {children}
+      </svg>
+    </button>
+  );
+}
+
+function ShareButton({ onShare }: { onShare: () => Promise<string | null> }) {
+  const [state, setState] = useState<"idle" | "working" | "copied" | "failed">("idle");
+
+  return (
+    <button
+      onClick={async () => {
+        setState("working");
+        const url = await onShare();
+        if (!url) return setState("failed");
+        try {
+          await navigator.clipboard.writeText(url);
+          setState("copied");
+        } catch {
+          setState("copied");
+        }
+        setTimeout(() => setState("idle"), 2500);
+      }}
+      className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-line px-2 font-mono text-[11px] text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7" strokeLinecap="round" />
+        <path d="M12 16V3m0 0L8 7m4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {state === "working" ? "Sharing" : state === "copied" ? "Link copied" : state === "failed" ? "Failed" : "Share"}
+    </button>
+  );
+}
+
 export function PreviewPanel({
   code,
   generation,
@@ -38,6 +90,15 @@ export function PreviewPanel({
   deviceWidth,
   onDeviceChange,
   loading,
+  onFix,
+  fixing,
+  onErrorChange,
+  versions,
+  onRestore,
+  fullscreen,
+  onFullscreenChange,
+  onShare,
+  onDownload,
 }: {
   code: string;
   generation: number;
@@ -46,6 +107,15 @@ export function PreviewPanel({
   deviceWidth: number | null;
   onDeviceChange: (width: number | null) => void;
   loading: boolean;
+  onFix: (message: string) => void;
+  fixing: boolean;
+  onErrorChange: (message: string | null) => void;
+  versions: string[];
+  onRestore: (index: number) => void;
+  fullscreen: boolean;
+  onFullscreenChange: (on: boolean) => void;
+  onShare: () => Promise<string | null>;
+  onDownload: () => void;
 }) {
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -86,14 +156,62 @@ export function PreviewPanel({
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
+          {versions.length > 1 && (
+            <>
+              <label htmlFor="version" className="sr-only">
+                Version
+              </label>
+              <select
+                id="version"
+                value={versions.length - 1}
+                onChange={(e) => onRestore(Number(e.target.value))}
+                title="Restore an earlier version"
+                className="h-7 cursor-pointer rounded-md border border-line bg-raised px-2 font-mono text-[11px] text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+              >
+                {versions.map((_, i) => (
+                  <option key={i} value={i}>
+                    v{i + 1}
+                    {i === versions.length - 1 ? " (latest)" : ""}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
           {code && <CopyButton code={code} />}
+          {code && <ShareButton onShare={onShare} />}
+          {code && (
+            <IconButton label="Download project as ZIP" onClick={onDownload}>
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
+            </IconButton>
+          )}
+          {code && (
+            <IconButton
+              label={fullscreen ? "Exit full screen" : "Full screen preview"}
+              onClick={() => onFullscreenChange(!fullscreen)}
+            >
+              {fullscreen ? (
+                <path d="M9 3v6H3M15 21v-6h6M3 15h6v6M21 9h-6V3" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <path d="M4 9V4h5M20 15v5h-5M15 4h5v5M9 20H4v-5" strokeLinecap="round" strokeLinejoin="round" />
+              )}
+            </IconButton>
+          )}
         </div>
       </div>
 
       <div className="relative min-h-0 flex-1 bg-surface">
         {code ? (
-          <Preview code={code} generation={generation} tab={tab} deviceWidth={deviceWidth} />
+          <Preview
+            code={code}
+            generation={generation}
+            tab={tab}
+            deviceWidth={deviceWidth}
+            onFix={onFix}
+            fixing={fixing}
+            onErrorChange={onErrorChange}
+          />
         ) : (
           <div className="grid h-full place-items-center p-6">
             {loading ? (

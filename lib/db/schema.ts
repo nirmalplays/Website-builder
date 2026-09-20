@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // A project is owned by a Supabase auth user once signed in, and by an anonymous
 // session cookie before that. Keeping both means a signed-out visitor still gets
@@ -10,6 +10,8 @@ export const projects = pgTable("projects", {
   // in the auth schema, which Drizzle does not manage.
   userId: uuid("user_id"),
   title: text("title").notNull(),
+  // Off by default: sharing is an explicit act, never the default state.
+  isPublic: boolean("is_public").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
