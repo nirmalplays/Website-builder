@@ -30,6 +30,8 @@ export function Workspace({
 }) {
   const [history, setHistory] = useState<Turn[]>([]);
   const [code, setCode] = useState("");
+  const [files, setFiles] = useState<Record<string, string>>({});
+  const [dependencies, setDependencies] = useState<Record<string, string>>({});
   const [model, setModel] = useState(defaultModel);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
@@ -135,6 +137,8 @@ export function Workspace({
   function reset() {
     setHistory([]);
     setCode("");
+    setFiles({});
+    setDependencies({});
     setProjectId(null);
     setInput("");
     setError(null);
@@ -155,7 +159,6 @@ export function Workspace({
       const res = await fetch(`/api/template/${id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not open template.");
-      setCode(data.code);
       setGeneration((g) => g + 1);
       setTab("preview");
       setProjectId(null);
@@ -287,7 +290,9 @@ Fix it and return the complete corrected file.`,
 
       // Only swap the sandbox files once a generation is complete.
       if (data.projectId) setProjectId(data.projectId);
-      setCode(data.code);
+      if (data.files) setFiles(data.files);
+      if (data.dependencies) setDependencies(data.dependencies);
+      setCode(data.code ?? data.files?.["/App.tsx"] ?? "");
       setGeneration((g) => g + 1);
       setTab("preview");
       setHistory((h) => [...h, { role: "assistant", content: data.code }]);
@@ -391,6 +396,8 @@ Fix it and return the complete corrected file.`,
             >
               <PreviewPanel
                 code={code}
+                files={files}
+                dependencies={dependencies}
                 generation={generation}
                 tab={tab}
                 onTabChange={setTab}

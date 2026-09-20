@@ -84,6 +84,8 @@ function ShareButton({ onShare }: { onShare: () => Promise<string | null> }) {
 
 export function PreviewPanel({
   code,
+  files,
+  dependencies,
   generation,
   tab,
   onTabChange,
@@ -101,6 +103,8 @@ export function PreviewPanel({
   onDownload,
 }: {
   code: string;
+  files?: Record<string, string>;
+  dependencies?: Record<string, string>;
   generation: number;
   tab: "preview" | "code";
   onTabChange: (tab: "preview" | "code") => void;
@@ -205,6 +209,8 @@ export function PreviewPanel({
         {code ? (
           <Preview
             code={code}
+            files={files}
+            dependencies={dependencies}
             generation={generation}
             tab={tab}
             deviceWidth={deviceWidth}

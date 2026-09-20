@@ -14,6 +14,8 @@ const EXTERNAL_RESOURCES = ["https://cdn.tailwindcss.com"];
 
 export function Preview({
   code,
+  files,
+  dependencies,
   generation,
   tab,
   deviceWidth,
@@ -22,6 +24,9 @@ export function Preview({
   onErrorChange,
 }: {
   code: string;
+  /** Whole project. Falls back to a single /App.tsx when absent. */
+  files?: Record<string, string>;
+  dependencies?: Record<string, string>;
   generation: number;
   tab: "preview" | "code";
   deviceWidth: number | null;
@@ -35,8 +40,9 @@ export function Preview({
       key={generation}
       template="react-ts"
       theme="dark"
-      files={{ "/App.tsx": code }}
-      customSetup={{ dependencies: SANDPACK_DEPENDENCIES }}
+      files={files && Object.keys(files).length > 0 ? files : { "/App.tsx": code }}
+      // Only what the project imports, so a plain page does not pay for WebGL.
+      customSetup={{ dependencies: { ...SANDPACK_DEPENDENCIES, ...(dependencies ?? {}) } }}
       options={{
         recompileMode: "delayed",
         recompileDelay: 500,
@@ -71,7 +77,8 @@ export function Preview({
         </div>
         <div className={tab === "code" ? "h-full" : "hidden"}>
           <SandpackCodeEditor
-            showTabs={false}
+            showTabs
+            showInlineErrors
             showLineNumbers
             readOnly
             showReadOnly={false}
