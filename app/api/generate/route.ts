@@ -14,7 +14,7 @@ import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
-import { getUsage } from "@/lib/limits";
+import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -87,6 +87,20 @@ export async function POST(req: Request) {
     if (image.data.length > 7_000_000) {
       return NextResponse.json({ error: "Image is too large (5 MB max)." }, { status: 413 });
     }
+  }
+
+  // Shared-key safety valve before anything is spent.
+  const globalUsed = await getGlobalUsage();
+  if (globalUsed !== null && globalUsed >= GLOBAL_DAILY_CAP) {
+    return NextResponse.json(
+      {
+        error:
+          "This app has hit its daily generation budget. It resets at midnight UTC - ready-made templates still open for free.",
+        usage: usageBefore,
+        limitReached: true,
+      },
+      { status: 429 },
+    );
   }
 
   const history = (body.history ?? []).slice(-HISTORY_TURNS * 2);

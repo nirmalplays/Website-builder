@@ -44,7 +44,8 @@ export function UsageMeter({ usage }: { usage: Usage | null }) {
         aria-valuemax={usage.limit}
         aria-label={`${usage.used} of ${usage.limit} generations used today`}
       >
-        {usage.limit <= 12 ? (
+        {/* Pips stay readable only for small counts; beyond that a bar is clearer. */}
+        {usage.limit <= 6 ? (
           Array.from({ length: usage.limit }, (_, i) => (
             <span
               key={i}
@@ -54,7 +55,7 @@ export function UsageMeter({ usage }: { usage: Usage | null }) {
             />
           ))
         ) : (
-          <span className="relative block h-[3px] w-16 overflow-hidden rounded-full bg-line-strong">
+          <span className="relative block h-[3px] w-20 overflow-hidden rounded-full bg-line-strong">
             <span
               className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${dotColor}`}
               style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
