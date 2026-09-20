@@ -1,186 +1,143 @@
-import React from 'react';
-import { ArrowRight, BarChart3, Bell, Calendar, ChevronDown, CreditCard, DollarSign, Home, LogOut, Mail, MoreHorizontal, Package, Search, Settings, ShoppingCart, Sparkles, TrendingDown, TrendingUp, Users } from "lucide-react";
+import React, { useState } from 'react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  CreditCard, 
+  Package, 
+  Bell, 
+  Search, 
+  Settings, 
+  Menu, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  MoreHorizontal,
+  LogOut,
+  User,
+  Zap
+} from 'lucide-react';
 
 export default function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   const stats = [
-    { name: 'Total Revenue', value: '$45,231.89', change: '+20.1%', icon: DollarSign, trend: 'up' },
-    { name: 'New Customers', value: '2,350', change: '+18.7%', icon: Users, trend: 'up' },
-    { name: 'Products Sold', value: '12,234', change: '+15.3%', icon: Package, trend: 'up' },
-    { name: 'Pending Orders', value: '578', change: '-2.1%', icon: ShoppingCart, trend: 'down' },
+    { label: 'Total Revenue', value: '$54,230', change: '+12.5%', icon: DollarSign, positive: true },
+    { label: 'Active Users', value: '2,845', change: '+3.2%', icon: Users, positive: true },
+    { label: 'Pending Orders', value: '142', change: '-4.1%', icon: Package, positive: false },
+    { label: 'Conversion Rate', value: '3.8%', change: '+0.8%', icon: Zap, positive: true },
   ];
 
   const activities = [
-    { id: 'ORD-7890', type: 'Order', description: 'New order from Jane Doe', amount: '$120.00', date: '2023-10-26 14:30' },
-    { id: 'INV-1234', type: 'Invoice', description: 'Invoice paid by Acme Corp', amount: '$850.50', date: '2023-10-26 11:15' },
-    { id: 'CUS-5678', type: 'Customer', description: 'New customer registration', amount: null, date: '2023-10-25 09:00' },
-    { id: 'PRO-9012', type: 'Product', description: 'Product stock updated: Widget X', amount: null, date: '2023-10-25 16:45' },
-    { id: 'ORD-3456', type: 'Order', description: 'Order refunded for John Smith', amount: '-$50.00', date: '2023-10-24 10:00' },
+    { id: 1, user: 'Sarah Jenkins', action: 'Upgraded to Pro Plan', time: '2 mins ago', status: 'Success' },
+    { id: 2, user: 'Marcus Thorne', action: 'Cancelled subscription', time: '45 mins ago', status: 'Warning' },
+    { id: 3, user: 'Elena Rodriguez', action: 'Added new payment method', time: '2 hours ago', status: 'Success' },
+    { id: 4, user: 'David Kim', action: 'Invited team member', time: '5 hours ago', status: 'Success' },
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 p-6 flex flex-col border-r border-gray-800">
-        <div className="flex items-center gap-2 mb-10">
-          <Sparkles className="h-6 w-6 text-indigo-400" />
-          <h1 className="text-2xl font-bold text-gray-50">Acme Inc.</h1>
+      <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 border-r border-slate-800 transition-all duration-300 flex flex-col hidden md:flex`}>
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <Zap className="text-white w-5 h-5" />
+          </div>
+          {isSidebarOpen && <span className="font-bold text-xl tracking-tight">Nexus</span>}
         </div>
-        <nav className="flex-grow">
-          <ul className="space-y-2">
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg text-indigo-400 bg-gray-800">
-                <Home className="h-5 w-5" />
-                <span>Dashboard</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-                <BarChart3 className="h-5 w-5" />
-                <span>Analytics</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-                <Package className="h-5 w-5" />
-                <span>Products</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-                <Users className="h-5 w-5" />
-                <span>Customers</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-                <CreditCard className="h-5 w-5" />
-                <span>Payments</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-                <Settings className="h-5 w-5" />
-                <span>Settings</span>
-              </a>
-            </li>
-          </ul>
+        
+        <nav className="flex-1 px-4 space-y-2 mt-4">
+          {[
+            { icon: LayoutDashboard, label: 'Dashboard' },
+            { icon: Users, label: 'Customers' },
+            { icon: Package, label: 'Inventory' },
+            { icon: CreditCard, label: 'Billing' },
+            { icon: Settings, label: 'Settings' },
+          ].map((item, i) => (
+            <button key={i} className="flex items-center gap-4 w-full p-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white">
+              <item.icon className="w-5 h-5" />
+              {isSidebarOpen && <span>{item.label}</span>}
+            </button>
+          ))}
         </nav>
-        <div className="mt-8 pt-4 border-t border-gray-800">
-          <a href="#" className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
-            <LogOut className="h-5 w-5" />
-            <span>Logout</span>
-          </a>
+
+        <div className="p-4 border-t border-slate-800">
+          <button className="flex items-center gap-4 w-full p-3 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+            <LogOut className="w-5 h-5" />
+            {isSidebarOpen && <span>Logout</span>}
+          </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 p-6 lg:p-10">
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-          <h2 className="text-3xl font-bold text-gray-50">Dashboard</h2>
+      {/* Main Content */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-slate-500">Welcome back, Admin</p>
+          </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="bg-gray-800 text-gray-200 rounded-lg py-2 pl-10 pr-4 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <div className="relative hidden sm:block">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <input type="text" placeholder="Search..." className="bg-slate-900 border border-slate-800 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64" />
             </div>
-            <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors">
-              <Bell className="h-5 w-5 text-gray-300" />
+            <button className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800">
+              <Bell className="w-5 h-5" />
             </button>
-            <button className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors">
-              <Mail className="h-5 w-5 text-gray-300" />
-            </button>
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-medium">JD</div>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
+            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold">
+              JD
             </div>
           </div>
         </header>
 
-        {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-gray-900 p-6 rounded-xl border border-gray-800 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-gray-400">{stat.name}</h3>
-                <stat.icon className="h-5 w-5 text-indigo-400" />
-              </div>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-3xl font-semibold text-gray-50">{stat.value}</span>
-                <span className={`text-xs font-medium ${stat.trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
-                  {stat.trend === 'up' ? <TrendingUp className="inline h-4 w-4 mr-1" /> : <TrendingDown className="inline h-4 w-4 mr-1" />}
+        {/* Stats Grid */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, i) => (
+            <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-2 bg-slate-800 rounded-lg">
+                  <stat.icon className="w-6 h-6 text-indigo-500" />
+                </div>
+                <span className={`text-xs font-medium px-2 py-1 rounded ${stat.positive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
                   {stat.change}
                 </span>
               </div>
-              <p className="text-xs text-gray-500">Compared to last month</p>
+              <div className="text-3xl font-bold mb-1">{stat.value}</div>
+              <div className="text-slate-500 text-sm">{stat.label}</div>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* Recent Activity Table */}
-        <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-50">Recent Activity</h3>
-            <button className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-medium">
-              View All
-              <ArrowRight className="h-4 w-4" />
-            </button>
+        {/* Recent Activity */}
+        <section className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+            <h2 className="font-bold text-lg">Recent Activity</h2>
+            <button className="text-indigo-500 text-sm hover:underline">View all</button>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-800">
-              <thead>
+            <table className="w-full text-left">
+              <thead className="bg-slate-950 text-slate-500 text-sm uppercase">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th scope="col" className="relative px-4 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
+                  <th className="px-6 py-4 font-medium">User</th>
+                  <th className="px-6 py-4 font-medium">Action</th>
+                  <th className="px-6 py-4 font-medium">Time</th>
+                  <th className="px-6 py-4 font-medium">Status</th>
+                  <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
-                {activities.map((activity) => (
-                  <tr key={activity.id} className="hover:bg-gray-800 transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-300">{activity.id}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        activity.type === 'Order' ? 'bg-indigo-900 text-indigo-300' :
-                        activity.type === 'Invoice' ? 'bg-green-900 text-green-300' :
-                        activity.type === 'Customer' ? 'bg-yellow-900 text-yellow-300' :
-                        'bg-gray-800 text-gray-300'
-                      }`}>
-                        {activity.type}
+              <tbody className="divide-y divide-slate-800">
+                {activities.map((act) => (
+                  <tr key={act.id} className="hover:bg-slate-800/50">
+                    <td className="px-6 py-4 font-medium">{act.user}</td>
+                    <td className="px-6 py-4 text-slate-400">{act.action}</td>
+                    <td className="px-6 py-4 text-slate-500">{act.time}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${act.status === 'Success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                        {act.status}
                       </span>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{activity.description}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {activity.amount ? (
-                        <span className={`${activity.amount.startsWith('-') ? 'text-red-400' : 'text-green-400'}`}>
-                          {activity.amount}
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">{activity.date}</td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button className="text-gray-400 hover:text-gray-200">
-                        <MoreHorizontal className="h-5 w-5" />
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-slate-500 hover:text-white">
+                        <MoreHorizontal className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
@@ -188,7 +145,7 @@ export default function App() {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

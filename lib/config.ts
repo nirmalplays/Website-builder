@@ -1,5 +1,11 @@
 // One constant. Swap the model here (or via env) if output disappoints.
-export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+// Benchmarked 2026-09-20 on the dashboard prompt (free tier, thinking off):
+//   gemini-3.1-flash-lite  7.7s   7.0k chars  clean   <- chosen, own daily quota
+//   gemini-2.5-flash      12.4s   9.9k chars  clean   <- fallback, only 20 req/day
+//   gemini-3.5-flash-lite 13.5s  17.9k chars  clean
+//   gemini-3.5-flash      26.5s  20.4k chars  too slow for a live demo
+//   gemini-3.8-flash         --  503 high demand
+export const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 
 // Packages Sandpack is allowed to resolve. Must match the system prompt's allowlist.
 export const SANDPACK_DEPENDENCIES: Record<string, string> = {
