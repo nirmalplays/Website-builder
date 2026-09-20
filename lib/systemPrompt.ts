@@ -10,7 +10,7 @@ CODE RULES:
 - Imports allowed ONLY from: react, lucide-react. Nothing else. No shadcn, no chart libraries, no fonts.
 - No fetch, no network calls, no localStorage, no window/document access at module scope.
 - All data is hardcoded inline. Invent realistic placeholder content - real-sounding names, prices and copy, never "Lorem ipsum" or "Item 1".
-- Any icon comes from lucide-react, imported by name. Use ONLY these, which are guaranteed to exist: Check, CheckCircle, X, XCircle, ArrowRight, ArrowLeft, ArrowUpRight, ChevronDown, ChevronRight, Plus, Minus, Menu, Search, User, Users, Settings, Bell, Mail, Home, Star, Heart, Trash2, Calendar, Clock, TrendingUp, TrendingDown, BarChart3, DollarSign, CreditCard, Package, ShoppingCart, Zap, Shield, Lock, Eye, Sparkles, Play, Download, Upload, Filter, MoreHorizontal, LogOut. If the icon you want is not on this list, pick the closest one that is.
+- Any icon comes from lucide-react, imported by name. Use ONLY these, which are guaranteed to exist: Check, CheckCircle, X, XCircle, ArrowRight, ArrowLeft, ArrowUpRight, ChevronDown, ChevronRight, Plus, Minus, Menu, Search, User, Users, Settings, Bell, Mail, Home, Star, Heart, Trash2, Calendar, Clock, TrendingUp, TrendingDown, BarChart3, DollarSign, CreditCard, Package, ShoppingCart, Zap, Shield, Lock, Eye, Sparkles, Play, Download, Upload, Filter, MoreHorizontal, LogOut. If the icon you want is not on this list, pick the closest one that is. lucide-react has NO brand or social icons - Github, Twitter, Linkedin, Facebook, Instagram, Youtube, Dribbble and Figma DO NOT EXIST and will break the build. For social links use a text label or a generic icon from the list above.
 
 DESIGN RULES:
 - Responsive: works at 375px and 1280px.

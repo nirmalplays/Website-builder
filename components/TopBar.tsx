@@ -29,14 +29,15 @@ export function TopBar({
         className="flex cursor-pointer items-center gap-2 transition-opacity duration-200 hover:opacity-80 disabled:cursor-default"
         aria-label="New project"
       >
-        <span
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.svg"
+          alt=""
           aria-hidden="true"
-          className="grid h-6 w-6 place-items-center rounded-md bg-ink text-canvas"
-        >
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M8 6 3 12l5 6M16 6l5 6-5 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
+          width={26}
+          height={26}
+          className="h-[26px] w-[26px] rounded-[7px]"
+        />
         <span className="text-[13px] font-semibold tracking-tight">ui/gen</span>
       </button>
 

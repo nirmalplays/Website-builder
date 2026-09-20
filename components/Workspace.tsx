@@ -19,11 +19,13 @@ export function Workspace({
   authEnabled,
   providers,
   user,
+  bakedTemplates,
 }: {
   defaultModel: string;
   authEnabled: boolean;
   providers: OAuthProvider[];
   user: SessionUser;
+  bakedTemplates: string[];
 }) {
   const [history, setHistory] = useState<Turn[]>([]);
   const [code, setCode] = useState("");
@@ -126,6 +128,35 @@ export function Workspace({
     setError(null);
     setTab("preview");
     setMobileView("chat");
+  }
+
+  /**
+   * Ready-made templates open instantly from shipped code: no model call,
+   * no quota spent, no waiting. Editing it afterwards is a normal follow-up.
+   */
+  async function openTemplate(id: string, title: string) {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    setMobileView("result");
+    try {
+      const res = await fetch(`/api/template/${id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not open template.");
+      setCode(data.code);
+      setGeneration((g) => g + 1);
+      setTab("preview");
+      setProjectId(null);
+      setHistory([
+        { role: "user", content: `Opened the ${title} template` },
+        { role: "assistant", content: data.code },
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not open template.");
+      setMobileView("chat");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function restore(index: number) {
@@ -268,6 +299,8 @@ Fix it and return the complete corrected file.`,
             error={error}
             attachment={attachment}
             onAttach={setAttachment}
+            bakedTemplates={bakedTemplates}
+            onOpenTemplate={openTemplate}
           />
         </main>
       ) : (

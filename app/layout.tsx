@@ -6,6 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "UI Generator",
   description: "Describe a UI in plain English, get live React + Tailwind.",
+  icons: { icon: "/logo.svg", apple: "/logo.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

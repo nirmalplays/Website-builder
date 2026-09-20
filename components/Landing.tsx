@@ -16,6 +16,8 @@ export function Landing({
   error,
   attachment,
   onAttach,
+  bakedTemplates,
+  onOpenTemplate,
 }: {
   input: string;
   onInput: (v: string) => void;
@@ -27,6 +29,8 @@ export function Landing({
   error: string | null;
   attachment: Attachment | null;
   onAttach: (a: Attachment | null) => void;
+  bakedTemplates: string[];
+  onOpenTemplate: (id: string, title: string) => void;
 }) {
   const [filter, setFilter] = useState<Category | "All">("All");
   const [chipSeed, setChipSeed] = useState(0);
@@ -39,7 +43,9 @@ export function Landing({
 
   const visible = filter === "All" ? TEMPLATES : TEMPLATES.filter((t) => t.category === filter);
 
-  /** Templates load into the composer so they can be edited before generating. */
+  const ready = new Set(bakedTemplates);
+
+  /** Prompt-only starters load into the composer so they can be edited first. */
   function useTemplate(prompt: string) {
     onInput(prompt);
     document.getElementById("prompt")?.focus();
@@ -132,15 +138,26 @@ export function Landing({
             {visible.map((t) => (
               <li key={t.id}>
                 <button
-                  onClick={() => useTemplate(t.prompt)}
-                  disabled={outOfQuota}
+                  onClick={() =>
+                    ready.has(t.id) ? onOpenTemplate(t.id, t.title) : useTemplate(t.prompt)
+                  }
+                  disabled={!ready.has(t.id) && outOfQuota}
                   className="group w-full cursor-pointer text-left disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <TemplateThumb kind={t.preview} />
+                  <div className="relative">
+                    <TemplateThumb kind={t.preview} />
+                    {ready.has(t.id) && (
+                      <span className="absolute right-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-canvas">
+                        Ready
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-2.5 flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="truncate text-[13px] font-medium text-ink">{t.title}</h3>
-                      <p className="truncate text-[12px] text-faint">{t.blurb}</p>
+                      <p className="truncate text-[12px] text-faint">
+                        {ready.has(t.id) ? "Opens instantly · no credits used" : t.blurb}
+                      </p>
                     </div>
                     <span className="mt-0.5 shrink-0 rounded-full border border-line px-2 py-0.5 text-[10px] text-faint">
                       {t.category}
@@ -152,7 +169,8 @@ export function Landing({
           </ul>
 
           <p className="mt-8 text-center font-mono text-[11px] text-faint">
-            Templates load into the prompt box &mdash; edit before generating.
+            Templates marked Ready open instantly from shipped code. The rest load into the
+            prompt box to generate.
           </p>
         </section>
       </div>

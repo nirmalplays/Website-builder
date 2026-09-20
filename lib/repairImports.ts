@@ -44,7 +44,59 @@ function usedComponents(code: string): Set<string> {
   return names;
 }
 
+/**
+ * lucide-react dropped its brand icons (Github, Twitter, Linkedin...), and models
+ * still reach for them. Aliasing a real icon to the expected name keeps the JSX
+ * untouched and the preview alive, rather than failing the whole generation.
+ */
+const ICON_FALLBACKS: Record<string, string> = {
+  Github: "Code",
+  Gitlab: "Code",
+  Twitter: "MessageCircle",
+  X: "X",
+  Linkedin: "Briefcase",
+  Facebook: "Users",
+  Instagram: "Camera",
+  Youtube: "Play",
+  Dribbble: "Palette",
+  Figma: "Palette",
+  Slack: "MessageSquare",
+  Discord: "MessageSquare",
+  Tiktok: "Music",
+  Whatsapp: "MessageCircle",
+};
+
+const GENERIC_FALLBACK = "Circle";
+
+export function replaceUnknownIcons(code: string): string {
+  const importLine = code.match(/import\s*\{([^}]+)\}\s*from\s*["']lucide-react["'];?/);
+  if (!importLine) return code;
+
+  let changed = false;
+  const rewritten = importLine[1]
+    .split(",")
+    .map((raw) => raw.trim())
+    .filter(Boolean)
+    .map((spec) => {
+      // Already aliased (`Star as Logo`): only the source name must exist.
+      const [source, alias] = spec.split(/\s+as\s+/).map((x) => x.trim());
+      if (source in Lucide) return spec;
+      changed = true;
+      const wanted = alias ?? source;
+      const candidate = ICON_FALLBACKS[source] ?? GENERIC_FALLBACK;
+      const replacement = candidate in Lucide ? candidate : GENERIC_FALLBACK;
+      return `${replacement} as ${wanted}`;
+    });
+
+  if (!changed) return code;
+  return code.replace(
+    importLine[0],
+    `import { ${rewritten.join(", ")} } from "lucide-react";`,
+  );
+}
+
 export function repairImports(code: string): string {
+  code = replaceUnknownIcons(code);
   const declared = declaredNames(code);
   const imported = importedNames(code);
   const missing = [...usedComponents(code)].filter(
