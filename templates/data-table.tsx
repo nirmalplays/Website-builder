@@ -1,101 +1,170 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
-  MoreHorizontal, 
+  Plus, 
+  Trash2, 
+  CheckCircle, 
+  XCircle, 
   ChevronLeft, 
   ChevronRight, 
-  User, 
-  Shield, 
-  Mail, 
-  Filter,
-  Plus
+  MoreHorizontal,
+  User,
+  Shield,
+  Clock
 } from 'lucide-react';
 
-const TEAM_MEMBERS = [
-  { id: 1, name: "Elena Rodriguez", role: "Product Designer", status: "Active", email: "elena@nexus.com", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" },
-  { id: 2, name: "Marcus Chen", role: "Senior Engineer", status: "Active", email: "marcus@nexus.com", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" },
-  { id: 3, name: "Sarah Jenkins", role: "Marketing Lead", status: "Away", email: "sarah@nexus.com", avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop" },
-  { id: 4, name: "David Kim", role: "Data Analyst", status: "Active", email: "david@nexus.com", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop" },
-  { id: 5, name: "Amara Okafor", role: "Operations Mgr", status: "Offline", email: "amara@nexus.com", avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop" },
-  { id: 6, name: "Thomas Wright", role: "Frontend Dev", status: "Active", email: "thomas@nexus.com", avatar: "https://images.unsplash.com/photo-1519345182560-3f2d17c4d2d0?w=100&h=100&fit=crop" },
+type Member = {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  status: 'Active' | 'Inactive' | 'Pending';
+};
+
+const INITIAL_DATA: Member[] = [
+  { id: '1', name: 'Sarah Jenkins', role: 'Product Designer', email: 'sarah@company.com', status: 'Active' },
+  { id: '2', name: 'Marcus Chen', role: 'Frontend Engineer', email: 'marcus@company.com', status: 'Active' },
+  { id: '3', name: 'Elena Rodriguez', role: 'UX Researcher', email: 'elena@company.com', status: 'Pending' },
+  { id: '4', name: 'David Kim', role: 'Backend Dev', email: 'dkim@company.com', status: 'Inactive' },
+  { id: '5', name: 'Amara Okafor', role: 'Product Manager', email: 'amara@company.com', status: 'Active' },
+  { id: '6', name: 'James Wilson', role: 'QA Engineer', email: 'james@company.com', status: 'Active' },
+  { id: '7', name: 'Sophie Taylor', role: 'Designer', email: 'sophie@company.com', status: 'Pending' },
 ];
 
 export default function App() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [members, setMembers] = useState<Member[]>(() => {
+    try { return JSON.parse(localStorage.getItem('team_data') || 'null') || INITIAL_DATA; }
+    catch { return INITIAL_DATA; }
+  });
+  const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ name: '', role: '', email: '' });
+  const itemsPerPage = 5;
 
-  const filteredMembers = TEAM_MEMBERS.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    localStorage.setItem('team_data', JSON.stringify(members));
+  }, [members]);
+
+  const filteredMembers = useMemo(() => 
+    members.filter(m => 
+      m.name.toLowerCase().includes(search.toLowerCase()) || 
+      m.role.toLowerCase().includes(search.toLowerCase())
+    ), [members, search]);
+
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage) || 1;
+  const paginatedData = filteredMembers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email) return;
+    
+    setIsLoading(true);
+    setTimeout(() => {
+      const newMember: Member = {
+        id: Date.now().toString(),
+        ...formData,
+        status: 'Active'
+      };
+      setMembers([...members, newMember]);
+      setFormData({ name: '', role: '', email: '' });
+      setShowForm(false);
+      setIsLoading(false);
+    }, 800);
+  };
+
+  const deleteMember = (id: string) => {
+    setMembers(members.filter(m => m.id !== id));
+  };
+
+  const toggleStatus = (id: string) => {
+    setMembers(members.map(m => 
+      m.id === id ? { ...m, status: m.status === 'Active' ? 'Inactive' : 'Active' } : m
+    ));
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-900">
+      <div className="max-w-5xl mx-auto">
+        <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Team Directory</h1>
-            <p className="text-slate-500">Manage your organization's members and access levels.</p>
+            <h1 className="text-2xl font-bold">Team Members</h1>
+            <p className="text-gray-500">Manage your team structure and access rights.</p>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium">
+          <button 
+            onClick={() => setShowForm(!showForm)}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+          >
             <Plus size={18} /> Add Member
           </button>
-        </div>
+        </header>
 
-        {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+        {showForm && (
+          <form onSubmit={handleAddMember} className="bg-white p-6 rounded-xl border border-gray-200 mb-8 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input required placeholder="Full Name" className="border p-2 rounded" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input required placeholder="Role" className="border p-2 rounded" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} />
+              <input type="email" required placeholder="Email" className="border p-2 rounded" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button disabled={isLoading} type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
+                {isLoading ? 'Saving...' : 'Confirm Save'}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)} className="text-gray-600 px-4 py-2">Cancel</button>
+            </div>
+          </form>
+        )}
+
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-gray-100 flex items-center gap-4">
+            <Search className="text-gray-400" size={20} />
             <input 
-              type="text"
-              placeholder="Search members..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search members..." 
+              className="flex-1 outline-none" 
+              value={search} 
+              onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
             />
           </div>
-          <button className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 border border-slate-200 px-4 py-2 rounded-lg font-medium transition">
-            <Filter size={18} /> Filters
-          </button>
-        </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Member</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              <thead className="bg-gray-50 text-gray-600 text-sm">
+                <tr>
+                  <th className="p-4 font-medium">Name</th>
+                  <th className="p-4 font-medium">Role</th>
+                  <th className="p-4 font-medium">Status</th>
+                  <th className="p-4 font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-50/50 transition">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img src={member.avatar} alt={member.name} className="w-10 h-10 rounded-full object-cover border border-slate-100" />
-                        <div>
-                          <p className="font-semibold">{member.name}</p>
-                          <p className="text-sm text-slate-500">{member.email}</p>
-                        </div>
+              <tbody className="divide-y divide-gray-100">
+                {paginatedData.map(member => (
+                  <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                        {member.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-xs text-gray-500">{member.email}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{member.role}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        member.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 
-                        member.status === 'Away' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
-                      }`}>
+                    <td className="p-4 text-gray-600">{member.role}</td>
+                    <td className="p-4">
+                      <button 
+                        onClick={() => toggleStatus(member.id)}
+                        className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                          member.status === 'Active' ? 'bg-green-100 text-green-700' : 
+                          member.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {member.status === 'Active' ? <CheckCircle size={12}/> : <Clock size={12}/>}
                         {member.status}
-                      </span>
+                      </button>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button className="text-slate-400 hover:text-indigo-600 transition p-1">
-                        <MoreHorizontal size={20} />
+                    <td className="p-4">
+                      <button onClick={() => deleteMember(member.id)} className="text-gray-400 hover:text-red-600">
+                        <Trash2 size={18} />
                       </button>
                     </td>
                   </tr>
@@ -104,27 +173,26 @@ export default function App() {
             </table>
           </div>
 
-          {/* Footer Pagination */}
-          <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-white">
-            <p className="text-sm text-slate-500">Showing <strong>{filteredMembers.length}</strong> results</p>
+          <div className="p-4 flex justify-between items-center border-t border-gray-100">
+            <span className="text-sm text-gray-500">Page {currentPage} of {totalPages}</span>
             <div className="flex gap-2">
               <button 
                 disabled={currentPage === 1}
-                className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50"
               >
-                <ChevronLeft size={18} />
+                <ChevronLeft size={18}/>
               </button>
-              <button className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">
-                <ChevronRight size={18} />
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="p-2 border rounded hover:bg-gray-50 disabled:opacity-50"
+              >
+                <ChevronRight size={18}/>
               </button>
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="mt-12 text-center text-slate-400 text-sm py-8">
-          <p>© 2024 Nexus Operations Dashboard. All rights reserved.</p>
-        </footer>
       </div>
     </div>
   );

@@ -160,6 +160,17 @@ ${source}
 </html>`;
 }
 
+// localStorage throws on an opaque origin, and generated apps now persist state,
+// so serve the page from a real http origin instead of setContent().
+const RENDER_ORIGIN = "http://generated.local";
+
+async function serve(page, html) {
+  await page.route(`${RENDER_ORIGIN}/**`, (route) =>
+    route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: html }),
+  );
+  await page.goto(`${RENDER_ORIGIN}/index.html`, { waitUntil: "networkidle" });
+}
+
 const browser = await chromium.launch();
 
 let ok = 0;
@@ -180,7 +191,7 @@ for (const id of ids) {
     const onError = (e) => errors.push(e.message.slice(0, 120));
     page.on("pageerror", onError);
 
-    await page.setContent(pageHtml(toBrowserSource(code)), { waitUntil: "networkidle" });
+    await serve(page, pageHtml(toBrowserSource(code)));
     await page.waitForFunction(() => document.getElementById("root")?.children.length > 0, {
       timeout: 15000,
     });

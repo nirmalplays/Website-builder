@@ -16,6 +16,7 @@ import { GoogleGenAI } from "@google/genai";
 import { SYSTEM_PROMPT } from "../tmp/lib/systemPrompt.mjs";
 import { extractCode } from "../tmp/lib/extractCode.mjs";
 import { repairImports } from "../tmp/lib/repairImports.mjs";
+import { findDeadControls, deadControlRepairPrompt } from "../tmp/lib/validateInteractivity.mjs";
 
 for (const line of readFileSync(".env.local", "utf8").split("\n")) {
   const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
@@ -66,7 +67,27 @@ for (const [i, t] of targets.entries()) {
         maxOutputTokens: 32768,
       },
     });
-    const code = repairImports(extractCode(res.text ?? ""));
+    let code = repairImports(extractCode(res.text ?? ""));
+
+    // Hold shipped templates to the same "it must actually work" bar.
+    const dead = findDeadControls(code);
+    if (dead.length) {
+      const retry = await ai.models.generateContent({
+        model: MODEL,
+        contents: t.prompt,
+        config: {
+          systemInstruction: `${SYSTEM_PROMPT}
+
+${BAKE_SUFFIX}
+
+${deadControlRepairPrompt(dead)}`,
+          temperature: 0.7,
+          maxOutputTokens: 32768,
+        },
+      });
+      const wired = repairImports(extractCode(retry.text ?? ""));
+      if (findDeadControls(wired).length < dead.length) code = wired;
+    }
 
     // Every named lucide import must exist, or the preview is a red pane.
     const lucide = code.match(/import\s*\{([^}]+)\}\s*from\s*["']lucide-react["']/);

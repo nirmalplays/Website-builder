@@ -1,181 +1,208 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Search, ShoppingCart, Star, ArrowRight, Menu, Zap, Shield, 
-  CreditCard, Mail, ChevronRight, Package, TrendingUp, User
+  ShoppingBag, Search, Star, Menu, X, ChevronRight, 
+  Package, DollarSign, Shield, Zap, Plus, Minus, Trash2, 
+  CheckCircle, Mail, ArrowRight
 } from 'lucide-react';
 
-const products = [
-  { id: 1, name: "Summit Alpine Backpack", price: 129.99, rating: 5, img: "https://images.unsplash.com/photo-1622560480654-d9f2140b88d8?auto=format&fit=crop&w=400&q=80" },
-  { id: 2, name: "Meridian Wireless Buds", price: 89.50, rating: 4, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=400&q=80" },
-  { id: 3, name: "AeroCore Running Shoes", price: 159.00, rating: 5, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80" },
-  { id: 4, name: "Luminary Desk Lamp", price: 45.00, rating: 4, img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=400&q=80" },
-  { id: 5, name: "Urban Nomad Jacket", price: 199.99, rating: 5, img: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?auto=format&fit=crop&w=400&q=80" },
-  { id: 6, name: "Titanium Travel Mug", price: 32.00, rating: 4, img: "https://images.unsplash.com/photo-1517093678835-75c081794270?auto=format&fit=crop&w=400&q=80" },
-  { id: 7, name: "Zenith Yoga Mat", price: 55.00, rating: 5, img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=400&q=80" },
-  { id: 8, name: "Focus Mechanical Keyboard", price: 149.00, rating: 5, img: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=400&q=80" },
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  rating: number;
+  image: string;
+};
+
+const INITIAL_PRODUCTS: Product[] = [
+  { id: 1, name: "Minimalist Desk Lamp", price: 89, category: "Home", rating: 4.8, image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=400&q=80" },
+  { id: 2, name: "Ergonomic Office Chair", price: 299, category: "Furniture", rating: 4.9, image: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&w=400&q=80" },
+  { id: 3, name: "Noise Cancelling Headphones", price: 199, category: "Tech", rating: 4.7, image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80" },
+  { id: 4, name: "Mechanical Keyboard", price: 149, category: "Tech", rating: 4.6, image: "https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=400&q=80" },
+  { id: 5, name: "Ceramic Coffee Mug", price: 24, category: "Kitchen", rating: 4.5, image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=400&q=80" },
+  { id: 6, name: "Canvas Backpack", price: 65, category: "Accessories", rating: 4.8, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80" },
+  { id: 7, name: "Smart Fitness Watch", price: 249, category: "Tech", rating: 4.4, image: "https://images.unsplash.com/photo-1557961168-e6d8a417537b?auto=format&fit=crop&w=400&q=80" },
+  { id: 8, name: "Organic Cotton Throw", price: 55, category: "Home", rating: 4.9, image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=400&q=80" },
 ];
 
 export default function App() {
-  const [cartCount] = useState(3);
+  const [cart, setCart] = useState<{product: Product, qty: number}[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cart');
+      if (saved) setCart(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const updateCart = (product: Product, delta: number) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      let next;
+      if (existing) {
+        const newQty = existing.qty + delta;
+        next = newQty <= 0 
+          ? prev.filter(i => i.product.id !== product.id)
+          : prev.map(i => i.product.id === product.id ? { ...i, qty: newQty } : i);
+      } else {
+        next = [...prev, { product, qty: 1 }];
+      }
+      localStorage.setItem('cart', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+    setTimeout(() => {
+      setNewsletterStatus('success');
+      setNewsletterEmail('');
+      setTimeout(() => setNewsletterStatus('idle'), 3000);
+    }, 1000);
+  };
+
+  const filteredProducts = INITIAL_PRODUCTS.filter(p => 
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
+      <nav className="sticky top-0 bg-white/95 backdrop-blur z-40 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="w-8 h-8 text-blue-600 fill-blue-600" />
-            <span className="text-xl font-bold tracking-tight">VELOCITY</span>
+          <div className="text-2xl font-bold text-blue-600 tracking-tight">MODERN.</div>
+          <div className="hidden md:flex flex-1 max-w-md mx-8 relative">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <input 
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-            <a href="#" className="hover:text-blue-600">New Arrivals</a>
-            <a href="#" className="hover:text-blue-600">Categories</a>
-            <a href="#" className="hover:text-blue-600">Support</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <Search className="w-5 h-5 text-slate-400 cursor-pointer" />
-            <div className="relative">
-              <ShoppingCart className="w-5 h-5 cursor-pointer" />
-              <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">{cartCount}</span>
-            </div>
-            <Menu className="md:hidden w-5 h-5" />
-          </div>
+          <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:bg-gray-100 rounded-full">
+            <ShoppingBag className="w-6 h-6" />
+            {cart.length > 0 && (
+              <span className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                {cart.reduce((acc, item) => acc + item.qty, 0)}
+              </span>
+            )}
+          </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="relative bg-slate-900 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 py-20 lg:py-32 flex flex-col items-start gap-6">
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-600 text-xs font-semibold uppercase tracking-wider">Summer Essentials</span>
-          <h1 className="text-5xl lg:text-7xl font-extrabold max-w-2xl leading-tight">Elevate Your Daily Routine.</h1>
-          <p className="text-lg text-slate-300 max-w-lg">Discover curated quality goods designed for the modern lifestyle. Fast shipping, guaranteed satisfaction.</p>
-          <button className="bg-white text-slate-900 px-8 py-4 rounded-lg font-bold flex items-center gap-2 hover:bg-slate-100 transition">
-            Shop Collection <ArrowRight className="w-5 h-5" />
-          </button>
+      <header className="relative py-20 bg-blue-900 text-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+          <h1 className="text-5xl md:text-7xl font-extrabold max-w-2xl leading-tight">Elevate Your Daily Routine.</h1>
+          <p className="mt-6 text-xl text-blue-100 max-w-lg">Hand-picked essentials designed for the modern lifestyle. Quality meeting aesthetic.</p>
+          <button className="mt-10 bg-white text-blue-900 px-8 py-4 rounded-full font-bold hover:bg-blue-50 transition-colors">Shop Collection</button>
         </div>
       </header>
 
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-2xl font-bold mb-8">Browse Categories</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['Tech', 'Apparel', 'Home', 'Fitness'].map((cat) => (
-            <div key={cat} className="group relative h-48 rounded-2xl overflow-hidden cursor-pointer">
-              <img src={`https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80`} alt={cat} className="w-full h-full object-cover transition duration-500 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-xl font-bold">{cat}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Products */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold">Best Sellers</h2>
-          <button className="text-blue-600 font-semibold flex items-center gap-1 hover:underline">View All <ChevronRight className="w-4 h-4" /></button>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
-            <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-100 hover:shadow-lg transition">
-              <img src={p.img} alt={p.name} className="w-full h-48 object-cover rounded-xl mb-4" />
-              <h3 className="font-semibold text-slate-800 mb-1">{p.name}</h3>
-              <div className="flex items-center gap-1 mb-3">
-                {[...Array(p.rating)].map((_, i) => <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />)}
+      {/* Grid */}
+      <main className="max-w-7xl mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold mb-10">Best Sellers</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {filteredProducts.map(product => (
+            <div key={product.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
+              <img src={product.image} alt={product.name} className="w-full h-48 object-cover rounded-xl mb-4" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-gray-800">{product.name}</h3>
+                  <p className="text-sm text-gray-500">{product.category}</p>
+                </div>
+                <div className="flex items-center text-yellow-500 text-sm font-bold">
+                  <Star className="w-4 h-4 fill-current mr-1" /> {product.rating}
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-bold">${p.price}</span>
-                <button className="bg-slate-900 text-white p-2 rounded-lg hover:bg-blue-600">
-                  <ShoppingCart className="w-4 h-4" />
+              <div className="mt-4 flex items-center justify-between">
+                <span className="font-bold text-lg">${product.price}</span>
+                <button 
+                  onClick={() => updateCart(product, 1)}
+                  className="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
                 </button>
               </div>
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Sale Banner */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="bg-blue-600 rounded-3xl p-8 md:p-16 text-white flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Flash Sale: Up to 40% Off</h2>
-            <p className="text-blue-100">Don't miss out on your favorite items. Limited stock available.</p>
-          </div>
-          <button className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold shadow-xl hover:bg-slate-100">Shop Sale Now</button>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-2xl font-bold mb-8 text-center">Loved by Thousands</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { name: "Sarah Jenkins", text: "The quality of the backpack is unmatched. Perfect for my daily commute!" },
-            { name: "Mark Peterson", text: "Fastest shipping I've ever experienced. Great product range too." },
-            { name: "Elena Rodriguez", text: "Absolutely love my new running shoes. My feet have never felt better." }
-          ].map((r, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100">
-              <div className="flex gap-1 mb-4 text-amber-400">
-                <Star className="w-4 h-4 fill-amber-400" /><Star className="w-4 h-4 fill-amber-400" /><Star className="w-4 h-4 fill-amber-400" /><Star className="w-4 h-4 fill-amber-400" /><Star className="w-4 h-4 fill-amber-400" />
-              </div>
-              <p className="text-slate-600 mb-4">"{r.text}"</p>
-              <div className="font-bold text-sm">— {r.name}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      </main>
 
       {/* Newsletter */}
-      <section className="bg-white py-20 border-t border-slate-100">
-        <div className="max-w-xl mx-auto px-4 text-center">
-          <Mail className="w-10 h-10 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Join our Newsletter</h2>
-          <p className="text-slate-500 mb-6">Get 10% off your first order and stay updated on new drops.</p>
-          <div className="flex gap-2">
-            <input type="email" placeholder="Enter your email" className="flex-1 px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600" />
-            <button className="bg-slate-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600">Subscribe</button>
-          </div>
+      <section className="bg-gray-900 text-white py-20">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold">Join Our Community</h2>
+          <p className="mt-4 text-gray-400">Get 10% off your first order and stay updated with new arrivals.</p>
+          <form onSubmit={handleNewsletter} className="mt-8 flex gap-2">
+            <input 
+              required
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-6 py-4 rounded-full text-gray-900 focus:outline-none"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+            />
+            <button 
+              disabled={newsletterStatus !== 'idle'}
+              className="bg-blue-600 px-8 py-4 rounded-full font-bold flex items-center hover:bg-blue-500 disabled:bg-gray-600"
+            >
+              {newsletterStatus === 'success' ? <CheckCircle /> : newsletterStatus === 'loading' ? "Wait..." : "Subscribe"}
+            </button>
+          </form>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-12">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-white">
-              <Zap className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-lg">VELOCITY</span>
-            </div>
-            <p className="text-sm">Modern living, redefined. Your one-stop shop for premium goods.</p>
+      <footer className="py-12 border-t border-gray-200 text-center text-gray-500 text-sm">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p>© 2024 MODERN Storefront. Built for excellence.</p>
+          <div className="flex items-center gap-4">
+            <Shield className="w-5 h-5" />
+            <Zap className="w-5 h-5" />
+            <DollarSign className="w-5 h-5" />
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
-              <li>About Us</li>
-              <li>Careers</li>
-              <li>Privacy Policy</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Support</h4>
-            <ul className="space-y-2 text-sm">
-              <li>Track Order</li>
-              <li>Returns</li>
-              <li>Contact</li>
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <h4 className="text-white font-bold">Secure Payments</h4>
-            <div className="flex gap-4">
-              <CreditCard className="w-8 h-8" />
-              <Shield className="w-8 h-8" />
-              <Package className="w-8 h-8" />
-            </div>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-800 text-sm text-center">
-          © 2024 Velocity Retail Inc. All rights reserved.
         </div>
       </footer>
+
+      {/* Cart Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
+          <div className="w-full max-w-md bg-white h-full p-6 shadow-xl flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Your Cart</h2>
+              <button onClick={() => setIsCartOpen(false)}><X /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {cart.length === 0 ? <p className="text-gray-500">Your cart is empty.</p> : cart.map(item => (
+                <div key={item.product.id} className="flex gap-4 p-2 border-b">
+                  <img src={item.product.image} className="w-16 h-16 rounded object-cover" alt="" />
+                  <div className="flex-1">
+                    <p className="font-bold">{item.product.name}</p>
+                    <p className="text-sm">${item.product.price} x {item.qty}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <button onClick={() => updateCart(item.product, -1)}><Trash2 className="w-4 h-4 text-red-500"/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="pt-6 border-t mt-6">
+              <div className="flex justify-between font-bold text-lg mb-4">
+                <span>Total</span>
+                <span>${cart.reduce((acc, i) => acc + (i.product.price * i.qty), 0)}</span>
+              </div>
+              <button className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold">Checkout</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

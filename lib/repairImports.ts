@@ -17,6 +17,14 @@ export class UnknownComponentError extends Error {
 
 const REACT_BUILTINS = new Set(["Fragment", "Suspense", "StrictMode", "Profiler"]);
 
+/**
+ * Names that look like JSX to a regex but are TypeScript types in generic
+ * position, e.g. React.ChangeEvent<HTMLInputElement>. Treating them as missing
+ * components used to fail the whole generation.
+ */
+const TYPE_LIKE =
+  /^(?:HTML\w*Element|SVG\w*Element|\w*Event|Element|Node|NodeList|Document|Window|Date|Promise|Array|ReadonlyArray|Map|Set|WeakMap|WeakSet|Record|Partial|Required|Readonly|Omit|Pick|Exclude|Extract|NonNullable|ReturnType|Parameters|InstanceType|String|Number|Boolean|Object|Function|Error|RegExp|JSX|T|K|V|U)$/;
+
 function declaredNames(code: string): Set<string> {
   const names = new Set<string>();
   for (const m of code.matchAll(/\b(?:function|class)\s+([A-Z]\w*)/g)) names.add(m[1]);
@@ -100,7 +108,7 @@ export function repairImports(code: string): string {
   const declared = declaredNames(code);
   const imported = importedNames(code);
   const missing = [...usedComponents(code)].filter(
-    (n) => !declared.has(n) && !imported.has(n) && !REACT_BUILTINS.has(n),
+    (n) => !declared.has(n) && !imported.has(n) && !REACT_BUILTINS.has(n) && !TYPE_LIKE.test(n),
   );
   if (missing.length === 0) return code;
 

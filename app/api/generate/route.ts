@@ -12,6 +12,7 @@ import {
 import { SYSTEM_PROMPT, REPAIR_SUFFIX, IMAGE_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
+import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInteractivity";
 import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
 import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
@@ -177,6 +178,29 @@ ${IMAGE_SUFFIX}` : base);
       // One automatic repair retry, then surface it.
       code = repairImports(extractCode(await call(SYSTEM_PROMPT + "\n\n" + suffix)));
       repaired = "model-retry";
+    }
+
+    // A page where nothing responds is the failure mode users notice most, so
+    // spend one extra call wiring it rather than shipping a mockup.
+    const dead = findDeadControls(code);
+    if (dead.length > 0) {
+      console.warn(`[generate] dead controls: ${dead.map((d) => d.detail).join("; ")}`);
+      try {
+        const wired = repairImports(
+          extractCode(await call(`${SYSTEM_PROMPT}
+
+${deadControlRepairPrompt(dead)}`)),
+        );
+        // Only accept the retry if it actually improved things.
+        if (findDeadControls(wired).length < dead.length) {
+          code = wired;
+          repaired = repaired ? `${repaired}+interactivity` : "interactivity";
+        }
+      } catch (err) {
+        console.warn(
+          `[generate] interactivity repair failed: ${err instanceof Error ? err.message : err}`,
+        );
+      }
     }
 
     const latencyMs = Date.now() - started;
