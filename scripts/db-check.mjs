@@ -12,7 +12,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const sql = postgres(process.env.DATABASE_URL, { max: 1, prepare: false, connect_timeout: 10 });
+const sql = postgres(process.env.DATABASE_URL, { max: 1, prepare: false, ssl: "require", connect_timeout: 10 });
 try {
   const started = Date.now();
   const [{ version }] = await sql`select version()`;

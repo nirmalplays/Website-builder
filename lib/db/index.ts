@@ -16,9 +16,17 @@ declare global {
 
 function createClient() {
   if (!url) return undefined;
-  // prepare:false keeps this working behind pgbouncer (Supabase transaction pooler).
-  // max:1 suits serverless, where each invocation is its own process.
-  return postgres(url, { prepare: false, max: 1, idle_timeout: 20, connect_timeout: 10 });
+  // prepare:false is required by Supabase's transaction pooler, which does not
+  // support prepared statements. max:1 suits serverless, where each invocation
+  // is its own process. Hosted Postgres requires SSL; local usually forbids it.
+  const isLocal = /@(localhost|127\.0\.0\.1)/.test(url);
+  return postgres(url, {
+    prepare: false,
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    ssl: isLocal ? false : "require",
+  });
 }
 
 const client = globalThis.__dbClient ?? createClient();
