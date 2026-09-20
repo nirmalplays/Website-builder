@@ -6,13 +6,23 @@ import { OAUTH_PROVIDERS, type OAuthProvider } from "@/lib/supabase/config";
 
 export type SessionUser = { email: string; avatarUrl: string | null } | null;
 
-export function AuthButton({ user, enabled }: { user: SessionUser; enabled: boolean }) {
+export function AuthButton({
+  user,
+  enabled,
+  providers,
+}: {
+  user: SessionUser;
+  enabled: boolean;
+  providers: OAuthProvider[];
+}) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Auth not configured: say nothing rather than showing a button that cannot work.
   if (!enabled) return null;
+
+  const available = OAUTH_PROVIDERS.filter((p) => providers.includes(p.id));
 
   async function signIn(provider: OAuthProvider) {
     const supabase = createClient();
@@ -75,7 +85,13 @@ export function AuthButton({ user, enabled }: { user: SessionUser; enabled: bool
           <p className="px-2.5 py-2 text-[11px] leading-snug text-neutral-500">
             Sign in to keep your projects. Generating works either way.
           </p>
-          {OAUTH_PROVIDERS.map((p) => (
+          {available.length === 0 && (
+            <p className="px-2.5 py-1.5 text-[11px] leading-snug text-amber-400/90">
+              No OAuth provider is enabled on this Supabase project yet. Enable GitHub or
+              Google under Authentication &rarr; Providers.
+            </p>
+          )}
+          {available.map((p) => (
             <button
               key={p.id}
               onClick={() => signIn(p.id)}

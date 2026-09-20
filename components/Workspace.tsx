@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Preview } from "./Preview";
 import { MODELS } from "@/lib/config";
 import { AuthButton, type SessionUser } from "./AuthButton";
+import type { OAuthProvider } from "@/lib/supabase/config";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -17,10 +18,12 @@ const EXAMPLES = [
 export function Workspace({
   defaultModel,
   authEnabled,
+  providers,
   user,
 }: {
   defaultModel: string;
   authEnabled: boolean;
+  providers: OAuthProvider[];
   user: SessionUser;
 }) {
   const [history, setHistory] = useState<Turn[]>([]);
@@ -96,7 +99,7 @@ export function Workspace({
               </option>
             ))}
           </select>
-          <AuthButton user={user} enabled={authEnabled} />
+          <AuthButton user={user} enabled={authEnabled} providers={providers} />
         </header>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
