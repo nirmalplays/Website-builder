@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Preview } from "./Preview";
+import { MODELS } from "@/lib/config";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -12,9 +13,11 @@ const EXAMPLES = [
   "A landing hero for a running shoe brand with a big product photo and an email capture",
 ];
 
-export function Workspace() {
+export function Workspace({ defaultModel }: { defaultModel: string }) {
   const [history, setHistory] = useState<Turn[]>([]);
   const [code, setCode] = useState("");
+  const [model, setModel] = useState(defaultModel);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
   const [tab, setTab] = useState<"preview" | "code">("preview");
   const [input, setInput] = useState("");
@@ -41,12 +44,13 @@ export function Workspace() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: trimmed, history: sentHistory }),
+        body: JSON.stringify({ prompt: trimmed, history: sentHistory, projectId, model }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Generation failed.");
 
       // Only swap the sandbox files once a generation is complete.
+      if (data.projectId) setProjectId(data.projectId);
       setCode(data.code);
       setGeneration((g) => g + 1);
       setTab("preview");
@@ -67,7 +71,22 @@ export function Workspace() {
             &#9670;
           </span>
           <h1 className="text-sm font-semibold tracking-tight">UI Generator</h1>
-          <span className="ml-auto text-xs text-neutral-500">Gemini</span>
+          <label htmlFor="model" className="sr-only">
+            Model
+          </label>
+          <select
+            id="model"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            title={MODELS.find((m) => m.id === model)?.note}
+            className="ml-auto max-w-[9.5rem] truncate rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 outline-none hover:border-neutral-700 focus:border-neutral-600"
+          >
+            {MODELS.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
         </header>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
