@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { Composer, type Attachment } from "./Composer";
 
-export type Turn = { role: "user" | "assistant"; content: string };
+/** `lines` is set when a turn is restored from history and the file body was not sent. */
+export type Turn = { role: "user" | "assistant"; content: string; lines?: number };
 
 export function ChatPanel({
   history,
@@ -57,7 +58,8 @@ export function ChatPanel({
               );
             }
             versionNo += 1;
-            const lines = turn.content.split("\n").length;
+            // Restored turns carry a line count instead of the file body.
+            const lines = turn.lines ?? turn.content.split("\n").length;
             return (
               <li key={i} className="flex items-center gap-2 pl-1">
                 <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-success" />

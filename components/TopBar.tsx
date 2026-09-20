@@ -49,6 +49,12 @@ export function TopBar({
         >
           Templates
         </Link>
+        <Link
+          href="/projects"
+          className="rounded-md px-2.5 py-1.5 text-muted transition-colors duration-200 hover:text-ink"
+        >
+          Projects
+        </Link>
       </nav>
 
       <span aria-live="polite" className="sr-only">

@@ -71,6 +71,36 @@ export function Workspace({
     };
   }, []);
 
+  // Reopening a saved project restores its files and prompt history.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("project");
+    if (!id) return;
+    window.history.replaceState({}, "", "/");
+    setLoading(true);
+    fetch(`/api/projects/${id}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("Project not found."))))
+      .then((data) => {
+        const latest = data.versions?.[0];
+        if (!latest?.files) throw new Error("That project has no saved files.");
+        setFiles(latest.files);
+        setCode(latest.files["/App.tsx"] ?? "");
+        setProjectId(id);
+        setHistory(
+          (data.messages ?? []).map(
+            (m: { role: "user" | "assistant"; content: string; lines?: number }) => ({
+              role: m.role,
+              content: m.content,
+              lines: m.lines,
+            }),
+          ),
+        );
+        setGeneration((g) => g + 1);
+        setMobileView("result");
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   // Arriving from the templates browser with ?template=<id> opens it straight away.
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("template");
