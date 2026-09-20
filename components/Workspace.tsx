@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ChatPanel, type Turn } from "./ChatPanel";
+import { Landing } from "./Landing";
 import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
 import type { SessionUser } from "./AuthButton";
@@ -34,14 +35,16 @@ export function Workspace({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
-  const [chatWidth, setChatWidth] = useState(380);
+  const [chatWidth, setChatWidth] = useState(400);
   const [mobileView, setMobileView] = useState<"chat" | "result">("chat");
   const shellRef = useRef<HTMLDivElement>(null);
 
   const isEdit = code !== "";
   const outOfQuota = usage?.enforced === true && usage.remaining <= 0;
 
-  // Seed the meter on load; every generation refreshes it from its own response.
+  // The split workspace only exists once there is something to show.
+  const started = history.length > 0 || loading;
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/usage")
@@ -55,7 +58,6 @@ export function Workspace({
     };
   }, []);
 
-  // Cmd/Ctrl+K focuses the prompt from anywhere.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -89,6 +91,16 @@ export function Workspace({
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   }, []);
+
+  function reset() {
+    setHistory([]);
+    setCode("");
+    setProjectId(null);
+    setInput("");
+    setError(null);
+    setTab("preview");
+    setMobileView("chat");
+  }
 
   async function send(prompt: string) {
     const trimmed = prompt.trim();
@@ -129,80 +141,97 @@ export function Workspace({
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-canvas">
       <TopBar
-        model={model}
-        onModelChange={setModel}
         usage={usage}
         user={user}
         authEnabled={authEnabled}
         providers={providers}
         busy={loading}
+        canReset={started}
+        onReset={reset}
       />
 
-      {/* Single-pane switch below the md breakpoint. */}
-      <div className="flex shrink-0 gap-1 border-b border-line bg-surface/60 p-1.5 md:hidden">
-        {(["chat", "result"] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setMobileView(v)}
-            aria-pressed={mobileView === v}
-            className={`h-9 flex-1 cursor-pointer rounded-md font-mono text-[11px] capitalize transition-colors duration-200 ${
-              mobileView === v ? "bg-raised text-ink" : "text-muted"
-            }`}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-
-      <div ref={shellRef} className="flex min-h-0 flex-1">
-        <aside
-          style={{ "--chat-w": `${chatWidth}px` } as CSSProperties}
-          className={`min-h-0 w-full shrink-0 flex-col border-line md:flex md:w-[var(--chat-w)] md:border-r ${
-            mobileView === "chat" ? "flex" : "hidden"
-          }`}
-        >
-          <ChatPanel
-            history={history}
-            loading={loading}
-            error={error}
+      {!started ? (
+        <main className="min-h-0 flex-1">
+          <Landing
             input={input}
             onInput={setInput}
-            onSend={send}
-            outOfQuota={outOfQuota}
-            isEdit={isEdit}
-          />
-        </aside>
-
-        {/* Drag or arrow-key the divider. */}
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Resize panels"
-          tabIndex={0}
-          onPointerDown={startResize}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowLeft") setChatWidth((w) => Math.max(MIN_CHAT, w - 16));
-            if (e.key === "ArrowRight") setChatWidth((w) => Math.min(MAX_CHAT, w + 16));
-          }}
-          className="hidden w-1 shrink-0 cursor-col-resize bg-transparent transition-colors duration-200 hover:bg-accent/40 focus-visible:bg-accent/60 md:block"
-        />
-
-        <div
-          className={`min-h-0 min-w-0 flex-1 md:flex ${
-            mobileView === "result" ? "flex" : "hidden"
-          }`}
-        >
-          <PreviewPanel
-            code={code}
-            generation={generation}
-            tab={tab}
-            onTabChange={setTab}
-            deviceWidth={deviceWidth}
-            onDeviceChange={setDeviceWidth}
+            onSubmit={send}
+            model={model}
+            onModelChange={setModel}
             loading={loading}
+            outOfQuota={outOfQuota}
+            error={error}
           />
-        </div>
-      </div>
+        </main>
+      ) : (
+        <>
+          <div className="flex shrink-0 gap-1 border-b border-line p-1.5 md:hidden">
+            {(["chat", "result"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setMobileView(v)}
+                aria-pressed={mobileView === v}
+                className={`h-9 flex-1 cursor-pointer rounded-md text-xs capitalize transition-colors duration-200 ${
+                  mobileView === v ? "bg-raised text-ink" : "text-muted"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+
+          <div ref={shellRef} className="flex min-h-0 flex-1">
+            <aside
+              style={{ "--chat-w": `${chatWidth}px` } as CSSProperties}
+              className={`min-h-0 w-full shrink-0 flex-col border-line md:flex md:w-[var(--chat-w)] md:border-r ${
+                mobileView === "chat" ? "flex" : "hidden"
+              }`}
+            >
+              <ChatPanel
+                history={history}
+                loading={loading}
+                error={error}
+                input={input}
+                onInput={setInput}
+                onSend={send}
+                model={model}
+                onModelChange={setModel}
+                outOfQuota={outOfQuota}
+                isEdit={isEdit}
+              />
+            </aside>
+
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize panels"
+              tabIndex={0}
+              onPointerDown={startResize}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowLeft") setChatWidth((w) => Math.max(MIN_CHAT, w - 16));
+                if (e.key === "ArrowRight") setChatWidth((w) => Math.min(MAX_CHAT, w + 16));
+              }}
+              className="hidden w-1 shrink-0 cursor-col-resize transition-colors duration-200 hover:bg-line-strong focus-visible:bg-ink md:block"
+            />
+
+            <div
+              className={`min-h-0 min-w-0 flex-1 md:flex ${
+                mobileView === "result" ? "flex" : "hidden"
+              }`}
+            >
+              <PreviewPanel
+                code={code}
+                generation={generation}
+                tab={tab}
+                onTabChange={setTab}
+                deviceWidth={deviceWidth}
+                onDeviceChange={setDeviceWidth}
+                loading={loading}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
