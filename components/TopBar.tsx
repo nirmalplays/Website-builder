@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { OAuthProvider } from "@/lib/supabase/config";
 import { AuthButton, type SessionUser } from "./AuthButton";
 import { UsageMeter, type Usage } from "./UsageMeter";
@@ -40,6 +41,15 @@ export function TopBar({
         />
         <span className="text-[13px] font-semibold tracking-tight">ui/gen</span>
       </button>
+
+      <nav className="hidden items-center gap-1 text-[13px] sm:flex">
+        <Link
+          href="/templates"
+          className="rounded-md px-2.5 py-1.5 text-muted transition-colors duration-200 hover:text-ink"
+        >
+          Templates
+        </Link>
+      </nav>
 
       <span aria-live="polite" className="sr-only">
         {busy ? "Generating component" : ""}

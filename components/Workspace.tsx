@@ -10,6 +10,7 @@ import type { SessionUser } from "./AuthButton";
 import type { Usage } from "./UsageMeter";
 import type { Attachment } from "./Composer";
 import type { OAuthProvider } from "@/lib/supabase/config";
+import { TEMPLATES } from "@/lib/templates";
 
 const MIN_CHAT = 320;
 const MAX_CHAT = 560;
@@ -65,6 +66,17 @@ export function Workspace({
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Arriving from the templates browser with ?template=<id> opens it straight away.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("template");
+    if (!id) return;
+    window.history.replaceState({}, "", "/");
+    const meta = TEMPLATES.find((t) => t.id === id);
+    void openTemplate(id, meta?.title ?? "template");
+    // openTemplate is stable for this purpose; run once on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // A shared project opened with Remix hands its code over through session storage.

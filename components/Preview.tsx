@@ -8,21 +8,9 @@ import {
 import { SANDPACK_DEPENDENCIES } from "@/lib/config";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 
-// Tailwind comes from the play CDN inside the sandbox, so generated classes just work.
-const INDEX_HTML = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body { margin: 0; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>`;
+// Sandpack's bundler serves its own HTML and ignores /public/index.html, so
+// Tailwind has to come in through externalResources.
+const EXTERNAL_RESOURCES = ["https://cdn.tailwindcss.com"];
 
 export function Preview({
   code,
@@ -47,12 +35,13 @@ export function Preview({
       key={generation}
       template="react-ts"
       theme="dark"
-      files={{
-        "/App.tsx": code,
-        "/public/index.html": INDEX_HTML,
-      }}
+      files={{ "/App.tsx": code }}
       customSetup={{ dependencies: SANDPACK_DEPENDENCIES }}
-      options={{ recompileMode: "delayed", recompileDelay: 500 }}
+      options={{
+        recompileMode: "delayed",
+        recompileDelay: 500,
+        externalResources: EXTERNAL_RESOURCES,
+      }}
     >
       <div className="h-full w-full">
         <div className={tab === "preview" ? "relative h-full" : "hidden"}>
