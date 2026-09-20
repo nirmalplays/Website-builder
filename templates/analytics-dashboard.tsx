@@ -1,149 +1,161 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Home, 
-  BarChart3, 
-  Users, 
-  Settings, 
-  Bell, 
-  Search, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Package, 
-  Clock, 
-  MoreHorizontal,
-  LogOut,
-  Zap
+  LayoutDashboard, Users, Package, DollarSign, TrendingUp, TrendingDown, 
+  Search, Bell, Settings, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight,
+  CheckCircle, Clock, XCircle, ChevronDown, Plus
 } from 'lucide-react';
 
+const INITIAL_DATA = [
+  { id: 1, user: 'Sarah Jenkins', action: 'Subscription Renewal', amount: '$49.00', status: 'Completed', time: '10 mins ago' },
+  { id: 2, user: 'Marcus Thorne', action: 'API Integration', amount: '$120.00', status: 'Pending', time: '2 hours ago' },
+  { id: 3, user: 'Elena Rodriguez', action: 'Server Migration', amount: '$0.00', status: 'Failed', time: '5 hours ago' },
+  { id: 4, user: 'David Kim', action: 'Enterprise License', amount: '$499.00', status: 'Completed', time: '1 day ago' },
+  { id: 5, user: 'TechFlow Inc', action: 'Cloud Storage', amount: '$89.00', status: 'Completed', time: '2 days ago' },
+];
+
 export default function App() {
-  const [activeNav, setActiveNav] = useState('Dashboard');
+  const [activities, setActivities] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dash_activities');
+      return saved ? JSON.parse(saved) : INITIAL_DATA;
+    } catch { return INITIAL_DATA; }
+  });
+  const [filter, setFilter] = useState('All');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('dash_activities', JSON.stringify(activities));
+  }, [activities]);
 
   const stats = [
-    { title: 'Total Revenue', value: '$48,292', trend: '+12.5%', isUp: true, icon: DollarSign },
-    { title: 'Active Sessions', value: '1,284', trend: '+8.2%', isUp: true, icon: Zap },
-    { title: 'Units Sold', value: '8,940', trend: '-2.4%', isUp: false, icon: Package },
-    { title: 'Avg. Response Time', value: '1.2s', trend: '-0.4s', isUp: true, icon: Clock },
+    { title: 'Total Revenue', value: '$48,294', trend: '+12.5%', isUp: true },
+    { title: 'Active Users', value: '1,284', trend: '+3.2%', isUp: true },
+    { title: 'Pending Orders', value: '24', trend: '-8.1%', isUp: false },
+    { title: 'System Uptime', value: '99.98%', trend: '+0.1%', isUp: true },
   ];
 
-  const activities = [
-    { id: 1, user: 'Sarah Jenkins', action: 'Purchased Premium Plan', status: 'Completed', date: '2 mins ago' },
-    { id: 2, user: 'Marcus Thorne', action: 'Requested API Access', status: 'Pending', date: '15 mins ago' },
-    { id: 3, user: 'Elena Rodriguez', action: 'Updated Billing Info', status: 'Completed', date: '1 hour ago' },
-    { id: 4, user: 'David Kim', action: 'Failed Login Attempt', status: 'Failed', date: '3 hours ago' },
-    { id: 5, user: 'Alex Rivera', action: 'Created New Workspace', status: 'Completed', date: '5 hours ago' },
-  ];
+  const filteredActivities = filter === 'All' 
+    ? activities 
+    : activities.filter(a => a.status === filter);
+
+  const deleteActivity = (id: number) => {
+    setLoading(true);
+    setTimeout(() => {
+      setActivities(activities.filter(a => a.id !== id));
+      setLoading(false);
+    }, 600);
+  };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-800 flex flex-col hidden md:flex">
-        <div className="p-6 flex items-center gap-2 text-indigo-500">
-          <BarChart3 size={28} />
-          <span className="font-bold text-xl text-white">NexusAnalytics</span>
+      <aside className="w-64 border-r border-slate-800 p-6 flex flex-col hidden md:flex">
+        <div className="flex items-center gap-2 mb-10 text-emerald-500 font-bold text-xl">
+          <LayoutDashboard /><span>NexusFlow</span>
         </div>
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {['Dashboard', 'Analytics', 'Team', 'Settings'].map((item) => (
-            <button
-              key={item}
-              onClick={() => setActiveNav(item)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                activeNav === item ? 'bg-indigo-600 text-white' : 'hover:bg-slate-900 text-slate-400'
-              }`}
-            >
-              {item === 'Dashboard' && <Home size={20} />}
-              {item === 'Analytics' && <BarChart3 size={20} />}
-              {item === 'Team' && <Users size={20} />}
-              {item === 'Settings' && <Settings size={20} />}
+        <nav className="space-y-4 flex-grow">
+          {['Dashboard', 'Analytics', 'Customers', 'Billing', 'Settings'].map((item) => (
+            <button key={item} className="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-900 transition-colors text-slate-400 hover:text-white">
               {item}
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <button className="flex items-center gap-3 text-slate-400 hover:text-white transition-colors">
-            <LogOut size={20} />
-            Sign Out
-          </button>
+        <div className="bg-slate-900 p-4 rounded-xl border border-slate-800">
+          <p className="text-sm font-semibold mb-1">Upgrade Plan</p>
+          <p className="text-xs text-slate-400 mb-3">Get access to pro features.</p>
+          <button className="w-full bg-emerald-600 hover:bg-emerald-700 py-2 rounded-lg text-sm font-medium transition">Upgrade Now</button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 p-8 overflow-y-auto">
         <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Overview</h1>
-            <p className="text-slate-400">Welcome back, your system is running smoothly.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 text-slate-500" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search metrics..." 
-                className="bg-slate-900 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
-              />
-            </div>
-            <button className="p-2 bg-slate-900 rounded-lg border border-slate-800 hover:text-indigo-500">
-              <Bell size={20} />
-            </button>
+          <h1 className="text-2xl font-semibold">Dashboard Overview</h1>
+          <div className="flex gap-4">
+            <button className="p-2 bg-slate-900 rounded-full border border-slate-800"><Bell size={20} /></button>
+            <div className="w-10 h-10 rounded-full bg-emerald-900 flex items-center justify-center font-bold">SJ</div>
           </div>
         </header>
 
         {/* Stats Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, i) => (
-            <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-              <div className="flex justify-between mb-4">
-                <div className="p-2 bg-slate-800 rounded-lg text-indigo-400">
-                  <stat.icon size={20} />
-                </div>
-                <span className={`text-xs font-medium flex items-center gap-1 ${stat.isUp ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {stat.isUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {stat.trend}
+          {stats.map((s, i) => (
+            <div key={i} className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+              <p className="text-slate-400 text-sm mb-2">{s.title}</p>
+              <div className="flex justify-between items-end">
+                <h3 className="text-2xl font-bold">{s.value}</h3>
+                <span className={`flex items-center text-xs ${s.isUp ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {s.isUp ? <TrendingUp size={14} className="mr-1"/> : <TrendingDown size={14} className="mr-1"/>}
+                  {s.trend}
                 </span>
               </div>
-              <h3 className="text-slate-400 text-sm font-medium">{stat.title}</h3>
-              <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
             </div>
           ))}
         </section>
 
-        {/* Activity Table */}
-        <section className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-800 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
-            <button className="text-slate-400 hover:text-indigo-500">
-              <MoreHorizontal size={20} />
-            </button>
-          </div>
-          <table className="w-full text-left">
-            <thead className="bg-slate-950 text-slate-400 text-sm">
-              <tr>
-                <th className="px-6 py-4 font-medium">User</th>
-                <th className="px-6 py-4 font-medium">Action</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {activities.map((act) => (
-                <tr key={act.id} className="hover:bg-slate-800/50 transition-colors text-sm">
-                  <td className="px-6 py-4 font-medium text-white">{act.user}</td>
-                  <td className="px-6 py-4 text-slate-300">{act.action}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                      act.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500' :
-                      act.status === 'Pending' ? 'bg-amber-500/10 text-amber-500' :
-                      'bg-rose-500/10 text-rose-500'
-                    }`}>
-                      {act.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">{act.date}</td>
-                </tr>
+        {/* Table Section */}
+        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-semibold">Recent Activity</h2>
+            <div className="flex gap-2">
+              {['All', 'Completed', 'Pending', 'Failed'].map(f => (
+                <button 
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1 text-sm rounded-full border ${filter === f ? 'bg-emerald-600 border-emerald-500' : 'border-slate-700'}`}
+                >
+                  {f}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="h-48 flex items-center justify-center text-slate-500">Processing...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 text-sm">
+                    <th className="pb-4">User</th>
+                    <th className="pb-4">Action</th>
+                    <th className="pb-4">Amount</th>
+                    <th className="pb-4">Status</th>
+                    <th className="pb-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {filteredActivities.map((a) => (
+                    <tr key={a.id} className="text-sm">
+                      <td className="py-4 font-medium">{a.user}</td>
+                      <td className="py-4 text-slate-400">{a.action}</td>
+                      <td className="py-4">{a.amount}</td>
+                      <td className="py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          a.status === 'Completed' ? 'bg-emerald-950 text-emerald-400' :
+                          a.status === 'Pending' ? 'bg-amber-950 text-amber-400' :
+                          'bg-rose-950 text-rose-400'
+                        }`}>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <button 
+                          onClick={() => deleteActivity(a.id)}
+                          className="text-slate-500 hover:text-rose-500 transition"
+                        >
+                          <XCircle size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredActivities.length === 0 && (
+                <div className="text-center py-10 text-slate-500">No activities found matching your criteria.</div>
+              )}
+            </div>
+          )}
         </section>
       </main>
     </div>

@@ -70,6 +70,19 @@ for (const { id, code } of targets) {
     const changed = (a, b) =>
       a.html !== b.html || a.text !== b.text || a.inputs.join("|") !== b.inputs.join("|");
 
+    // Fill visible text inputs first. An "Add" button that correctly ignores an
+    // empty field would otherwise look dead.
+    const fillable = page.locator(
+      'input[type="text"]:visible, input[type="email"]:visible, input:not([type]):visible, textarea:visible',
+    );
+    const fillCount = Math.min(await fillable.count(), 10);
+    for (let i = 0; i < fillCount; i++) {
+      await fillable
+        .nth(i)
+        .fill(i % 2 === 0 ? "Ship the release notes" : "test@example.com", { timeout: 1200 })
+        .catch(() => {});
+    }
+
     // 1. Buttons: does clicking each one change anything visible?
     // A disabled button is correctly inert (pagination on page 1); only
     // enabled controls are expected to do something.
