@@ -10,7 +10,13 @@ ALTER TABLE "messages" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "versions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "usage" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 
-REVOKE ALL ON "projects" FROM anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON "messages" FROM anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON "versions" FROM anon, authenticated;--> statement-breakpoint
-REVOKE ALL ON "usage" FROM anon, authenticated;
+DO $$
+BEGIN
+  -- These roles exist only on Supabase; skip cleanly on plain Postgres.
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    REVOKE ALL ON "projects", "messages", "versions", "usage" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    REVOKE ALL ON "projects", "messages", "versions", "usage" FROM authenticated;
+  END IF;
+END $$;
