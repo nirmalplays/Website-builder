@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Composer } from "./Composer";
+import { Composer, type Attachment } from "./Composer";
 
 export type Turn = { role: "user" | "assistant"; content: string };
 
@@ -16,6 +16,8 @@ export function ChatPanel({
   onModelChange,
   outOfQuota,
   isEdit,
+  attachment,
+  onAttach,
 }: {
   history: Turn[];
   loading: boolean;
@@ -27,6 +29,8 @@ export function ChatPanel({
   onModelChange: (id: string) => void;
   outOfQuota: boolean;
   isEdit: boolean;
+  attachment: Attachment | null;
+  onAttach: (a: Attachment | null) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +95,8 @@ export function ChatPanel({
           loading={loading}
           outOfQuota={outOfQuota}
           isEdit={isEdit}
+          attachment={attachment}
+          onAttach={onAttach}
         />
         <p className="mt-2 px-1 font-mono text-[10px] text-faint">
           Enter to send &middot; Shift+Enter for a newline &middot; Cmd/Ctrl+K to focus

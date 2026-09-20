@@ -8,6 +8,7 @@ import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
 import type { SessionUser } from "./AuthButton";
 import type { Usage } from "./UsageMeter";
+import type { Attachment } from "./Composer";
 import type { OAuthProvider } from "@/lib/supabase/config";
 
 const MIN_CHAT = 320;
@@ -40,6 +41,7 @@ export function Workspace({
   const [fullscreen, setFullscreen] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [fixing, setFixing] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
 
   const isEdit = code !== "";
@@ -195,20 +197,32 @@ Fix it and return the complete corrected file.`,
 
   async function send(prompt: string) {
     const trimmed = prompt.trim();
-    if (!trimmed || loading || outOfQuota) return;
+    const sentImage = attachment;
+    if ((!trimmed && !sentImage) || loading || outOfQuota) return;
 
     setInput("");
+    setAttachment(null);
     setError(null);
     setLoading(true);
     setMobileView("result");
     const sentHistory = history;
-    setHistory((h) => [...h, { role: "user", content: trimmed }]);
+    const label = trimmed || "Build this screenshot";
+    setHistory((h) => [
+      ...h,
+      { role: "user", content: sentImage ? `${label}  [image: ${sentImage.name}]` : label },
+    ]);
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: trimmed, history: sentHistory, projectId, model }),
+        body: JSON.stringify({
+          prompt: trimmed || "Recreate the attached screenshot as a React component.",
+          history: sentHistory,
+          projectId,
+          model,
+          ...(sentImage ? { image: { data: sentImage.data, mimeType: sentImage.mimeType } } : {}),
+        }),
       });
       const data = await res.json();
       if (data.usage) setUsage(data.usage);
@@ -252,6 +266,8 @@ Fix it and return the complete corrected file.`,
             loading={loading}
             outOfQuota={outOfQuota}
             error={error}
+            attachment={attachment}
+            onAttach={setAttachment}
           />
         </main>
       ) : (
@@ -289,6 +305,8 @@ Fix it and return the complete corrected file.`,
                 onModelChange={setModel}
                 outOfQuota={outOfQuota}
                 isEdit={isEdit}
+                attachment={attachment}
+                onAttach={setAttachment}
               />
             </aside>
 

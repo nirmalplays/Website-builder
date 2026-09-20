@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { CATEGORIES, QUICK_STARTS, TEMPLATES, type Category } from "@/lib/templates";
 import { TemplateThumb } from "./TemplateThumb";
-import { Composer } from "./Composer";
+import { Composer, type Attachment } from "./Composer";
 
 export function Landing({
   input,
@@ -14,6 +14,8 @@ export function Landing({
   loading,
   outOfQuota,
   error,
+  attachment,
+  onAttach,
 }: {
   input: string;
   onInput: (v: string) => void;
@@ -23,6 +25,8 @@ export function Landing({
   loading: boolean;
   outOfQuota: boolean;
   error: string | null;
+  attachment: Attachment | null;
+  onAttach: (a: Attachment | null) => void;
 }) {
   const [filter, setFilter] = useState<Category | "All">("All");
   const [chipSeed, setChipSeed] = useState(0);
@@ -63,6 +67,8 @@ export function Landing({
               loading={loading}
               outOfQuota={outOfQuota}
               isEdit={false}
+              attachment={attachment}
+              onAttach={onAttach}
               size="hero"
             />
           </div>

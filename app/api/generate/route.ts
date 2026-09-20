@@ -9,7 +9,7 @@ import {
   isAllowedModel,
   supportsThinkingConfig,
 } from "@/lib/config";
-import { SYSTEM_PROMPT, REPAIR_SUFFIX } from "@/lib/systemPrompt";
+import { SYSTEM_PROMPT, REPAIR_SUFFIX, IMAGE_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 import { db, tryPersist, schema } from "@/lib/db";
@@ -39,7 +39,13 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { prompt?: string; history?: Turn[]; projectId?: string; model?: string };
+  let body: {
+    prompt?: string;
+    history?: Turn[];
+    projectId?: string;
+    model?: string;
+    image?: { data: string; mimeType: string };
+  };
   try {
     body = await req.json();
   } catch {
@@ -68,8 +74,31 @@ export async function POST(req: Request) {
     );
   }
 
+  // Image input (FR-11): PNG/JPG/WebP, 5 MB ceiling before base64 overhead.
+  const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+  const image = body.image;
+  if (image) {
+    if (!ALLOWED_IMAGE_TYPES.includes(image.mimeType)) {
+      return NextResponse.json(
+        { error: "Attach a PNG, JPG or WebP image." },
+        { status: 400 },
+      );
+    }
+    if (image.data.length > 7_000_000) {
+      return NextResponse.json({ error: "Image is too large (5 MB max)." }, { status: 413 });
+    }
+  }
+
   const history = (body.history ?? []).slice(-HISTORY_TURNS * 2);
-  const contents = [...toContents(history), ...toContents([{ role: "user", content: prompt }])];
+  const userParts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [
+    { text: prompt },
+  ];
+  if (image) userParts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
+
+  const contents = [
+    ...toContents(history),
+    { role: "user" as const, parts: userParts as { text: string }[] },
+  ];
   const started = Date.now();
 
   // Test/backup path: serve a known-good generation instead of calling Gemini.
@@ -91,12 +120,16 @@ export async function POST(req: Request) {
   let inputTokens = 0;
   let outputTokens = 0;
 
+  const systemFor = (base: string) => (image ? `${base}
+
+${IMAGE_SUFFIX}` : base);
+
   const call = async (systemInstruction: string) => {
     const res = await ai.models.generateContent({
       model,
       contents,
       config: {
-        systemInstruction,
+        systemInstruction: systemFor(systemInstruction),
         temperature: 0.7,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
         // Some models reject thinkingConfig outright.
