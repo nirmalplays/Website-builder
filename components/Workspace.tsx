@@ -32,6 +32,7 @@ export function Workspace({
   const [code, setCode] = useState("");
   const [files, setFiles] = useState<Record<string, string>>({});
   const [dependencies, setDependencies] = useState<Record<string, string>>({});
+  const [buildNotes, setBuildNotes] = useState<string[]>([]);
   const [model, setModel] = useState(defaultModel);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
@@ -291,6 +292,13 @@ Fix it and return the complete corrected file.`,
       // Only swap the sandbox files once a generation is complete.
       if (data.projectId) setProjectId(data.projectId);
       if (data.files) setFiles(data.files);
+      setBuildNotes([
+        ...(data.plan ? [`Planned: ${data.plan}`] : []),
+        ...(data.components?.length
+          ? [`Used ${data.components.map((c: { component: string }) => c.component).join(", ")}`]
+          : []),
+        ...(data.notes ?? []),
+      ]);
       if (data.dependencies) setDependencies(data.dependencies);
       setCode(data.code ?? data.files?.["/App.tsx"] ?? "");
       setGeneration((g) => g + 1);
@@ -369,6 +377,7 @@ Fix it and return the complete corrected file.`,
                 onModelChange={setModel}
                 outOfQuota={outOfQuota}
                 isEdit={isEdit}
+                buildNotes={buildNotes}
                 attachment={attachment}
                 onAttach={setAttachment}
               />

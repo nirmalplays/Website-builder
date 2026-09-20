@@ -62,17 +62,27 @@ export function parseFiles(raw: string): GeneratedFiles {
 }
 
 /** Imports of project files, so we can tell when the model references a file it never wrote. */
+/** Collapse "." and ".." the way a bundler would. */
+function resolveRelative(from: string, spec: string): string {
+  if (spec.startsWith("/")) return spec;
+  const dir = from.slice(0, from.lastIndexOf("/")) || "";
+  const parts: string[] = [];
+  for (const segment of `${dir}/${spec}`.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") parts.pop();
+    else parts.push(segment);
+  }
+  return `/${parts.join("/")}`;
+}
+
 export function missingLocalImports(files: GeneratedFiles): string[] {
   const missing = new Set<string>();
   const have = new Set(Object.keys(files));
 
   for (const [from, content] of Object.entries(files)) {
-    const dir = from.slice(0, from.lastIndexOf("/")) || "/";
     for (const m of content.matchAll(/from\s+["'](\.[^"']+|\/[^"']+)["']/g)) {
       const spec = m[1];
-      const resolved = spec.startsWith("/")
-        ? spec
-        : `${dir}/${spec.replace(/^\.\//, "")}`.replace(/\/{2,}/g, "/");
+      const resolved = resolveRelative(from, spec);
 
       const candidates = [
         resolved,

@@ -16,6 +16,7 @@ export function ChatPanel({
   onModelChange,
   outOfQuota,
   isEdit,
+  buildNotes,
   attachment,
   onAttach,
 }: {
@@ -29,6 +30,7 @@ export function ChatPanel({
   onModelChange: (id: string) => void;
   outOfQuota: boolean;
   isEdit: boolean;
+  buildNotes: string[];
   attachment: Attachment | null;
   onAttach: (a: Attachment | null) => void;
 }) {
@@ -65,11 +67,20 @@ export function ChatPanel({
               </li>
             );
           })}
+          {!loading && buildNotes.length > 0 && (
+            <li className="ml-3 space-y-1 border-l border-line pl-3">
+              {buildNotes.map((note, i) => (
+                <p key={i} className="text-[11px] leading-snug text-faint">
+                  {note}
+                </p>
+              ))}
+            </li>
+          )}
           {loading && (
             <li className="flex items-center gap-2 pl-1" aria-busy="true">
               <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink" />
               <span className="font-mono text-[11px] text-muted">
-                {isEdit ? "editing component" : "designing component"}
+                {isEdit ? "editing the app" : "planning, building and checking it in a browser"}
               </span>
             </li>
           )}

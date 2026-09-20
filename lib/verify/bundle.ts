@@ -1,0 +1,140 @@
+import * as esbuild from "esbuild";
+import type { GeneratedFiles } from "@/lib/parseFiles";
+
+/**
+ * Bundles a generated project in memory so it can be run headlessly.
+ *
+ * The files only exist as strings, so esbuild resolves them through a virtual
+ * filesystem plugin. npm packages are left external and resolved in the browser
+ * by an import map pointing at a CDN - bundling three.js here would cost seconds
+ * per check for no benefit.
+ */
+
+const CDN = "https://esm.sh";
+
+export type BundleResult = {
+  code: string;
+  externals: string[];
+  warnings: string[];
+};
+
+export class BundleError extends Error {
+  constructor(
+    message: string,
+    public readonly errors: { file: string; line: number; text: string }[],
+  ) {
+    super(message);
+    this.name = "BundleError";
+  }
+}
+
+function resolveVirtual(spec: string, importer: string, files: GeneratedFiles): string | null {
+  const dir = importer.slice(0, importer.lastIndexOf("/")) || "/";
+  const base = spec.startsWith("/")
+    ? spec
+    : `${dir}/${spec.replace(/^\.\//, "")}`.replace(/\/{2,}/g, "/");
+
+  const candidates = [
+    base,
+    `${base}.tsx`,
+    `${base}.ts`,
+    `${base}.jsx`,
+    `${base}.js`,
+    `${base}/index.tsx`,
+    `${base}/index.ts`,
+  ];
+  return candidates.find((c) => c in files) ?? null;
+}
+
+export async function bundleProject(files: GeneratedFiles): Promise<BundleResult> {
+  const externals = new Set<string>();
+
+  const virtualFs: esbuild.Plugin = {
+    name: "virtual-fs",
+    setup(build) {
+      build.onResolve({ filter: /.*/ }, (args) => {
+        if (args.kind === "entry-point") return { path: args.path, namespace: "vfs" };
+
+        // Relative or absolute: must be a file the model wrote.
+        if (args.path.startsWith(".") || args.path.startsWith("/")) {
+          const resolved = resolveVirtual(args.path, args.importer, files);
+          if (!resolved) {
+            return {
+              errors: [{ text: `Cannot find file "${args.path}" imported from ${args.importer}` }],
+            };
+          }
+          return { path: resolved, namespace: "vfs" };
+        }
+
+        // Bare specifier: an npm package, resolved in the browser.
+        const pkg = args.path.startsWith("@")
+          ? args.path.split("/").slice(0, 2).join("/")
+          : args.path.split("/")[0];
+        externals.add(pkg);
+        return { path: args.path, external: true };
+      });
+
+      build.onLoad({ filter: /.*/, namespace: "vfs" }, (args) => {
+        const contents = files[args.path];
+        if (contents === undefined) return { errors: [{ text: `Missing ${args.path}` }] };
+        const ext = args.path.split(".").pop() ?? "tsx";
+        const loader: esbuild.Loader =
+          ext === "css" ? "css" : ext === "json" ? "json" : ext === "js" ? "jsx" : (ext as esbuild.Loader);
+        return { contents, loader };
+      });
+    },
+  };
+
+  try {
+    const result = await esbuild.build({
+      entryPoints: ["/App.tsx"],
+      bundle: true,
+      write: false,
+      format: "esm",
+      target: "es2020",
+      jsx: "automatic",
+      // React comes from the import map too, so the bundle stays tiny.
+      jsxImportSource: "react",
+      plugins: [virtualFs],
+      logLevel: "silent",
+    });
+
+    return {
+      code: result.outputFiles?.[0]?.text ?? "",
+      externals: [...externals],
+      warnings: result.warnings.map((w) => w.text),
+    };
+  } catch (err) {
+    const build = err as esbuild.BuildFailure;
+    const errors = (build.errors ?? []).map((e) => ({
+      file: e.location?.file ?? "unknown",
+      line: e.location?.line ?? 0,
+      text: e.text,
+    }));
+    throw new BundleError(
+      errors[0]?.text ?? (err instanceof Error ? err.message : "bundle failed"),
+      errors,
+    );
+  }
+}
+
+/** Import map so the browser can fetch the packages we left external. */
+export function importMap(externals: string[], dependencies: Record<string, string>): string {
+  const imports: Record<string, string> = {
+    react: `${CDN}/react@18.3.1`,
+    "react/jsx-runtime": `${CDN}/react@18.3.1/jsx-runtime`,
+    "react-dom": `${CDN}/react-dom@18.3.1`,
+    "react-dom/client": `${CDN}/react-dom@18.3.1/client`,
+  };
+
+  for (const pkg of externals) {
+    if (imports[pkg]) continue;
+    const version = dependencies[pkg];
+    // Pin when we know the version; let the CDN pick otherwise.
+    imports[pkg] = version
+      ? `${CDN}/${pkg}@${version.replace(/^[\^~]/, "")}?external=react,react-dom`
+      : `${CDN}/${pkg}?external=react,react-dom`;
+  }
+
+  return JSON.stringify({ imports }, null, 2);
+}

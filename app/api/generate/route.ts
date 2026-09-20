@@ -20,6 +20,7 @@ import { repairImports } from "@/lib/repairImports";
 import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInteractivity";
 import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
+import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/inspect";
 import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
 import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
@@ -269,6 +270,58 @@ export async function POST(req: Request) {
       }
     }
 
+    // ---- 5. RUN IT AND LOOK AT IT --------------------------------------
+    // Static checks cannot see a white screen or a crash on mount. Render the
+    // project in a real browser, then hand any findings back to the model.
+    const MAX_FIX_ROUNDS = Number(process.env.MAX_FIX_ROUNDS ?? 2);
+    let report: VerifyReport | null = null;
+    let fixRounds = 0;
+
+    if (process.env.DISABLE_VERIFY !== "1") {
+      for (let round = 0; round <= MAX_FIX_ROUNDS; round++) {
+        const deps = Object.fromEntries(
+          Object.entries(dependencies).filter(([pkg]) =>
+            new Set(externalImports(files)).has(pkg),
+          ),
+        );
+        report = await verifyProject(files, deps);
+
+        const actionable = report.findings.filter((f) => f.severity !== "warning");
+        if (actionable.length === 0) break;
+        if (round === MAX_FIX_ROUNDS) {
+          notes.push(
+            `Still unresolved after ${MAX_FIX_ROUNDS} fix attempts: ${actionable
+              .map((f) => f.kind)
+              .join(", ")}`,
+          );
+          break;
+        }
+
+        try {
+          const fixed = parseFiles(await call(`${system}
+
+${repairPrompt(report)}`, userPrompt));
+          files = { ...files, ...fixed };
+          fixRounds++;
+          repaired = repaired ? `${repaired}+browser` : "browser";
+        } catch {
+          notes.push("A fix attempt did not return usable files; keeping the previous version.");
+          break;
+        }
+      }
+
+      if (report) {
+        const remaining = report.findings.filter((f) => f.severity !== "warning");
+        notes.push(
+          fixRounds > 0
+            ? `Ran it in a browser: fixed ${fixRounds === 1 ? "1 round of issues" : `${fixRounds} rounds of issues`}${remaining.length ? `, ${remaining.length} left` : ""}.`
+            : remaining.length === 0
+              ? "Ran it in a browser: no problems found."
+              : `Ran it in a browser: ${remaining.length} issue(s) found.`,
+        );
+      }
+    }
+
     // Ship only dependencies something actually imports.
     const imported = new Set(externalImports(files));
     const finalDependencies = Object.fromEntries(
@@ -345,6 +398,14 @@ export async function POST(req: Request) {
       dependencies: finalDependencies,
       components: componentSelections,
       plan: planSummary,
+      verification: report
+        ? {
+            ok: report.ok,
+            fixRounds,
+            findings: report.findings.map((f) => ({ kind: f.kind, detail: f.detail, severity: f.severity })),
+            stats: report.stats,
+          }
+        : null,
       notes,
       projectId,
       model,
