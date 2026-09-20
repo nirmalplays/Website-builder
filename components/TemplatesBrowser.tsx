@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CATEGORIES, TEMPLATES, type Category } from "@/lib/templates";
 import { TemplateThumb } from "./TemplateThumb";
+import { TemplateCardImage } from "./TemplateCardImage";
 
 const FEATURED = ["saas-site", "restaurant-site", "crypto-site", "wedding-site", "hotel-site", "game-studio-site"];
 
@@ -183,9 +184,9 @@ function Card({
       className="group w-full cursor-pointer text-left"
     >
       <div className="relative">
-        <TemplateThumb kind={template.preview} />
+        <TemplateCardImage id={template.id} kind={template.preview} title={template.title} />
         {ready && (
-          <span className="absolute right-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-canvas">
+          <span className="absolute right-2 top-2 rounded-full bg-canvas/85 px-2 py-0.5 text-[10px] font-medium text-ink shadow-sm ring-1 ring-ink/15 backdrop-blur">
             Ready
           </span>
         )}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CATEGORIES, QUICK_STARTS, TEMPLATES, type Category } from "@/lib/templates";
-import { TemplateThumb } from "./TemplateThumb";
+import { TemplateCardImage } from "./TemplateCardImage";
 import { Composer, type Attachment } from "./Composer";
 
 export function Landing({
@@ -176,9 +176,9 @@ export function Landing({
                   className="group w-full cursor-pointer text-left disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="relative">
-                    <TemplateThumb kind={t.preview} />
+                    <TemplateCardImage id={t.id} kind={t.preview} title={t.title} />
                     {ready.has(t.id) && (
-                      <span className="absolute right-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10px] font-medium text-canvas">
+                      <span className="absolute right-2 top-2 rounded-full bg-canvas/85 px-2 py-0.5 text-[10px] font-medium text-ink shadow-sm ring-1 ring-ink/15 backdrop-blur">
                         Ready
                       </span>
                     )}
