@@ -9,14 +9,27 @@
  *   node scripts/bake-templates.mjs saas-site  # just these ids
  *   FORCE=1 node scripts/bake-templates.mjs    # overwrite existing
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, renameSync } from "node:fs";
 import { execSync } from "node:child_process";
 import * as Lucide from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
-import { SYSTEM_PROMPT } from "../tmp/lib/systemPrompt.mjs";
-import { extractCode } from "../tmp/lib/extractCode.mjs";
-import { repairImports } from "../tmp/lib/repairImports.mjs";
-import { findDeadControls, deadControlRepairPrompt } from "../tmp/lib/validateInteractivity.mjs";
+// Compile lib/ fresh on every run. Importing pre-compiled copies meant a fix in
+// lib/ silently did not apply here, which cost a whole batch of bakes.
+execSync(
+  "npx tsc lib/systemPrompt.ts lib/extractCode.ts lib/repairImports.ts lib/validateInteractivity.ts" +
+    " --outDir tmp/lib --module esnext --target es2020 --moduleResolution bundler --skipLibCheck",
+  { stdio: "pipe" },
+);
+for (const f of readdirSync("tmp/lib").filter((f) => f.endsWith(".js"))) {
+  renameSync(`tmp/lib/${f}`, `tmp/lib/${f.replace(/\.js$/, ".mjs")}`);
+}
+
+const { SYSTEM_PROMPT } = await import("../tmp/lib/systemPrompt.mjs");
+const { extractCode } = await import("../tmp/lib/extractCode.mjs");
+const { repairImports } = await import("../tmp/lib/repairImports.mjs");
+const { findDeadControls, deadControlRepairPrompt } = await import(
+  "../tmp/lib/validateInteractivity.mjs"
+);
 
 for (const line of readFileSync(".env.local", "utf8").split("\n")) {
   const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);

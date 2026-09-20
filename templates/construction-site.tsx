@@ -1,95 +1,108 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle, ArrowRight, Shield, Calendar, Users, 
-  DollarSign, Package, Zap, Construction, HardHat, 
-  Phone, Mail, MapPin, ChevronRight, Star, XCircle 
+  Package, DollarSign, Clock, Menu, X, Star, 
+  TrendingUp, HardHat, Phone, Mail, MapPin 
 } from 'lucide-react';
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('Home');
-  const [quoteForm, setQuoteForm] = useState({ name: '', email: '', type: 'Residential', budget: '50k-100k', message: '' });
-  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const [projects] = useState([
-    { id: 1, title: 'Riverside Modern Villa', type: 'Residential', year: 2023, img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800' },
-    { id: 2, title: 'Downtown Tech Hub', type: 'Commercial', year: 2022, img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800' },
-    { id: 3, title: 'Green Valley School', type: 'Institutional', year: 2023, img: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=800' },
-  ]);
+const INITIAL_PROJECTS = [
+  { id: 1, name: "Riverside Office Complex", type: "Commercial", year: 2023, img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
+  { id: 2, name: "Sunset Heights Residential", type: "Residential", year: 2022, img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233" },
+  { id: 3, name: "City Library Renovation", type: "Public", year: 2023, img: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5" },
+  { id: 4, name: "Greenwood Industrial Park", type: "Industrial", year: 2021, img: "https://images.unsplash.com/photo-1504307651254-35680f356dfd" },
+  { id: 5, name: "Modern Loft Conversion", type: "Residential", year: 2024, img: "https://images.unsplash.com/photo-1449844908441-8829872d2607" },
+  { id: 6, name: "Tech Hub Plaza", type: "Commercial", year: 2023, img: "https://images.unsplash.com/photo-1577495508048-b635879837f1" },
+];
 
-  const services = [
-    { title: 'General Contracting', icon: <Construction /> },
-    { title: 'Project Management', icon: <Package /> },
-    { title: 'Custom Design-Build', icon: <Zap /> },
-    { title: 'Safety Consulting', icon: <Shield /> },
-    { title: 'Renovation & Remodel', icon: <HardHat /> },
-    { title: 'Site Preparation', icon: <MapPin /> },
-  ];
+export default function App() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', type: 'Residential', budget: '$50k-$100k' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [projects] = useState(INITIAL_PROJECTS);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus('loading');
     setTimeout(() => {
       setFormStatus('success');
-      setQuoteForm({ name: '', email: '', type: 'Residential', budget: '50k-100k', message: '' });
+      setFormData({ name: '', email: '', type: 'Residential', budget: '$50k-$100k' });
       setTimeout(() => setFormStatus('idle'), 3000);
     }, 1200);
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold text-amber-600 flex items-center gap-2">
-            <HardHat /> APEX CONSTRUCT
+      <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+            <HardHat className="w-8 h-8" /> APEX BUILDERS
           </div>
           <div className="hidden md:flex gap-8 font-medium">
             {['Services', 'Projects', 'Process', 'Team'].map(item => (
-              <button key={item} onClick={() => document.getElementById(item)?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-amber-600 transition-colors">
-                {item}
-              </button>
+              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-blue-700 transition-colors">{item}</a>
             ))}
           </div>
-          <button onClick={() => document.getElementById('Quote')?.scrollIntoView({ behavior: 'smooth' })} className="bg-amber-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-amber-700 transition-all flex items-center gap-2">
-            Get a Quote <ArrowRight size={16} />
+          <a href="#quote" className="hidden md:block bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition-all font-semibold">Get a Quote</a>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="relative h-[600px] flex items-center justify-center text-white text-center">
-        <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=2000" alt="Construction site" className="absolute inset-0 w-full h-full object-cover brightness-50" />
-        <div className="relative z-10 max-w-3xl px-6">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">Building Tomorrow's Skyline</h1>
-          <p className="text-xl mb-8">Professional construction services with a commitment to quality, safety, and timelines.</p>
-          <button onClick={() => document.getElementById('Services')?.scrollIntoView({ behavior: 'smooth' })} className="bg-white text-stone-900 px-8 py-4 rounded-lg font-bold text-lg hover:bg-stone-100">Explore Our Services</button>
+      <section className="pt-32 pb-20 px-4">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6">Building the Future of <span className="text-blue-700">Infrastructure</span></h1>
+            <p className="text-lg text-slate-600 mb-8">Expert construction management and execution with a commitment to safety, sustainability, and structural excellence.</p>
+            <div className="flex gap-4">
+              <a href="#quote" className="bg-blue-700 text-white px-8 py-4 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-800">Start Project <ArrowRight size={20} /></a>
+              <a href="#projects" className="border border-slate-300 px-8 py-4 rounded-lg font-bold hover:bg-slate-100">View Gallery</a>
+            </div>
+          </div>
+          <div className="h-96 bg-slate-200 rounded-2xl overflow-hidden shadow-2xl">
+            <img src="https://images.unsplash.com/photo-1541976590-713941681591" alt="Construction site" className="w-full h-full object-cover" />
+          </div>
         </div>
-      </header>
+      </section>
 
       {/* Services */}
-      <section id="Services" className="py-20 px-6 max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-center mb-16">Our Expert Services</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {services.map((s, i) => (
-            <div key={i} className="p-8 bg-white border border-stone-200 rounded-2xl hover:shadow-xl transition-shadow">
-              <div className="text-amber-600 mb-4">{s.icon}</div>
-              <h3 className="text-xl font-bold mb-2">{s.title}</h3>
-              <p className="text-stone-600">Premium quality delivery tailored to your specific project needs with industry-leading standards.</p>
-            </div>
-          ))}
+      <section id="services" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-12 text-center">Our Expertise</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { title: 'Commercial Construction', icon: <Package /> },
+              { title: 'Residential Development', icon: <Users /> },
+              { title: 'Public Infrastructure', icon: <MapPin /> },
+              { title: 'Renovation & Retrofit', icon: <TrendingUp /> },
+              { title: 'Safety Consulting', icon: <Shield /> },
+              { title: 'Project Management', icon: <Clock /> }
+            ].map((s, i) => (
+              <div key={i} className="p-8 bg-slate-50 rounded-xl border border-slate-100 hover:shadow-lg transition-shadow">
+                <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center mb-6">{s.icon}</div>
+                <h3 className="text-xl font-bold mb-2">{s.title}</h3>
+                <p className="text-slate-600">Delivering high-quality results with precision engineering and professional oversight.</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Projects */}
-      <section id="Projects" className="py-20 bg-stone-900 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-bold mb-16">Completed Projects</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+      <section id="projects" className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-12">Completed Projects</h2>
+          <div className="grid md:grid-cols-3 gap-6">
             {projects.map(p => (
-              <div key={p.id} className="group overflow-hidden rounded-2xl">
-                <img src={p.img} alt={p.title} className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="p-6 bg-stone-800">
-                  <p className="text-amber-500 font-semibold text-sm">{p.type} • {p.year}</p>
-                  <h3 className="text-xl font-bold mt-1">{p.title}</h3>
+              <div key={p.id} className="group rounded-xl overflow-hidden bg-white shadow-sm border border-slate-200">
+                <div className="h-48 overflow-hidden">
+                  <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+                <div className="p-6">
+                  <span className="text-xs font-bold text-blue-700 uppercase">{p.type} • {p.year}</span>
+                  <h3 className="text-lg font-semibold mt-1">{p.name}</h3>
                 </div>
               </div>
             ))}
@@ -97,61 +110,63 @@ export default function App() {
         </div>
       </section>
 
-      {/* Process */}
-      <section id="Process" className="py-20 max-w-7xl mx-auto px-6">
-        <h2 className="text-4xl font-bold text-center mb-16">Our Proven Process</h2>
-        <div className="grid md:grid-cols-5 gap-4">
-          {['Consultation', 'Design', 'Permitting', 'Construction', 'Handover'].map((step, i) => (
-            <div key={step} className="text-center">
-              <div className="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-4">{i + 1}</div>
-              <h4 className="font-bold">{step}</h4>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Form */}
-      <section id="Quote" className="py-20 bg-amber-50">
-        <div className="max-w-2xl mx-auto bg-white p-10 rounded-2xl shadow-sm border border-stone-200">
-          <h2 className="text-3xl font-bold mb-6">Request a Quote</h2>
-          {formStatus === 'success' ? (
-            <div className="text-center p-8 bg-green-50 text-green-700 rounded-lg flex flex-col items-center gap-4">
-              <CheckCircle size={48} />
-              <p className="font-bold text-lg">Request Received!</p>
-              <p>Our team will contact you within 24 hours.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input required type="text" placeholder="Your Name" value={quoteForm.name} onChange={e => setQuoteForm({...quoteForm, name: e.target.value})} className="w-full p-3 border border-stone-300 rounded-lg" />
-              <input required type="email" placeholder="Your Email" value={quoteForm.email} onChange={e => setQuoteForm({...quoteForm, email: e.target.value})} className="w-full p-3 border border-stone-300 rounded-lg" />
-              <select value={quoteForm.type} onChange={e => setQuoteForm({...quoteForm, type: e.target.value})} className="w-full p-3 border border-stone-300 rounded-lg">
-                <option>Residential</option>
-                <option>Commercial</option>
-                <option>Industrial</option>
-              </select>
-              <textarea placeholder="Tell us about your project" value={quoteForm.message} onChange={e => setQuoteForm({...quoteForm, message: e.target.value})} className="w-full p-3 border border-stone-300 rounded-lg h-32" />
-              <button disabled={formStatus === 'loading'} type="submit" className="w-full bg-amber-600 text-white p-4 rounded-lg font-bold hover:bg-amber-700 transition-colors">
-                {formStatus === 'loading' ? 'Sending...' : 'Submit Request'}
-              </button>
-            </form>
-          )}
+      {/* Quote Form */}
+      <section id="quote" className="py-20 bg-blue-900 text-white">
+        <div className="max-w-3xl mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-2 text-center">Request A Quote</h2>
+          <p className="text-blue-200 text-center mb-10">Get a professional consultation for your next project.</p>
+          
+          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl text-slate-900 space-y-4">
+            {formStatus === 'success' ? (
+              <div className="text-center py-12 text-green-600 font-bold flex flex-col items-center gap-2">
+                <CheckCircle size={48} /> Request submitted successfully! We'll contact you soon.
+              </div>
+            ) : (
+              <>
+                <input required placeholder="Full Name" className="w-full p-4 rounded-lg border border-slate-300" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <input required type="email" placeholder="Email Address" className="w-full p-4 rounded-lg border border-slate-300" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <select className="w-full p-4 rounded-lg border border-slate-300" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                  <option>Residential</option>
+                  <option>Commercial</option>
+                  <option>Industrial</option>
+                </select>
+                <select className="w-full p-4 rounded-lg border border-slate-300" value={formData.budget} onChange={e => setFormData({...formData, budget: e.target.value})}>
+                  <option>$50k-$100k</option>
+                  <option>$100k-$500k</option>
+                  <option>$500k+</option>
+                </select>
+                <button disabled={formStatus === 'loading'} type="submit" className="w-full bg-blue-700 text-white font-bold py-4 rounded-lg hover:bg-blue-800 disabled:opacity-50">
+                  {formStatus === 'loading' ? 'Processing...' : 'Submit Request'}
+                </button>
+              </>
+            )}
+          </form>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-stone-950 text-stone-400 py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
+      <footer className="bg-slate-900 text-slate-400 py-12 px-4">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8">
           <div>
-            <div className="text-white font-bold text-xl mb-4">APEX CONSTRUCT</div>
-            <p>Building excellence since 1998.</p>
+            <div className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+              <HardHat className="w-6 h-6" /> APEX BUILDERS
+            </div>
+            <p className="text-sm">Building trust, one foundation at a time since 1998.</p>
           </div>
-          <div className="space-y-2">
-            <p className="flex items-center gap-2"><Phone size={16}/> (555) 123-4567</p>
-            <p className="flex items-center gap-2"><Mail size={16}/> contact@apex.build</p>
-            <p className="flex items-center gap-2"><MapPin size={16}/> 123 Builder Way, Construction City</p>
+          <div>
+            <h4 className="text-white font-bold mb-4">Contact</h4>
+            <div className="flex items-center gap-2 mb-2"><Phone size={16} /> (555) 123-4567</div>
+            <div className="flex items-center gap-2"><Mail size={16} /> info@apexbuilders.com</div>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-4">Locations</h4>
+            <p>123 Construction Way<br/>Austin, TX 78701</p>
+          </div>
+          <div className="flex gap-4">
+            <Star className="text-yellow-500" />
+            <span className="text-white font-bold">5.0 Star Rating</span>
           </div>
         </div>
-        <div className="text-center pt-12 border-t border-stone-800 mt-12 text-sm">© 2024 Apex Construction. All rights reserved.</div>
       </footer>
     </div>
   );
