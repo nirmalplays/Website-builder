@@ -3,29 +3,16 @@
  * Free-tier daily quota is per project PER MODEL, so switching model is also how you
  * recover from a daily quota wall mid-session.
  */
-export type ModelOption = {
-  id: string;
-  label: string;
-  note: string;
-};
+import { getProvider } from "./providers";
+export type { ModelOption } from "./providers";
 
-export const MODELS: ModelOption[] = [
-  { id: "gemini-3.1-flash-lite", label: "Flash Lite 3.1", note: "~6s · fastest · default" },
-  { id: "gemini-2.5-flash", label: "Flash 2.5", note: "~12s · only 20/day on free tier" },
-  { id: "gemini-3.5-flash-lite", label: "Flash Lite 3.5", note: "~14s · more verbose output" },
-  { id: "gemini-3.5-flash", label: "Flash 3.5", note: "~27s · too slow for a live demo" },
-  { id: "gemini-3.8-flash", label: "Flash 3.8", note: "newest · was 503ing under load" },
-];
+/** Models offered by whichever provider is configured (Gemini, or your own). */
+export const MODELS = getProvider().listModels();
 
-export const DEFAULT_MODEL = process.env.GEMINI_MODEL ?? MODELS[0].id;
+export const DEFAULT_MODEL = process.env.GEMINI_MODEL ?? MODELS[0]?.id ?? "gemini-3.1-flash-lite";
 
 export function isAllowedModel(id: string): boolean {
   return MODELS.some((m) => m.id === id);
-}
-
-/** The lite tiers reject thinkingConfig outright with a 400. */
-export function supportsThinkingConfig(model: string): boolean {
-  return !/flash-lite/.test(model);
 }
 
 // Flash thinks by default, which costs ~7s per generation. 0 disables it.
@@ -39,6 +26,9 @@ export const SANDPACK_DEPENDENCIES: Record<string, string> = {
 };
 
 // Full-page website templates run long; 8k truncated them mid-JSX.
+/** Self-hosted sandpack-bundler, if you run one. Empty = CodeSandbox's public one. */
+export const SANDPACK_BUNDLER_URL = process.env.NEXT_PUBLIC_SANDPACK_BUNDLER_URL ?? "";
+
 export const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 32768);
 
 // How many prior turns to send back with an edit. More context is not the bottleneck today.

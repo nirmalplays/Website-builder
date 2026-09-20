@@ -1,123 +1,126 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  CheckCircle, 
-  Clock, 
-  Calendar, 
-  Users, 
-  Shield, 
-  Star, 
-  Zap, 
-  ArrowRight, 
-  Mail, 
-  Phone, 
-  MapPin,
-  Menu,
-  X
+  CheckCircle, Users, Shield, Calendar, Clock, Heart, 
+  Menu, X, Star, ChevronDown, ChevronRight, Zap, BookOpen 
 } from 'lucide-react';
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('infants');
+  const [formState, setFormState] = useState({ name: '', email: '', childAge: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const programs = [
-    { age: "Infants", range: "6 weeks - 18 months", desc: "Gentle care with sensory play and personalized routines.", color: "bg-amber-100" },
-    { age: "Toddlers", range: "18 months - 3 years", desc: "Focus on social development, motor skills, and curiosity.", color: "bg-sky-100" },
-    { age: "Preschool", range: "3 years - 5 years", desc: "Pre-literacy, STEM basics, and structured group learning.", color: "bg-emerald-100" },
-  ];
+  const programs = {
+    infants: { title: 'Infants (6-18 months)', desc: 'Gentle, nurturing environment focused on sensory play and developmental milestones.', schedule: ['8:00 AM Arrival', '9:30 AM Sensory Play', '11:00 AM Nap Time', '12:30 PM Lunch', '2:00 PM Outdoor Time'] },
+    toddlers: { title: 'Toddlers (18-36 months)', desc: 'Active exploration, social interaction, and early language development.', schedule: ['8:30 AM Circle Time', '10:00 AM Art Projects', '11:30 AM Lunch', '1:00 PM Nap Time', '3:00 PM Gross Motor Play'] },
+    preschool: { title: 'Preschool (3-5 years)', desc: 'School readiness through structured play, literacy, and STEM fundamentals.', schedule: ['9:00 AM Morning Meeting', '10:30 AM Phonics/Math', '12:00 PM Lunch', '1:30 PM Science Discovery', '3:00 PM Creative Projects'] }
+  };
 
   const teachers = [
-    { name: "Sarah Jenkins", role: "Lead Educator", cert: "M.Ed in Early Childhood", img: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&q=80&w=200" },
-    { name: "Marcus Thorne", role: "Preschool Specialist", cert: "BA Child Development", img: "https://images.unsplash.com/photo-1602116335926-9602f9e42106?auto=format&fit=crop&q=80&w=200" },
+    { name: 'Sarah Miller', role: 'Lead Educator', cert: 'MA in Early Childhood Education' },
+    { name: 'David Chen', role: 'Preschool Teacher', cert: 'BSc in Child Development' },
+    { name: 'Elena Rodriguez', role: 'Infant Specialist', cert: 'Certified Infant Care Provider' }
   ];
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSuccess(true);
+      setFormState({ name: '', email: '', childAge: '', message: '' });
+      setTimeout(() => setSuccess(false), 3000);
+    }, 1200);
+  };
+
   return (
-    <div className="min-h-screen bg-orange-50 text-slate-800 font-sans">
+    <div className="min-h-screen bg-orange-50 font-sans text-stone-800">
       {/* Nav */}
-      <nav className="bg-white sticky top-0 z-50 border-b border-orange-100 px-6 py-4 flex justify-between items-center">
-        <div className="text-2xl font-bold text-orange-600 flex items-center gap-2">
-          <Zap /> LittleSprouts
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2 text-orange-600 font-bold text-xl">
+            <Heart className="fill-orange-600" /> LittleSprouts Academy
+          </div>
+          <div className="hidden md:flex gap-8 font-medium text-stone-600">
+            {['Programs', 'Teachers', 'Tuition', 'Enrol'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-orange-600 transition">{item}</a>
+            ))}
+          </div>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden">
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
-        <div className="hidden md:flex gap-8 font-medium">
-          {['Programs', 'Curriculum', 'Safety', 'Tuition', 'Contact'].map(i => (
-            <a key={i} href={`#${i.toLowerCase()}`} className="hover:text-orange-600 transition-colors">{i}</a>
-          ))}
-        </div>
-        <button className="bg-orange-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-700 transition">Enrol Now</button>
       </nav>
 
       {/* Hero */}
-      <header className="px-6 py-16 md:py-24 max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1 space-y-6">
-          <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">Where Little Minds <span className="text-orange-600">Grow Big Dreams</span>.</h1>
-          <p className="text-xl text-slate-600">A nurturing, safe, and stimulating environment for your child's first steps into the world of learning.</p>
-          <div className="flex gap-4">
-            <button className="bg-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-700">Schedule a Tour</button>
-            <button className="bg-white border-2 border-orange-200 px-8 py-4 rounded-xl font-bold text-lg hover:border-orange-600">View Programs</button>
-          </div>
-        </div>
-        <div className="flex-1 w-full">
-          <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&q=80&w=800" alt="Happy children playing" className="rounded-3xl shadow-2xl" />
-        </div>
+      <header className="py-20 px-4 text-center bg-orange-100">
+        <h1 className="text-5xl md:text-6xl font-extrabold text-stone-900 mb-6">Where Little Minds <span className="text-orange-600">Blossom</span></h1>
+        <p className="text-xl text-stone-600 max-w-2xl mx-auto mb-10">Providing a safe, loving, and educational environment for your child's first milestones.</p>
+        <a href="#enrol" className="bg-orange-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-orange-700 transition shadow-lg">Schedule a Visit</a>
       </header>
 
       {/* Programs */}
-      <section id="programs" className="px-6 py-20 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12">Age-Appropriate Programs</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {programs.map((p, i) => (
-              <div key={i} className={`${p.color} p-8 rounded-3xl space-y-4`}>
-                <h3 className="text-2xl font-bold">{p.age}</h3>
-                <p className="text-sm font-semibold uppercase text-slate-600">{p.range}</p>
-                <p>{p.desc}</p>
-                <button className="flex items-center gap-2 font-bold underline">Learn more <ArrowRight size={16}/></button>
-              </div>
-            ))}
+      <section id="programs" className="py-20 px-4 max-w-6xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-12">Our Age-Group Programs</h2>
+        <div className="flex flex-wrap justify-center gap-4 mb-8">
+          {Object.keys(programs).map(key => (
+            <button 
+              key={key} 
+              onClick={() => setActiveTab(key)}
+              className={`px-6 py-2 rounded-full font-semibold ${activeTab === key ? 'bg-orange-600 text-white' : 'bg-white border text-stone-600'}`}
+            >
+              {programs[key as keyof typeof programs].title.split(' (')[0]}
+            </button>
+          ))}
+        </div>
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-stone-100">
+          <h3 className="text-2xl font-bold mb-4">{programs[activeTab as keyof typeof programs].title}</h3>
+          <p className="text-stone-600 mb-8">{programs[activeTab as keyof typeof programs].desc}</p>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-bold flex items-center gap-2 mb-4 text-orange-600"><Clock size={20} /> Daily Schedule</h4>
+              <ul className="space-y-2">
+                {programs[activeTab as keyof typeof programs].schedule.map((item, i) => (
+                  <li key={i} className="flex items-center gap-3"><CheckCircle size={16} className="text-green-500" /> {item}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Daily Schedule */}
-      <section id="curriculum" className="px-6 py-20">
-        <div className="max-w-4xl mx-auto bg-white p-10 rounded-3xl border border-orange-100">
-          <h2 className="text-3xl font-bold mb-8">A Typical Day</h2>
-          <div className="space-y-6">
-            {[
-              { time: "8:00 AM", task: "Arrival & Free Play" },
-              { time: "9:30 AM", task: "Morning Circle Time & Music" },
-              { time: "11:00 AM", task: "Outdoor Exploration" },
-              { time: "12:30 PM", task: "Nutritious Lunch & Rest" },
-              { time: "3:00 PM", task: "Creative Arts & Storytelling" }
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 hover:bg-orange-50 rounded-xl transition">
-                <div className="bg-orange-100 p-3 rounded-lg text-orange-600"><Clock size={20}/></div>
-                <span className="font-bold w-24">{item.time}</span>
-                <span>{item.task}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Safety & Teachers */}
-      <section id="safety" className="px-6 py-20 bg-orange-200">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16">
+      {/* Teachers & Safety */}
+      <section className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16">
           <div>
-            <h2 className="text-3xl font-bold mb-6 flex items-center gap-3"><Shield className="text-orange-600"/> Safety First</h2>
-            <ul className="space-y-4">
-              {['State-licensed facility', 'CPR & First Aid certified staff', 'Secure gated entry', 'Low child-to-teacher ratios'].map(item => (
-                <li key={item} className="flex items-center gap-3 bg-white p-4 rounded-xl"><CheckCircle className="text-emerald-500"/> {item}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Our Educators</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <h2 className="text-3xl font-bold mb-8">Meet Our Educators</h2>
+            <div className="space-y-6">
               {teachers.map(t => (
-                <div key={t.name} className="bg-white p-6 rounded-2xl">
-                  <img src={t.img} className="w-16 h-16 rounded-full mb-4 object-cover" />
-                  <h4 className="font-bold">{t.name}</h4>
-                  <p className="text-sm text-slate-500">{t.role}</p>
-                  <p className="text-xs text-orange-600 mt-2">{t.cert}</p>
+                <div key={t.name} className="flex items-center gap-4 border-b pb-4">
+                  <div className="bg-orange-100 p-3 rounded-full text-orange-600"><Users /></div>
+                  <div>
+                    <p className="font-bold text-lg">{t.name}</p>
+                    <p className="text-sm text-stone-500">{t.role} • {t.cert}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold mb-8">Safety First</h2>
+            <div className="space-y-6">
+              {[
+                { title: 'Licensed Facility', desc: 'Fully accredited by state childcare standards.' },
+                { title: 'Secured Entry', desc: 'Biometric access control for all authorized guardians.' },
+                { title: 'CPR Certified', desc: 'All staff undergo monthly safety and first-aid training.' }
+              ].map(s => (
+                <div key={s.title} className="flex gap-4">
+                  <div className="text-orange-600"><Shield size={32} /></div>
+                  <div>
+                    <h4 className="font-bold">{s.title}</h4>
+                    <p className="text-stone-600">{s.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -125,22 +128,34 @@ export default function App() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white px-6 py-12">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-12">
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold">LittleSprouts</h3>
-            <p className="text-slate-400">Nurturing the leaders of tomorrow, one sprout at a time.</p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-bold">Contact</h4>
-            <p className="text-slate-400 flex items-center gap-2"><MapPin size={16}/> 123 Maple St, Oakwood</p>
-            <p className="text-slate-400 flex items-center gap-2"><Mail size={16}/> hello@littlesprouts.edu</p>
-          </div>
+      {/* Enrolment Form */}
+      <section id="enrol" className="py-20 px-4 max-w-2xl mx-auto">
+        <div className="bg-white p-8 rounded-3xl shadow-xl">
+          <h2 className="text-3xl font-bold mb-6">Enrolment Enquiry</h2>
+          {success ? (
+            <div className="text-center py-12 text-green-600 font-bold text-xl"><CheckCircle className="mx-auto mb-4" /> Application Received! We'll be in touch soon.</div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input required placeholder="Parent Name" className="w-full p-3 border rounded-lg" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} />
+              <input required type="email" placeholder="Email Address" className="w-full p-3 border rounded-lg" value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} />
+              <select className="w-full p-3 border rounded-lg" value={formState.childAge} onChange={e => setFormState({...formState, childAge: e.target.value})}>
+                <option value="">Select Child Age</option>
+                <option value="infant">6-18 Months</option>
+                <option value="toddler">18-36 Months</option>
+                <option value="preschool">3-5 Years</option>
+              </select>
+              <textarea placeholder="Any questions?" className="w-full p-3 border rounded-lg h-32" value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} />
+              <button disabled={isSubmitting} className="w-full bg-orange-600 text-white py-4 rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50">
+                {isSubmitting ? 'Sending...' : 'Submit Enquiry'}
+              </button>
+            </form>
+          )}
         </div>
-        <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-800 text-center text-slate-500">
-          © 2024 LittleSprouts Early Learning Center. All rights reserved.
-        </div>
+      </section>
+
+      <footer className="py-12 bg-stone-900 text-stone-400 text-center px-4">
+        <p>&copy; 2024 LittleSprouts Academy. All rights reserved.</p>
+        <p className="mt-2 text-sm">123 Learning Lane, Sunshine City, CA 90210</p>
       </footer>
     </div>
   );

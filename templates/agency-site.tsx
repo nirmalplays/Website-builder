@@ -1,74 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, Zap, Target, Palette, Code, BarChart3, Users, 
-  Star, ChevronRight, Menu, X, Shield, Sparkles 
+  Zap, Shield, BarChart3, Package, Users, Settings, 
+  ArrowRight, CheckCircle, X, Search, Menu, Star, 
+  ChevronRight, Mail, Home, Clock, TrendingUp, DollarSign 
 } from 'lucide-react';
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const services = [
-    { icon: <Palette className="w-8 h-8" />, title: "Brand Identity", desc: "Crafting visual languages that resonate with your core audience." },
-    { icon: <Code className="w-8 h-8" />, title: "Web Development", desc: "High-performance websites built for scale and modern experiences." },
-    { icon: <Target className="w-8 h-8" />, title: "Digital Strategy", desc: "Data-driven roadmaps to navigate the complex digital landscape." },
-    { icon: <Zap className="w-8 h-8" />, title: "Motion Design", desc: "Bringing static concepts to life through fluid animation." },
-    { icon: <BarChart3 className="w-8 h-8" />, title: "Growth Marketing", desc: "Precision-targeted campaigns that drive measurable conversion." },
-    { icon: <Shield className="w-8 h-8" />, title: "Content Security", desc: "Protecting your digital assets with robust infrastructure." }
-  ];
+  const [activeTab, setActiveTab] = useState('All');
+  const [formState, setFormState] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
 
   const projects = [
-    { title: "Neon Pulse", category: "App UI", img: "https://images.unsplash.com/photo-1551650975-87de1940e457?auto=format&fit=crop&q=80&w=800" },
-    { title: "Summit Gear", category: "E-commerce", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800" },
-    { title: "EcoFlow", category: "Sustainability", img: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800" },
-    { title: "Velocity AI", category: "Tech Platform", img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800" },
-    { title: "Urban Oasis", category: "Architecture", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800" },
-    { title: "Zenith Sound", category: "Audio Brand", img: "https://images.unsplash.com/photo-1545128485-c400e7702796?auto=format&fit=crop&q=80&w=800" }
+    { id: 1, title: 'Nebula Branding', cat: 'Branding', img: 'https://images.unsplash.com/photo-1634942539450-466d1192e210?auto=format&fit=crop&w=800&q=80' },
+    { id: 2, title: 'Velocity UI', cat: 'Digital', img: 'https://images.unsplash.com/photo-1551650975-87de11494a3b?auto=format&fit=crop&w=800&q=80' },
+    { id: 3, title: 'EcoFlow Web', cat: 'Development', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80' },
+    { id: 4, title: 'Zenith App', cat: 'Digital', img: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80' },
+    { id: 5, title: 'Apex Strategy', cat: 'Strategy', img: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80' },
+    { id: 6, title: 'Flux Motion', cat: 'Branding', img: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80' },
   ];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setTimeout(() => {
+      setStatus('success');
+      setFormState({ name: '', email: '', message: '' });
+      setTimeout(() => setStatus('idle'), 3000);
+    }, 1200);
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans">
-      {/* Navbar */}
-      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="text-2xl font-bold tracking-tighter text-indigo-600">LUMINA.</div>
-          <div className="hidden md:flex gap-8 font-medium text-slate-600">
-            {['Services', 'Work', 'Team', 'Contact'].map(link => (
-              <a key={link} href="#" className="hover:text-indigo-600 transition-colors">{link}</a>
-            ))}
-          </div>
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden">
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="text-2xl font-bold tracking-tighter text-indigo-600">CREA<span className="text-slate-900">TIVE</span></div>
+        <div className="hidden md:flex gap-8 font-medium text-sm text-slate-600">
+          {['Services', 'Work', 'Team', 'Contact'].map(link => (
+            <a key={link} href={`#${link.toLowerCase()}`} className="hover:text-indigo-600 transition-colors">{link}</a>
+          ))}
         </div>
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden">
+          {isMenuOpen ? <X /> : <Menu />}
+        </button>
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-sm font-semibold mb-6">
-            <Sparkles className="w-4 h-4 mr-2" /> We build future-ready brands
-          </span>
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8">
-            Digital craftsmanship for <span className="text-indigo-600">ambitious ventures.</span>
-          </h1>
-          <p className="text-xl text-slate-500 mb-10 max-w-2xl mx-auto">
-            We merge cutting-edge technology with human-centric design to create products that people actually want to use.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <button className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700 transition">View Our Work</button>
-            <button className="border border-slate-200 px-8 py-4 rounded-xl font-semibold hover:bg-slate-50 transition">Let's Talk</button>
-          </div>
+      <section className="py-20 px-6 max-w-6xl mx-auto text-center">
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6">We build digital <span className="text-indigo-600">experiences</span> that matter.</h1>
+        <p className="text-xl text-slate-500 max-w-2xl mx-auto mb-10">From strategy to execution, we help brands grow through design, development, and data-driven storytelling.</p>
+        <div className="flex gap-4 justify-center">
+          <button className="bg-indigo-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-700 transition flex items-center gap-2">View Our Work <ArrowRight size={18} /></button>
+          <button className="border border-slate-200 px-8 py-4 rounded-full font-semibold hover:bg-slate-50 transition">Book a Consultation</button>
         </div>
       </section>
 
-      {/* Services Grid */}
-      <section className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12">Our Expertise</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((s, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl border border-slate-100 hover:shadow-lg transition">
-                <div className="text-indigo-600 mb-4">{s.icon}</div>
+      {/* Services */}
+      <section id="services" className="py-20 bg-slate-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-12 text-center">Our Expertise</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { icon: Zap, title: 'Brand Identity', desc: 'Crafting visual stories that resonate with audiences.' },
+              { icon: Package, title: 'Product Design', desc: 'User-centric interfaces that drive conversion.' },
+              { icon: BarChart3, title: 'Data Strategy', desc: 'Turning raw numbers into actionable growth insights.' },
+              { icon: Shield, title: 'Security Audits', desc: 'Protecting your digital assets with rigor.' },
+              { icon: Users, title: 'UX Research', desc: 'Deep dive into user needs and pain points.' },
+              { icon: Settings, title: 'Web Development', desc: 'Scalable solutions for modern business needs.' },
+            ].map((s, i) => (
+              <div key={i} className="bg-white p-8 rounded-2xl border border-slate-100 hover:shadow-lg transition-shadow">
+                <s.icon className="text-indigo-600 mb-4" size={32} />
                 <h3 className="text-xl font-bold mb-2">{s.title}</h3>
                 <p className="text-slate-500">{s.desc}</p>
               </div>
@@ -77,71 +78,75 @@ export default function App() {
         </div>
       </section>
 
-      {/* Portfolio */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-end mb-12">
-            <h2 className="text-3xl font-bold">Selected Work</h2>
-            <a href="#" className="text-indigo-600 font-semibold flex items-center hover:gap-2 transition-all">View All Projects <ArrowRight className="ml-2 w-4 h-4" /></a>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((p, i) => (
-              <div key={i} className="group cursor-pointer overflow-hidden rounded-2xl">
-                <img src={p.img} alt={p.title} className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="p-4">
-                  <p className="text-sm text-indigo-600 font-semibold">{p.category}</p>
-                  <h3 className="text-lg font-bold">{p.title}</h3>
-                </div>
-              </div>
+      {/* Gallery */}
+      <section id="work" className="py-20 px-6 max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="text-3xl font-bold">Selected Work</h2>
+          <div className="flex gap-2">
+            {['All', 'Digital', 'Branding'].map(cat => (
+              <button key={cat} onClick={() => setActiveTab(cat)} className={`px-4 py-2 rounded-full text-sm font-medium ${activeTab === cat ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>{cat}</button>
             ))}
           </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {projects.filter(p => activeTab === 'All' || p.cat === activeTab).map(p => (
+            <div key={p.id} className="group cursor-pointer overflow-hidden rounded-2xl relative">
+              <img src={p.img} alt={p.title} className="w-full h-64 object-cover transition-transform group-hover:scale-105" />
+              <div className="absolute inset-0 bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-lg">{p.title}</div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Testimonial */}
-      <section className="py-20 bg-indigo-900 text-white">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <Star className="w-12 h-12 text-yellow-400 mx-auto mb-8" />
-          <p className="text-2xl md:text-3xl font-light italic mb-8">
-            "Lumina transformed our vision into a cohesive digital ecosystem. Their attention to detail and strategic foresight are truly unmatched in the industry."
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200" className="w-12 h-12 rounded-full" alt="CEO" />
-            <div className="text-left">
-              <p className="font-bold">Marcus Thorne</p>
-              <p className="text-indigo-300">CEO, Velocity Systems</p>
-            </div>
+      <section className="py-20 bg-indigo-900 text-white text-center px-6">
+        <Star className="mx-auto mb-6 text-yellow-400" size={48} />
+        <blockquote className="text-2xl md:text-4xl italic max-w-4xl mx-auto mb-8 font-light">"The creative team transformed our vision into a market leader. Their attention to detail is unmatched."</blockquote>
+        <div className="font-bold">Sarah Jenkins</div>
+        <div className="text-indigo-300">CEO, TechFlow Inc.</div>
+      </section>
+
+      {/* Contact Form */}
+      <section id="contact" className="py-20 px-6 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold mb-8 text-center">Let's work together</h2>
+        {status === 'success' ? (
+          <div className="bg-green-50 text-green-700 p-8 rounded-2xl text-center border border-green-200">
+            <CheckCircle className="mx-auto mb-4" />
+            <p className="font-bold">Message sent successfully!</p>
           </div>
-        </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input required type="text" placeholder="Name" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})} />
+            <input required type="email" placeholder="Email" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" value={formState.email} onChange={e => setFormState({...formState, email: e.target.value})} />
+            <textarea required rows={4} placeholder="Your project details" className="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none" value={formState.message} onChange={e => setFormState({...formState, message: e.target.value})} />
+            <button disabled={status === 'loading'} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 disabled:bg-slate-300 transition">
+              {status === 'loading' ? 'Sending...' : 'Send Message'}
+            </button>
+          </form>
+        )}
       </section>
 
       {/* Footer */}
-      <footer className="py-20 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12">
+      <footer className="bg-slate-950 text-slate-400 py-16 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-12">
           <div>
-            <h4 className="font-bold text-lg mb-4">Lumina Agency</h4>
-            <p className="text-slate-500 text-sm">Building the future of digital experiences since 2015.</p>
+            <div className="text-white text-xl font-bold mb-4">CREATIVE</div>
+            <p className="text-sm">Building the future of digital brands since 2015.</p>
           </div>
           <div>
-            <h4 className="font-bold mb-4">Services</h4>
-            <ul className="space-y-2 text-slate-500 text-sm">
-              <li>Design</li><li>Development</li><li>Strategy</li><li>Branding</li>
-            </ul>
+            <h4 className="text-white font-bold mb-4">Company</h4>
+            <ul className="space-y-2 text-sm"><li>About</li><li>Careers</li><li>Blog</li></ul>
           </div>
           <div>
-            <h4 className="font-bold mb-4">Company</h4>
-            <ul className="space-y-2 text-slate-500 text-sm">
-              <li>Our Story</li><li>Careers</li><li>Press</li><li>Privacy</li>
-            </ul>
+            <h4 className="text-white font-bold mb-4">Support</h4>
+            <ul className="space-y-2 text-sm"><li>Documentation</li><li>Help Center</li><li>Privacy</li></ul>
           </div>
           <div>
-            <h4 className="font-bold mb-4">Connect</h4>
+            <h4 className="text-white font-bold mb-4">Connect</h4>
             <div className="flex gap-4">
-              {['Twitter', 'LinkedIn', 'Instagram'].map(s => (
-                <div key={s} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer hover:bg-indigo-600 hover:text-white transition">
-                  <span className="text-[10px] font-bold">{s[0]}</span>
-                </div>
-              ))}
+              <Mail size={20} />
+              <Home size={20} />
+              <Clock size={20} />
             </div>
           </div>
         </div>

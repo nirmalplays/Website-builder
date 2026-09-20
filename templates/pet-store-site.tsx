@@ -1,130 +1,152 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Star, Zap, Shield, Search, Menu, ArrowRight, ChevronRight, Check, Heart, Clock, Calendar, Mail, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ShoppingCart, Search, Star, Package, Heart, ChevronRight, 
+  Plus, Minus, Trash2, CheckCircle, Clock, Zap, Shield, User,
+  Menu, X
+} from 'lucide-react';
 
-const products = [
-  { id: 1, name: "Organic Grain-Free Kibble", price: 42.99, rating: 4.8, img: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&q=80&w=400" },
-  { id: 2, name: "Plush Squeaky Hedgehog", price: 12.50, rating: 4.5, img: "https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&q=80&w=400" },
-  { id: 3, name: "Calming Lavender Bed", price: 65.00, rating: 4.9, img: "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&q=80&w=400" },
-  { id: 4, name: "Interactive Laser Toy", price: 24.99, rating: 4.7, img: "https://images.unsplash.com/photo-1545249390-6bdfa286032f?auto=format&fit=crop&q=80&w=400" },
+const INITIAL_PRODUCTS = [
+  { id: 1, name: "Premium Salmon Kibble", price: 45.99, category: "Dogs", rating: 5, image: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&q=80&w=400" },
+  { id: 2, name: "Organic Catnip Mice", price: 12.50, category: "Cats", rating: 4, image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=400" },
+  { id: 3, name: "Hamster Fitness Wheel", price: 18.99, category: "Small Pets", rating: 5, image: "https://images.unsplash.com/photo-1548767797-d8c84414694c?auto=format&fit=crop&q=80&w=400" },
+  { id: 4, name: "Heavy Duty Chew Toy", price: 24.00, category: "Dogs", rating: 4, image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&q=80&w=400" },
 ];
 
 export default function App() {
-  const [cartCount, setCartCount] = useState(2);
+  const [cart, setCart] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('petCart') || '[]'); } catch { return []; }
+  });
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+
+  useEffect(() => {
+    localStorage.setItem('petCart', JSON.stringify(cart));
+  }, [cart]);
+
+  const addToCart = (product: any) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) return prev.map(p => p.id === product.id ? { ...p, qty: p.qty + 1 } : p);
+      return [...prev, { ...product, qty: 1 }];
+    });
+  };
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+    setTimeout(() => { setNewsletterStatus('success'); setEmail(""); }, 1000);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-orange-500 p-1.5 rounded-lg text-white font-bold text-xl">P</div>
-            <span className="font-bold text-xl tracking-tight">PetPalace</span>
-          </div>
-          <div className="hidden md:flex gap-8 font-medium text-slate-600">
-            <a href="#" className="hover:text-orange-600">Shop</a>
-            <a href="#" className="hover:text-orange-600">Services</a>
-            <a href="#" className="hover:text-orange-600">About</a>
-          </div>
-          <div className="flex items-center gap-4">
-            <Search className="w-5 h-5 text-slate-400 cursor-pointer" />
-            <div className="relative cursor-pointer">
-              <ShoppingCart className="w-6 h-6" />
-              <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">{cartCount}</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-orange-50 font-sans text-slate-900">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-orange-100 p-4">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-orange-600 flex items-center gap-2">
+            <Zap className="fill-orange-600" /> PawsitivePet
+          </h1>
+          <button onClick={() => setIsCartOpen(!isCartOpen)} className="relative p-2 hover:bg-orange-100 rounded-full">
+            <ShoppingCart />
+            {cart.length > 0 && <span className="absolute top-0 right-0 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">{cart.reduce((a, b) => a + b.qty, 0)}</span>}
+          </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="bg-orange-50 py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
-            <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-semibold">Special Launch Offer</span>
-            <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">Everything your furry friend could dream of.</h1>
-            <p className="text-lg text-slate-600 max-w-lg">Premium supplies, grooming services, and healthy treats delivered right to your doorstep. Join the pack today!</p>
-            <button className="bg-orange-500 text-white px-8 py-4 rounded-xl font-bold hover:bg-orange-600 flex items-center gap-2">
-              Shop Now <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-          <img src="https://images.unsplash.com/photo-1514984879728-be0aff75a6e8?auto=format&fit=crop&q=80&w=800" alt="Happy Dog" className="rounded-3xl w-full md:w-1/2 shadow-2xl" />
-        </div>
+      <header className="bg-orange-600 text-white py-16 px-4 text-center">
+        <h2 className="text-4xl md:text-6xl font-extrabold mb-4">Happy Pets, Happy Life!</h2>
+        <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">Premium nutrition and supplies delivered to your door.</p>
+        <button className="bg-white text-orange-600 px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform">Shop Best Sellers</button>
       </header>
 
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8">Shop by Pet</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {['Dogs', 'Cats', 'Small Pets'].map((cat) => (
-            <div key={cat} className="group relative h-64 rounded-2xl overflow-hidden cursor-pointer">
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all" />
-              <img src={`https://images.unsplash.com/photo-${cat === 'Dogs' ? '1583511655857-d19b40a7a54e' : cat === 'Cats' ? '1514888286974-6c03e2ca1dba' : '1548767797-d86847129f58'}?auto=format&fit=crop&q=80&w=600`} className="w-full h-full object-cover" alt={cat} />
-              <div className="absolute bottom-6 left-6 text-white font-bold text-2xl">{cat}</div>
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto p-4 py-12 space-y-16">
+        
+        {/* Categories */}
+        <section className="grid md:grid-cols-3 gap-6">
+          {['Dogs', 'Cats', 'Small Pets'].map(cat => (
+            <div key={cat} className="bg-white p-8 rounded-2xl shadow-sm text-center border border-orange-100 hover:border-orange-300 transition-colors">
+              <h3 className="text-2xl font-bold mb-4">{cat}</h3>
+              <button className="text-orange-600 font-semibold flex items-center justify-center gap-2 mx-auto">Shop Now <ChevronRight size={18}/></button>
             </div>
           ))}
-        </div>
-      </section>
+        </section>
 
-      {/* Bestsellers */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8">Fan Favorites</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products.map(p => (
-            <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-              <img src={p.img} className="w-full h-48 object-cover rounded-xl mb-4" alt={p.name} />
-              <h3 className="font-semibold mb-1">{p.name}</h3>
-              <div className="flex items-center gap-1 text-amber-400 mb-2">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="text-slate-600 text-sm font-medium">{p.rating}</span>
-              </div>
-              <div className="flex justify-between items-center mt-4">
-                <span className="font-bold text-lg">${p.price}</span>
-                <button className="p-2 bg-slate-100 rounded-lg hover:bg-orange-100 hover:text-orange-600">
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Services */}
-      <section className="bg-slate-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-12">Professional Grooming</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[ { title: 'Full Spa Bath', price: '45', time: '60 min' }, { title: 'Haircut & Trim', price: '65', time: '90 min' }, { title: 'Nail Trimming', price: '20', time: '20 min' } ].map(s => (
-              <div key={s.title} className="bg-slate-800 p-8 rounded-2xl border border-slate-700 flex flex-col gap-4">
-                <h3 className="text-xl font-bold">{s.title}</h3>
-                <div className="flex gap-4 text-slate-400">
-                  <div className="flex items-center gap-1"><Clock className="w-4 h-4"/> {s.time}</div>
-                </div>
-                <div className="text-4xl font-bold mt-4">${s.price}</div>
-                <button className="w-full mt-auto bg-white text-slate-900 py-3 rounded-lg font-bold">Book Now</button>
+        {/* Products */}
+        <section>
+          <h3 className="text-3xl font-bold mb-8">Bestselling Products</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {INITIAL_PRODUCTS.map(p => (
+              <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+                <img src={p.image} alt={p.name} className="w-full h-40 object-cover rounded-lg mb-4" />
+                <h4 className="font-bold">{p.name}</h4>
+                <div className="flex text-amber-400 my-1">{[...Array(p.rating)].map((_, i) => <Star key={i} size={14} fill="currentColor"/>)}</div>
+                <p className="text-orange-600 font-bold mb-4">${p.price.toFixed(2)}</p>
+                <button onClick={() => addToCart(p)} className="w-full bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-800">Add to Cart</button>
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Newsletter */}
+        <section className="bg-white p-8 md:p-16 rounded-3xl border border-orange-100 text-center">
+          <h3 className="text-3xl font-bold mb-4">Join our VIP Pack</h3>
+          <p className="mb-8 text-slate-600">Get 10% off your first order when you sign up.</p>
+          <form onSubmit={handleNewsletter} className="max-w-md mx-auto flex gap-2">
+            <input 
+              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email" className="flex-1 p-3 border rounded-full px-6"
+            />
+            <button disabled={newsletterStatus === 'loading'} className="bg-orange-600 text-white px-6 rounded-full font-bold">
+              {newsletterStatus === 'loading' ? '...' : 'Subscribe'}
+            </button>
+          </form>
+          {newsletterStatus === 'success' && <p className="mt-4 text-emerald-600 flex items-center justify-center gap-2"><CheckCircle size={20}/> Thanks for joining!</p>}
+        </section>
+      </main>
+
+      {/* Cart Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] p-4 flex justify-end">
+          <div className="bg-white w-full max-w-sm h-full rounded-l-2xl p-6 shadow-2xl overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold">Your Cart</h3>
+              <button onClick={() => setIsCartOpen(false)}><X/></button>
+            </div>
+            {cart.length === 0 ? <p className="text-center py-10">Your cart is empty!</p> : (
+              <div className="space-y-4">
+                {cart.map(item => (
+                  <div key={item.id} className="flex items-center gap-4 border-b pb-4">
+                    <img src={item.image} className="w-16 h-16 object-cover rounded" />
+                    <div className="flex-1">
+                      <p className="font-bold">{item.name}</p>
+                      <p className="text-sm">${(item.price * item.qty).toFixed(2)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setCart(cart.map(i => i.id === item.id ? {...i, qty: Math.max(1, i.qty - 1)} : i))} className="p-1"><Minus size={16}/></button>
+                      <span>{item.qty}</span>
+                      <button onClick={() => setCart(cart.map(i => i.id === item.id ? {...i, qty: i.qty + 1} : i))} className="p-1"><Plus size={16}/></button>
+                      <button onClick={() => setCart(cart.filter(i => i.id !== item.id))} className="text-red-500 p-1"><Trash2 size={16}/></button>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-4 font-bold text-lg flex justify-between">
+                  <span>Total:</span>
+                  <span>${cart.reduce((a, b) => a + (b.price * b.qty), 0).toFixed(2)}</span>
+                </div>
+                <button className="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Checkout</button>
+              </div>
+            )}
+          </div>
         </div>
-      </section>
+      )}
 
       {/* Footer */}
-      <footer className="bg-white py-16 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-12">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-orange-500 p-1.5 rounded-lg text-white font-bold text-lg">P</div>
-              <span className="font-bold text-lg">PetPalace</span>
-            </div>
-            <p className="text-slate-500 text-sm">Serving happy pets and owners since 2018.</p>
-          </div>
-          <div><h4 className="font-bold mb-4">Shop</h4><ul className="space-y-2 text-slate-600 text-sm"><li>New Arrivals</li><li>Best Sellers</li><li>Supplies</li></ul></div>
-          <div><h4 className="font-bold mb-4">Support</h4><ul className="space-y-2 text-slate-600 text-sm"><li>Shipping Policy</li><li>Returns</li><li>Contact</li></ul></div>
-          <div>
-            <h4 className="font-bold mb-4">Newsletter</h4>
-            <div className="flex gap-2">
-              <input type="email" placeholder="Email address" className="bg-slate-100 rounded-lg px-4 py-2 flex-1 outline-none"/>
-              <button className="bg-orange-500 text-white p-2 rounded-lg"><ArrowRight className="w-5 h-5"/></button>
-            </div>
-          </div>
+      <footer className="bg-slate-900 text-white py-12 px-4 mt-12">
+        <div className="max-w-6xl mx-auto text-center">
+          <h4 className="text-xl font-bold mb-4">PawsitivePet</h4>
+          <p className="text-slate-400">© 2024 PawsitivePet Inc. All rights reserved.</p>
         </div>
       </footer>
     </div>

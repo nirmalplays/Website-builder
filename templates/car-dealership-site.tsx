@@ -1,163 +1,208 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Search, Phone, Zap, Shield, DollarSign, Calendar, Clock, 
-  ChevronRight, Star, ChevronDown, CheckCircle, TrendingUp 
+  Search, Car, DollarSign, Shield, Users, Clock, 
+  ChevronRight, Star, TrendingUp, Phone, Menu, X, CheckCircle 
 } from 'lucide-react';
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('inventory');
+const INITIAL_INVENTORY = [
+  { id: 1, make: 'Tesla', model: 'Model 3', year: 2022, price: 34990, mileage: 28000, img: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=600' },
+  { id: 2, make: 'Toyota', model: 'Camry', year: 2021, price: 24500, mileage: 42000, img: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=600' },
+  { id: 3, make: 'BMW', model: 'X5', year: 2023, price: 58900, mileage: 12000, img: 'https://images.unsplash.com/photo-1556189250-72ba954cfc2b?auto=format&fit=crop&q=80&w=600' },
+  { id: 4, make: 'Honda', model: 'Civic', year: 2020, price: 21900, mileage: 35000, img: 'https://images.unsplash.com/photo-1591465201947-a8220023a886?auto=format&fit=crop&q=80&w=600' },
+  { id: 5, make: 'Ford', model: 'Mustang', year: 2022, price: 38500, mileage: 15000, img: 'https://images.unsplash.com/photo-1584345604476-8aa5e58b96d7?auto=format&fit=crop&q=80&w=600' },
+  { id: 6, make: 'Audi', model: 'A4', year: 2021, price: 32000, mileage: 29000, img: 'https://images.unsplash.com/photo-1603584173870-7f23fdae1872?auto=format&fit=crop&q=80&w=600' },
+];
 
-  const featuredCars = [
-    { id: 1, make: 'Porsche', model: '911 Carrera', year: 2023, price: '$115,000', miles: '4,200', img: 'https://images.unsplash.com/photo-1614162692292-7add56d7dfbf?auto=format&fit=crop&w=800&q=80' },
-    { id: 2, make: 'Audi', model: 'e-tron GT', year: 2024, price: '$108,500', miles: '1,100', img: 'https://images.unsplash.com/photo-1614200187524-dc4b892acf16?auto=format&fit=crop&w=800&q=80' },
-    { id: 3, make: 'Land Rover', model: 'Range Rover', year: 2022, price: '$98,900', miles: '12,500', img: 'https://images.unsplash.com/photo-1612825173281-9a193378556e?auto=format&fit=crop&w=800&q=80' },
-    { id: 4, make: 'BMW', model: 'M4 Competition', year: 2023, price: '$84,200', miles: '8,900', img: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80' },
-    { id: 5, make: 'Mercedes-Benz', model: 'S-Class 580', year: 2024, price: '$122,000', miles: '500', img: 'https://images.unsplash.com/photo-1605559424843-9e4c228caf1c?auto=format&fit=crop&w=800&q=80' },
-    { id: 6, make: 'Tesla', model: 'Model S Plaid', year: 2023, price: '$94,500', miles: '3,800', img: 'https://images.unsplash.com/photo-1617704548623-340376560968?auto=format&fit=crop&w=800&q=80' },
-  ];
+export default function App() {
+  const [inventory] = useState(INITIAL_INVENTORY);
+  const [search, setSearch] = useState('');
+  const [filtered, setFiltered] = useState(INITIAL_INVENTORY);
+  const [mobileMenu, setMobileMenu] = useState(false);
+  
+  // Finance Calculator State
+  const [price, setPrice] = useState(30000);
+  const [term, setTerm] = useState(60);
+  const [rate, setRate] = useState(4.9);
+  
+  // Trade-in State
+  const [tradeForm, setTradeForm] = useState({ make: '', model: '', year: '' });
+  const [tradeSuccess, setTradeSuccess] = useState(false);
+
+  useEffect(() => {
+    setFiltered(inventory.filter(c => 
+      `${c.make} ${c.model}`.toLowerCase().includes(search.toLowerCase())
+    ));
+  }, [search, inventory]);
+
+  const handleTradeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setTradeSuccess(true);
+    setTimeout(() => setTradeSuccess(false), 3000);
+    setTradeForm({ make: '', model: '', year: '' });
+  };
+
+  const monthlyPayment = ((price * (1 + (rate / 100) * (term / 12))) / term).toFixed(2);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       {/* Nav */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <div className="text-2xl font-black text-indigo-700 tracking-tighter">ELITE<span className="text-gray-900">MOTORS</span></div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            {['Inventory', 'Finance', 'Service', 'Trade-In'].map(item => (
-              <a key={item} href="#" className="hover:text-indigo-600 transition-colors">{item}</a>
-            ))}
+      <nav className="bg-white sticky top-0 z-50 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <div className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+            <Car /> PREMIER MOTORS
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-indigo-700 font-bold">
-              <Phone size={18} />
-              <span>(555) 987-6543</span>
+          <div className="hidden md:flex items-center gap-8 font-medium">
+            <a href="#inventory" className="hover:text-blue-700">Inventory</a>
+            <a href="#finance" className="hover:text-blue-700">Finance</a>
+            <a href="#service" className="hover:text-blue-700">Service</a>
+            <div className="flex items-center gap-2 text-blue-700 font-bold">
+              <Phone size={18} /> (555) 123-4567
             </div>
           </div>
+          <button className="md:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
+            {mobileMenu ? <X /> : <Menu />}
+          </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative h-[600px] flex items-center justify-center bg-gray-900 overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1583121274602-3e2820d6988b?auto=format&fit=crop&w=2000&q=80" className="absolute inset-0 w-full h-full object-cover opacity-60" alt="Luxury showroom" />
-        <div className="relative z-10 max-w-4xl px-4 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6">Drive Your Ambition.</h1>
-          <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px] text-left">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Make</label>
-              <button className="w-full border rounded-lg p-3 flex justify-between items-center text-gray-700">Select Make <ChevronDown size={16}/></button>
+      <header className="relative py-20 bg-gray-900 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-30"></div>
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6">Drive Your Dream Today</h1>
+          <div className="bg-white p-4 rounded-xl shadow-2xl flex flex-col md:flex-row gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search by make or model..." 
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-600 outline-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-            <div className="flex-1 min-w-[200px] text-left">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Max Price</label>
-              <button className="w-full border rounded-lg p-3 flex justify-between items-center text-gray-700">$150,000 <ChevronDown size={16}/></button>
-            </div>
-            <button className="bg-indigo-700 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-800 transition-colors flex items-center gap-2">
-              <Search size={20} /> Search Inventory
-            </button>
+            <button className="bg-blue-700 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-800">Search Inventory</button>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Featured Grid */}
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <h2 className="text-3xl font-bold mb-12">Featured Inventory</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredCars.map(car => (
-            <div key={car.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-shadow">
-              <img src={car.img} alt={car.model} className="h-48 w-full object-cover" />
+      {/* Featured */}
+      <section id="inventory" className="py-16 max-w-7xl mx-auto px-4">
+        <h2 className="text-3xl font-bold mb-10">Featured Vehicles</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filtered.map(car => (
+            <div key={car.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
+              <img src={car.img} alt={car.model} className="w-full h-48 object-cover" />
               <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold">{car.make} {car.model}</h3>
-                  <span className="text-indigo-700 font-black text-lg">{car.price}</span>
+                <h3 className="text-xl font-bold">{car.year} {car.make} {car.model}</h3>
+                <p className="text-gray-500 mb-4">{car.mileage.toLocaleString()} miles</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-bold text-blue-700">${car.price.toLocaleString()}</span>
+                  <button className="text-blue-700 font-bold flex items-center hover:underline">View Details <ChevronRight size={16}/></button>
                 </div>
-                <div className="text-gray-500 text-sm mb-6 flex gap-4">
-                  <span>{car.year}</span> • <span>{car.miles} miles</span>
-                </div>
-                <button className="w-full py-3 border-2 border-indigo-700 text-indigo-700 rounded-lg font-bold hover:bg-indigo-700 hover:text-white transition-colors">
-                  View Details
-                </button>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Finance & Trade-in */}
-      <section className="bg-gray-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-12">
-          <div className="bg-white text-gray-900 p-8 rounded-2xl">
-            <div className="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center mb-6"><DollarSign size={24}/></div>
-            <h3 className="text-2xl font-bold mb-4">Finance Calculator</h3>
-            <p className="text-gray-600 mb-6">Get an instant estimate on monthly payments based on your credit score and down payment.</p>
-            <button className="text-indigo-700 font-bold flex items-center gap-2">Launch Calculator <ChevronRight size={18}/></button>
-          </div>
-          <div className="bg-indigo-700 p-8 rounded-2xl">
-            <div className="w-12 h-12 bg-indigo-600 text-white rounded-xl flex items-center justify-center mb-6"><TrendingUp size={24}/></div>
-            <h3 className="text-2xl font-bold mb-4">Trade-In Valuation</h3>
-            <p className="text-indigo-100 mb-6">Get a professional appraisal for your current vehicle in under 3 minutes.</p>
-            <button className="bg-white text-indigo-700 px-6 py-3 rounded-lg font-bold">Start Valuation</button>
+      {/* Finance Calculator */}
+      <section id="finance" className="py-16 bg-gray-100">
+        <div className="max-w-4xl mx-auto px-4 bg-white p-8 rounded-2xl shadow-sm">
+          <h2 className="text-3xl font-bold mb-8">Finance Calculator</h2>
+          <div className="grid md:grid-cols-2 gap-12">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2">Vehicle Price (${price})</label>
+                <input type="range" min="5000" max="100000" step="500" value={price} onChange={(e) => setPrice(Number(e.target.value))} className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Loan Term ({term} months)</label>
+                <select value={term} onChange={(e) => setTerm(Number(e.target.value))} className="w-full p-3 border border-gray-300 rounded-lg">
+                  <option value={36}>36 Months</option>
+                  <option value={48}>48 Months</option>
+                  <option value={60}>60 Months</option>
+                  <option value={72}>72 Months</option>
+                </select>
+              </div>
+            </div>
+            <div className="bg-blue-700 text-white p-8 rounded-xl flex flex-col justify-center items-center">
+              <p className="text-blue-100 uppercase tracking-widest text-sm mb-2">Estimated Payment</p>
+              <div className="text-5xl font-bold mb-4">${monthlyPayment}</div>
+              <p className="text-sm text-blue-200 italic">Based on {rate}% APR</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Why Buy & Reviews */}
-      <section className="max-w-7xl mx-auto px-4 py-20">
-        <div className="grid md:grid-cols-2 gap-20">
+      {/* Trade-in Form */}
+      <section className="py-16 max-w-7xl mx-auto px-4">
+        <div className="bg-blue-900 text-white rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
+          <div className="flex-1">
+            <h2 className="text-3xl font-bold mb-4">Trade-in Your Vehicle</h2>
+            <p className="text-blue-200">Get an instant valuation for your current car. No obligations, just fair market pricing.</p>
+          </div>
+          <form onSubmit={handleTradeSubmit} className="flex-1 w-full bg-white text-gray-900 p-6 rounded-xl space-y-4">
+            {tradeSuccess ? (
+              <div className="text-green-600 font-bold text-center py-8">
+                <CheckCircle className="mx-auto mb-2" /> Evaluation request received!
+              </div>
+            ) : (
+              <>
+                <input required placeholder="Make" className="w-full p-3 border rounded-lg" value={tradeForm.make} onChange={e => setTradeForm({...tradeForm, make: e.target.value})} />
+                <input required placeholder="Model" className="w-full p-3 border rounded-lg" value={tradeForm.model} onChange={e => setTradeForm({...tradeForm, model: e.target.value})} />
+                <input required type="number" placeholder="Year" className="w-full p-3 border rounded-lg" value={tradeForm.year} onChange={e => setTradeForm({...tradeForm, year: e.target.value})} />
+                <button type="submit" className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold hover:bg-blue-800 transition">Get Valuation</button>
+              </>
+            )}
+          </form>
+        </div>
+      </section>
+
+      {/* Why Buy & Service */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-16">
           <div>
-            <h2 className="text-3xl font-bold mb-8">Why Elite Motors?</h2>
+            <h2 className="text-3xl font-bold mb-8">Why Buy From Us?</h2>
             <div className="space-y-6">
               {[
-                { title: 'Certified Quality', desc: 'Every vehicle passes a 150-point inspection.' },
-                { title: 'Transparent Pricing', desc: 'No hidden fees, no dealer add-ons.' },
-                { title: 'Home Delivery', desc: 'We deliver your new car to your doorstep.' }
+                { title: 'Certified Quality', icon: Shield },
+                { title: 'Transparent Pricing', icon: DollarSign },
+                { title: 'Excellent Service', icon: Users }
               ].map((item, i) => (
                 <div key={i} className="flex gap-4">
-                  <div className="mt-1 text-indigo-700"><CheckCircle size={24} /></div>
+                  <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center shrink-0">
+                    <item.icon size={24} />
+                  </div>
                   <div>
                     <h4 className="font-bold text-lg">{item.title}</h4>
-                    <p className="text-gray-600">{item.desc}</p>
+                    <p className="text-gray-600">We prioritize your satisfaction with our 100-point inspection and no-haggle pricing.</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-bold mb-8">Customer Stories</h2>
-            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex gap-1 text-yellow-400 mb-4">
-                {[1,2,3,4,5].map(s => <Star key={s} size={20} fill="currentColor" />)}
-              </div>
-              <p className="text-gray-700 italic mb-6">"Elite Motors made the buying process seamless. I got my dream car delivered in less than 24 hours. The team was professional and transparent."</p>
-              <div className="font-bold">Sarah Jenkins</div>
-              <div className="text-sm text-gray-500">Porsche 911 Owner</div>
+          <div id="service" className="bg-gray-900 text-white p-8 rounded-2xl">
+            <h2 className="text-3xl font-bold mb-6">Service Department</h2>
+            <p className="mb-6 text-gray-400">Our expert technicians are here to keep your vehicle running like new. From oil changes to major repairs, we use genuine parts.</p>
+            <div className="flex items-center gap-4 text-sm bg-gray-800 p-4 rounded-lg">
+              <Clock className="text-blue-500" />
+              <span>Mon-Fri: 7am - 7pm | Sat: 8am - 4pm</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Service */}
-      <section className="bg-gray-100 py-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-md text-indigo-700"><Zap size={32} /></div>
-          <h2 className="text-3xl font-bold mb-4">World-Class Service Center</h2>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">From oil changes to complex engine diagnostics, our factory-trained technicians keep your vehicle performing at its peak.</p>
-          <div className="flex justify-center gap-4">
-            <button className="bg-indigo-700 text-white px-8 py-3 rounded-lg font-bold">Schedule Service</button>
-            <button className="bg-white border border-gray-300 px-8 py-3 rounded-lg font-bold">View Service Menu</button>
+            <button className="mt-8 w-full border-2 border-blue-600 py-3 rounded-lg font-bold hover:bg-blue-600 transition">Schedule Appointment</button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
-        <div className="max-w-7xl mx-auto px-4 text-sm">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="text-white font-black tracking-tighter text-xl">ELITE MOTORS</div>
-            <div className="flex gap-8">
-              <span>Privacy Policy</span>
-              <span>Terms of Service</span>
-              <span>Contact Us</span>
-            </div>
-            <div>© 2024 Elite Motors Group. All rights reserved.</div>
+      <footer className="bg-gray-900 text-gray-400 py-12 text-center">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-2xl font-bold text-white mb-4">PREMIER MOTORS</div>
+          <p className="mb-8">123 Highway Blvd, Automotive City, CA 90210</p>
+          <div className="flex justify-center gap-6 text-sm">
+            <span>© 2024 Premier Motors. All rights reserved.</span>
+            <a href="#" className="hover:text-white">Privacy</a>
+            <a href="#" className="hover:text-white">Terms</a>
           </div>
         </div>
       </footer>

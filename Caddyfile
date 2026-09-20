@@ -1,0 +1,12 @@
+# Automatic HTTPS from Let's Encrypt. Set DOMAIN in .env.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+
+	# Generated previews are sandboxed elsewhere; this app itself should not be framed.
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

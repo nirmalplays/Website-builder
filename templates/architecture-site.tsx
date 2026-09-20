@@ -1,120 +1,148 @@
-import React, { useState } from 'react';
-import { ArrowRight, ChevronRight, Mail, MapPin, Phone, Users, Zap, Shield, Sparkles, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Menu, X, ArrowRight, Mail, MapPin, Phone, Award, 
+  BookOpen, Users, Building2, ChevronRight, CheckCircle 
+} from 'lucide-react';
 
 export default function App() {
-  const projects = [
-    { name: "Lumina Pavilion", year: "2023", type: "Public Cultural", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800" },
-    { name: "Cedar Ridge Villa", year: "2022", type: "Residential", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" },
-    { name: "Urban Tech Hub", year: "2024", type: "Commercial", img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=800" },
-    { name: "Coastal Retreat", year: "2021", type: "Hospitality", img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800" }
-  ];
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('All');
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [projects] = useState([
+    { id: 1, name: 'Lumina Pavilion', year: '2023', type: 'Public', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800' },
+    { id: 2, name: 'Haven Residencies', year: '2022', type: 'Residential', img: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=80&w=800' },
+    { id: 3, name: 'Urban Nexus', year: '2024', type: 'Commercial', img: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&q=80&w=800' },
+    { id: 4, name: 'Echo Library', year: '2021', type: 'Civic', img: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=800' }
+  ]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('loading');
+    setTimeout(() => {
+      setFormStatus('success');
+      setContactForm({ name: '', email: '', message: '' });
+      setTimeout(() => setFormStatus('idle'), 3000);
+    }, 1200);
+  };
+
+  const filteredProjects = activeTab === 'All' 
+    ? projects 
+    : projects.filter(p => p.type === activeTab);
 
   return (
-    <div className="min-h-screen bg-white text-stone-900 font-sans">
-      {/* Nav */}
-      <nav className="fixed w-full bg-white/90 backdrop-blur-sm z-50 border-b border-stone-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tighter">ELARA STUDIO</div>
-          <div className="hidden md:flex gap-8 text-sm font-medium text-stone-600">
-            {['Works', 'Philosophy', 'Services', 'Team', 'Contact'].map(item => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-stone-900 transition-colors">{item}</a>
+    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
+      {/* Navigation */}
+      <nav className="fixed w-full bg-stone-50/90 backdrop-blur-sm z-50 border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <span className="text-xl font-bold tracking-tighter">ARCHITECTS COLLECTIVE</span>
+          <div className="hidden md:flex gap-8 text-sm uppercase tracking-widest font-medium">
+            {['Works', 'Philosophy', 'Services', 'Contact'].map(link => (
+              <button key={link} onClick={() => document.getElementById(link.toLowerCase())?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-amber-700 transition-colors">
+                {link}
+              </button>
             ))}
           </div>
-          <button className="bg-stone-900 text-white px-5 py-2 text-sm rounded-full hover:bg-stone-700 transition">Inquire</button>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
       </nav>
 
       {/* Hero */}
       <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
-        <h1 className="text-6xl md:text-8xl font-light tracking-tight mb-8">Architecture of <br/> intentional stillness.</h1>
-        <div className="relative h-[500px] w-full bg-stone-100 rounded-2xl overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=2400" alt="Signature building" className="w-full h-full object-cover" />
+        <h1 className="text-6xl md:text-8xl font-light tracking-tighter mb-8 leading-[0.9]">Designing <br />the future <br />of space.</h1>
+        <div className="relative h-[500px] w-full overflow-hidden rounded-sm">
+          <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=1600" alt="Architecture" className="w-full h-full object-cover" />
         </div>
       </section>
 
       {/* Works */}
       <section id="works" className="py-20 px-6 max-w-7xl mx-auto">
-        <h2 className="text-sm uppercase tracking-widest text-stone-500 mb-12 font-semibold">Selected Works</h2>
-        <div className="grid md:grid-cols-2 gap-12">
-          {projects.map((p, i) => (
-            <div key={i} className="group cursor-pointer">
-              <div className="aspect-[4/3] overflow-hidden rounded-xl mb-4 bg-stone-100">
-                <img src={p.img} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+        <div className="flex justify-between items-end mb-12">
+          <h2 className="text-4xl font-light">Selected Works</h2>
+          <div className="flex gap-4">
+            {['All', 'Public', 'Residential', 'Commercial'].map(cat => (
+              <button key={cat} onClick={() => setActiveTab(cat)} className={`text-sm ${activeTab === cat ? 'text-amber-700 underline' : 'text-stone-400'}`}>
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {filteredProjects.map(p => (
+            <div key={p.id} className="group cursor-pointer">
+              <div className="overflow-hidden mb-4">
+                <img src={p.img} alt={p.name} className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-105" />
               </div>
-              <div className="flex justify-between items-end">
-                <div>
-                  <h3 className="text-xl font-medium">{p.name}</h3>
-                  <p className="text-stone-500">{p.type}</p>
-                </div>
-                <span className="text-sm font-light text-stone-400">{p.year}</span>
-              </div>
+              <p className="text-sm text-stone-500">{p.year} / {p.type}</p>
+              <h3 className="text-2xl font-medium">{p.name}</h3>
             </div>
           ))}
         </div>
       </section>
 
       {/* Philosophy */}
-      <section id="philosophy" className="py-20 bg-stone-50">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <Sparkles className="mx-auto mb-6 text-stone-400" />
-          <h2 className="text-4xl font-light mb-8">We believe that architecture is the art of framing human experience, not just building structures.</h2>
-          <p className="text-stone-600 leading-relaxed text-lg">Founded in 2015, Elara Studio prioritizes sustainable materiality, light-driven spatial planning, and an unwavering commitment to the local context of every project we undertake.</p>
+      <section id="philosophy" className="bg-stone-900 text-stone-100 py-24 px-6">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-4xl font-light mb-8">Our Philosophy</h2>
+          <p className="text-lg leading-relaxed text-stone-300">
+            We believe architecture is the bridge between human experience and the built environment. Every project we undertake is rooted in sustainability, material honesty, and a profound respect for the site's history. We don't just build structures; we curate atmospheres that stand the test of time.
+          </p>
         </div>
       </section>
 
       {/* Services */}
-      <section id="services" className="py-20 max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-12">
-        {[
-          { icon: <Building2 />, title: "Master Planning", desc: "Strategic development of urban landscapes and campus environments." },
-          { icon: <Shield />, title: "Sustainable Design", desc: "Net-zero focused methodology integrating passive heating and cooling." },
-          { icon: <Zap />, title: "Interior Architecture", desc: "Holistic interior solutions that harmonize form, function, and lighting." }
-        ].map((s, i) => (
-          <div key={i} className="p-8 border border-stone-100 rounded-2xl hover:border-stone-200 transition">
-            <div className="mb-4 text-stone-900">{s.icon}</div>
-            <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-            <p className="text-stone-500 text-sm leading-relaxed">{s.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* Team */}
-      <section id="team" className="py-20 bg-stone-900 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-sm uppercase tracking-widest text-stone-400 mb-12 font-semibold">The Collective</h2>
-          <div className="grid md:grid-cols-4 gap-8">
-            {['Elena Vance', 'Marcus Thorne', 'Sarah Jenkins', 'David Kim'].map((name, i) => (
-              <div key={i}>
-                <div className="w-full aspect-square bg-stone-800 rounded-lg mb-4"></div>
-                <h4 className="font-medium">{name}</h4>
-                <p className="text-stone-400 text-sm">Principal Architect</p>
-              </div>
-            ))}
-          </div>
+      <section id="services" className="py-24 px-6 max-w-7xl mx-auto">
+        <h2 className="text-4xl font-light mb-16">Services</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          {[
+            { title: 'Master Planning', desc: 'Large scale urban integration and site analysis.' },
+            { title: 'Architecture', desc: 'Full lifecycle design from concept to construction.' },
+            { title: 'Interior Design', desc: 'Crafting bespoke environments with attention to detail.' }
+          ].map((s, i) => (
+            <div key={i} className="border-t border-stone-300 pt-6">
+              <h4 className="text-xl font-medium mb-2">{s.title}</h4>
+              <p className="text-stone-600">{s.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Contact */}
-      <section id="contact" className="py-20 max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-2 gap-20">
+      <section id="contact" className="py-24 px-6 bg-stone-100">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
           <div>
-            <h2 className="text-5xl font-light mb-8">Let's build something extraordinary.</h2>
+            <h2 className="text-4xl font-light mb-8">Let's Talk</h2>
+            <p className="mb-8 text-stone-600">Have a project in mind? We'd love to collaborate with you.</p>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 text-stone-600"><MapPin size={20}/> 124 Architecture Lane, Portland, OR</div>
-              <div className="flex items-center gap-3 text-stone-600"><Mail size={20}/> hello@elarastudio.com</div>
-              <div className="flex items-center gap-3 text-stone-600"><Phone size={20}/> +1 (503) 555-0192</div>
+              <div className="flex items-center gap-3"><MapPin size={18} /> 123 Design District, New York, NY</div>
+              <div className="flex items-center gap-3"><Mail size={18} /> studio@architectscollective.com</div>
+              <div className="flex items-center gap-3"><Phone size={18} /> (212) 555-0199</div>
             </div>
           </div>
-          <form className="space-y-4">
-            <input type="text" placeholder="Name" className="w-full p-4 bg-stone-50 rounded-lg border-0 focus:ring-2 focus:ring-stone-900"/>
-            <input type="email" placeholder="Email" className="w-full p-4 bg-stone-50 rounded-lg border-0 focus:ring-2 focus:ring-stone-900"/>
-            <textarea placeholder="Tell us about your project" rows={4} className="w-full p-4 bg-stone-50 rounded-lg border-0 focus:ring-2 focus:ring-stone-900"></textarea>
-            <button className="w-full bg-stone-900 text-white py-4 rounded-lg font-medium hover:bg-stone-700 transition">Send Inquiry</button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {formStatus === 'success' ? (
+              <div className="p-6 bg-green-100 text-green-800 rounded flex items-center gap-2">
+                <CheckCircle /> Message sent successfully!
+              </div>
+            ) : (
+              <>
+                <input required type="text" placeholder="Name" className="w-full p-4 border border-stone-300 bg-white" value={contactForm.name} onChange={e => setContactForm({...contactForm, name: e.target.value})} />
+                <input required type="email" placeholder="Email" className="w-full p-4 border border-stone-300 bg-white" value={contactForm.email} onChange={e => setContactForm({...contactForm, email: e.target.value})} />
+                <textarea required placeholder="Message" rows={4} className="w-full p-4 border border-stone-300 bg-white" value={contactForm.message} onChange={e => setContactForm({...contactForm, message: e.target.value})} />
+                <button disabled={formStatus === 'loading'} type="submit" className="bg-stone-900 text-white px-8 py-4 w-full uppercase tracking-widest hover:bg-amber-700 transition-colors disabled:opacity-50">
+                  {formStatus === 'loading' ? 'Sending...' : 'Send Message'}
+                </button>
+              </>
+            )}
           </form>
         </div>
       </section>
 
-      <footer className="py-8 border-t border-stone-100 text-center text-stone-400 text-sm">
-        © 2024 Elara Studio Architecture. All rights reserved.
+      {/* Footer */}
+      <footer className="py-12 px-6 text-center text-sm text-stone-500 border-t border-stone-200">
+        © 2024 Architects Collective. All rights reserved.
       </footer>
     </div>
   );

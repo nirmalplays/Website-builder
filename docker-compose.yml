@@ -1,0 +1,90 @@
+# Fully self-hosted stack: app + database + local model.
+#   docker compose up -d
+#   docker compose --profile local-model up -d   # also runs Ollama
+#
+# Nothing here depends on a third-party cloud when the local-model profile is on.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uigen
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: uigen
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uigen"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://uigen:${POSTGRES_PASSWORD:-change-me}@db:5432/uigen
+      # Pick ONE provider:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODELS: ${AI_MODELS:-}
+      # Generous by default when you own the hardware.
+      LIMIT_ANONYMOUS: ${LIMIT_ANONYMOUS:-50}
+      LIMIT_SIGNED_IN: ${LIMIT_SIGNED_IN:-500}
+      GLOBAL_DAILY_CAP: ${GLOBAL_DAILY_CAP:-0}
+      SANDPACK_BUNDLER_URL: ${SANDPACK_BUNDLER_URL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # docker compose --profile local-model up -d
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["local-model"]
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+
+  # Optional: your own Sandpack bundler, so previews stop calling CodeSandbox.
+  # docker compose --profile local-bundler up -d, then set
+  # SANDPACK_BUNDLER_URL=http://localhost:8080
+  bundler:
+    image: ghcr.io/codesandbox/sandpack-bundler:latest
+    profiles: ["local-bundler"]
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+
+  # Public VPS deploy with automatic HTTPS:
+  #   DOMAIN=ui.example.com docker compose --profile public up -d
+  # Point an A record at the VPS first; Caddy gets the certificate itself.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["public"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  db-data:
+  ollama-models:
+  caddy-data:
+  caddy-config:

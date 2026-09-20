@@ -1,166 +1,148 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, Users, Star, MapPin, Coffee, Wifi, Shield, 
-  Clock, ArrowRight, ChevronDown, Sparkles, Zap, DollarSign,
-  Phone, Mail, Menu, X 
+  Calendar, Users, ChevronDown, Star, Wifi, Coffee, MapPin, 
+  Shield, Clock, Sparkles, CheckCircle, ArrowRight, Menu, X,
+  DollarSign, Package, Zap
 } from 'lucide-react';
+
+const ROOMS = [
+  { id: 1, name: 'Ocean View Suite', price: 450, guests: 2, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=800' },
+  { id: 2, name: 'Deluxe Garden Room', price: 290, guests: 3, image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&q=80&w=800' },
+  { id: 3, name: 'Family Penthouse', price: 650, guests: 5, image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&q=80&w=800' },
+];
+
+const AMENITIES = [
+  { icon: Wifi, title: 'High-Speed Wi-Fi' },
+  { icon: Coffee, title: 'Gourmet Breakfast' },
+  { icon: Sparkles, title: 'Daily Housekeeping' },
+  { icon: Shield, title: '24/7 Security' },
+  { icon: Clock, title: 'Concierge Service' },
+  { icon: Zap, title: 'Fitness Center' },
+];
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [booking, setBooking] = useState({ checkIn: '', checkOut: '', guests: 1 });
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState('');
 
-  const rooms = [
-    { name: "Oceanfront Suite", price: 450, guests: 2, image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=80&w=800" },
-    { name: "Garden Villa", price: 320, guests: 4, image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&q=80&w=800" },
-    { name: "Deluxe King Room", price: 210, guests: 2, image: "https://images.unsplash.com/photo-1611892440504-42a792e24566?auto=format&fit=crop&q=80&w=800" }
-  ];
-
-  const amenities = [
-    { icon: <Wifi size={24} />, title: "High-Speed Fiber", desc: "Stay connected anywhere on the property." },
-    { icon: <Coffee size={24} />, title: "Artisan Breakfast", desc: "Freshly brewed coffee and seasonal local fruits." },
-    { icon: <Shield size={24} />, title: "24/7 Security", desc: "Your safety and privacy are our top priority." },
-    { icon: <Sparkles size={24} />, title: "Daily Housekeeping", desc: "Impeccable service for a stress-free stay." }
-  ];
+  const handleBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setFeedback('Booking inquiry submitted! Our team will contact you shortly.');
+      setTimeout(() => setFeedback(''), 5000);
+    }, 1000);
+  };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
+    <div className="min-h-screen bg-stone-50 font-sans text-stone-900">
       {/* Navigation */}
-      <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <span className="text-2xl font-serif font-bold tracking-tight text-emerald-800">ELYSIA RESORT</span>
-          <div className="hidden md:flex gap-8 text-sm font-medium text-stone-600">
-            {['Rooms', 'Dining', 'Spa', 'Location'].map(item => (
-              <a key={item} href="#" className="hover:text-emerald-700 transition-colors">{item}</a>
+      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-stone-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <span className="text-2xl font-serif font-bold text-emerald-900">ELYSIA RESORT</span>
+          <div className="hidden md:flex space-x-8 font-medium text-sm tracking-wider uppercase">
+            {['Rooms', 'Amenities', 'Dining', 'Reviews'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-emerald-700 transition-colors">{item}</a>
             ))}
           </div>
-          <button className="bg-emerald-800 text-white px-6 py-2 rounded-full text-sm hover:bg-emerald-900 transition-all">Book Now</button>
-          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden">
             {isMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="relative h-[80vh] flex items-center justify-center text-center px-6 pt-20">
-        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover" alt="Luxury Resort" />
+      <section className="relative h-[85vh] flex items-center justify-center">
+        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover" alt="Hotel exterior" />
         <div className="absolute inset-0 bg-black/40" />
-        <div className="relative z-10 text-white max-w-3xl">
+        <div className="relative z-10 text-center text-white px-4">
           <h1 className="text-5xl md:text-7xl font-serif mb-6">Experience Serenity</h1>
-          <p className="text-lg md:text-xl mb-10 opacity-90">Escape to the shores of Elysia, where luxury meets the horizon.</p>
-          
-          <div className="bg-white p-4 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-4 gap-4 text-stone-800">
-            <div className="flex items-center gap-3 border-b md:border-b-0 md:border-r border-stone-200 p-2">
-              <Calendar className="text-emerald-700" size={20} />
-              <input type="date" className="w-full focus:outline-none text-sm" />
-            </div>
-            <div className="flex items-center gap-3 border-b md:border-b-0 md:border-r border-stone-200 p-2">
-              <Calendar className="text-emerald-700" size={20} />
-              <input type="date" className="w-full focus:outline-none text-sm" />
-            </div>
-            <div className="flex items-center gap-3 p-2">
-              <Users className="text-emerald-700" size={20} />
-              <select className="w-full focus:outline-none text-sm bg-transparent">
-                <option>2 Guests</option>
-                <option>4 Guests</option>
-              </select>
-            </div>
-            <button className="bg-emerald-800 text-white py-3 rounded-xl hover:bg-emerald-900 font-semibold text-sm">Search</button>
-          </div>
+          <p className="text-xl mb-10 opacity-90">Luxury island escape designed for the modern traveler.</p>
         </div>
-      </header>
+      </section>
+
+      {/* Booking Bar */}
+      <div className="max-w-5xl mx-auto -mt-20 relative z-20 px-4">
+        <form onSubmit={handleBooking} className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl grid md:grid-cols-4 gap-4 items-end">
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-stone-500">Check In</label>
+            <input type="date" required className="w-full border-b border-stone-300 py-2 focus:outline-none" onChange={e => setBooking({...booking, checkIn: e.target.value})} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-stone-500">Check Out</label>
+            <input type="date" required className="w-full border-b border-stone-300 py-2 focus:outline-none" onChange={e => setBooking({...booking, checkOut: e.target.value})} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-stone-500">Guests</label>
+            <select className="w-full border-b border-stone-300 py-2 focus:outline-none bg-transparent" onChange={e => setBooking({...booking, guests: parseInt(e.target.value)})}>
+              {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} Guests</option>)}
+            </select>
+          </div>
+          <button disabled={loading} className="bg-emerald-900 text-white py-3 rounded-lg hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2">
+            {loading ? 'Processing...' : <>Check Availability <ArrowRight size={18} /></>}
+          </button>
+        </form>
+        {feedback && <div className="mt-4 p-4 bg-emerald-100 text-emerald-900 rounded-lg text-center font-medium">{feedback}</div>}
+      </div>
 
       {/* Rooms */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h2 className="text-4xl font-serif mb-12 text-center">Exquisite Accommodations</h2>
+      <section id="rooms" className="py-24 max-w-7xl mx-auto px-4">
+        <h2 className="text-4xl font-serif mb-12 text-center">Our Accommodations</h2>
         <div className="grid md:grid-cols-3 gap-8">
-          {rooms.map((room) => (
-            <div key={room.name} className="bg-white rounded-2xl overflow-hidden border border-stone-200 hover:shadow-lg transition-shadow">
-              <img src={room.image} alt={room.name} className="h-64 w-full object-cover" />
+          {ROOMS.map(room => (
+            <div key={room.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-stone-200 group">
+              <div className="h-64 overflow-hidden">
+                <img src={room.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={room.name} />
+              </div>
               <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{room.name}</h3>
-                <div className="flex justify-between items-center mb-4 text-sm text-stone-500">
-                  <span>Up to {room.guests} guests</span>
-                  <span className="font-bold text-emerald-800">${room.price}/night</span>
+                <h3 className="text-xl font-bold mb-2">{room.name}</h3>
+                <div className="flex justify-between items-center text-emerald-900 font-bold mb-4">
+                  <span>${room.price}/night</span>
+                  <span className="text-sm font-normal text-stone-500">Max {room.guests} guests</span>
                 </div>
-                <button className="w-full border border-emerald-800 text-emerald-800 py-2 rounded-lg hover:bg-emerald-50">View Details</button>
+                <button className="w-full py-2 border border-emerald-900 text-emerald-900 rounded hover:bg-emerald-900 hover:text-white transition-colors">Book Now</button>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Amenities Grid */}
-      <section className="bg-stone-100 py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-serif mb-16 text-center">Refined Amenities</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {amenities.map((a, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm">
-                <div className="text-emerald-800 mb-4">{a.icon}</div>
-                <h4 className="font-semibold text-lg mb-2">{a.title}</h4>
-                <p className="text-stone-600 text-sm">{a.desc}</p>
+      {/* Amenities */}
+      <section id="amenities" className="bg-stone-100 py-24">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-4xl font-serif mb-16 text-center">Premium Amenities</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-12">
+            {AMENITIES.map((item, i) => (
+              <div key={i} className="flex flex-col items-center text-center gap-4">
+                <div className="p-4 bg-white rounded-full shadow-sm text-emerald-900"><item.icon size={28} /></div>
+                <h4 className="font-bold">{item.title}</h4>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Dining & Spa */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-serif">A Culinary Journey</h2>
-            <p className="text-stone-600 leading-relaxed">Our award-winning chefs source local ingredients to create Mediterranean-inspired dishes with a modern twist. Experience dining under the stars at our signature Azure restaurant.</p>
-            <button className="flex items-center gap-2 text-emerald-800 font-semibold">Book a table <ArrowRight size={18} /></button>
+      {/* Footer */}
+      <footer className="bg-stone-900 text-stone-400 py-16 px-4">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
+          <div className="col-span-2 md:col-span-1">
+            <span className="text-xl font-serif text-white">ELYSIA RESORT</span>
+            <p className="mt-4 text-sm">Where luxury meets the horizon. Your perfect getaway begins with us.</p>
           </div>
-          <img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=800" className="rounded-2xl shadow-xl" alt="Dining" />
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="max-w-7xl mx-auto px-6 py-20 bg-stone-50">
-        <h2 className="text-4xl font-serif mb-12 text-center">Guest Experiences</h2>
-        <div className="grid md:grid-cols-3 gap-8">
           {[
-            { name: "Sarah Jenkins", text: "The most beautiful resort I have ever visited. The service was impeccable." },
-            { name: "Marcus Thorne", text: "Exceptional dining and a spa that truly rejuvenated my mind and body." },
-            { name: "Elena Rodriguez", text: "Perfect location. Waking up to the ocean view every morning was a dream." }
-          ].map((r, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-stone-100">
-              <div className="flex text-amber-400 mb-4"><Star size={16} fill="currentColor" />{[...Array(4)].map((_, j) => <Star key={j} size={16} fill="currentColor" />)}</div>
-              <p className="text-stone-700 italic mb-4">"{r.text}"</p>
-              <p className="font-bold text-sm text-stone-900">— {r.name}</p>
+            { title: 'Explore', links: ['Rooms', 'Dining', 'Spa', 'Contact'] },
+            { title: 'Support', links: ['FAQ', 'Policies', 'Privacy', 'Help Center'] },
+            { title: 'Contact', links: ['123 Coastal Ave', 'Paradise Island', 'hello@elysia.com', '+1 234 567 890'] }
+          ].map(section => (
+            <div key={section.title}>
+              <h5 className="text-white font-bold mb-4">{section.title}</h5>
+              <ul className="space-y-2 text-sm">
+                {section.links.map(link => <li key={link}><a href="#" className="hover:text-white">{link}</a></li>)}
+              </ul>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 py-16">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-12">
-          <div>
-            <h4 className="text-white font-serif text-lg mb-4">ELYSIA RESORT</h4>
-            <p className="text-sm">128 Coastal Drive, Haven Bay, CA 90210</p>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Contact</h4>
-            <p className="text-sm">reservations@elysia.com</p>
-            <p className="text-sm">+1 (555) 123-4567</p>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Explore</h4>
-            <ul className="text-sm space-y-2">
-              <li>About Us</li>
-              <li>Terms of Service</li>
-              <li>Privacy Policy</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-medium mb-4">Newsletter</h4>
-            <div className="flex gap-2">
-              <input type="email" placeholder="Your email" className="bg-stone-800 p-2 rounded text-sm w-full" />
-              <button className="bg-emerald-800 text-white px-4 py-2 rounded text-sm">Join</button>
-            </div>
-          </div>
         </div>
       </footer>
     </div>

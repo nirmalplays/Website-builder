@@ -1,184 +1,177 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, 
-  Calendar, 
-  Clock, 
-  Users, 
-  BookOpen, 
-  GraduationCap, 
-  MapPin, 
-  Star, 
-  ChevronRight,
-  Mail,
-  Shield,
-  Zap,
-  Menu,
-  X
+  CheckCircle, ChevronRight, Plus, Minus, Search, 
+  BookOpen, Users, Calendar, DollarSign, GraduationCap, 
+  Award, Mail, MapPin, Bell, Menu, X, ArrowRight
 } from 'lucide-react';
 
-export default function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
+const INITIAL_PROGRAMS = [
+  { id: 1, name: 'Computer Science', faculty: 'Engineering', duration: '4 Years' },
+  { id: 2, name: 'Business Administration', faculty: 'Business', duration: '4 Years' },
+  { id: 3, name: 'Clinical Psychology', faculty: 'Health Sciences', duration: '5 Years' },
+  { id: 4, name: 'International Relations', faculty: 'Humanities', duration: '3 Years' },
+  { id: 5, name: 'Sustainable Architecture', faculty: 'Engineering', duration: '4 Years' },
+];
 
-  const programs = [
-    { faculty: "Engineering", name: "Robotics & AI Systems", icon: Zap },
-    { faculty: "Business", name: "Global Finance & Strategy", icon: BookOpen },
-    { faculty: "Arts", name: "Digital Media Design", icon: Star },
-    { faculty: "Science", name: "Environmental Biology", icon: Shield },
-  ];
+export default function App() {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [programs, setPrograms] = useState(INITIAL_PROGRAMS);
+  const [formState, setFormState] = useState({ name: '', email: '', program: '' });
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [filter, setFilter] = useState('');
+
+  const filteredPrograms = programs.filter(p => 
+    p.name.toLowerCase().includes(filter.toLowerCase()) || 
+    p.faculty.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const handleApply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formState.name || !formState.email) return;
+    setFormStatus('loading');
+    setTimeout(() => {
+      setFormStatus('success');
+      setFormState({ name: '', email: '', program: '' });
+      setTimeout(() => setFormStatus('idle'), 3000);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       {/* Nav */}
-      <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl font-bold text-indigo-700">Horizon Univ.</div>
-          <div className="hidden md:flex gap-8 font-medium text-slate-600">
-            <a href="#" className="hover:text-indigo-600">Academics</a>
-            <a href="#" className="hover:text-indigo-600">Admissions</a>
-            <a href="#" className="hover:text-indigo-600">Campus</a>
+      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-2 rounded-lg">
+                <GraduationCap className="text-white w-6 h-6" />
+              </div>
+              <span className="text-xl font-bold tracking-tight">Apex University</span>
+            </div>
+            <div className="hidden md:flex gap-8 font-medium">
+              {['Programs', 'Admissions', 'Campus', 'Research'].map(item => (
+                <button key={item} className="hover:text-indigo-600 transition-colors">{item}</button>
+              ))}
+            </div>
+            <button className="bg-indigo-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-700 transition-all">
+              Apply Now
+            </button>
+            <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X /> : <Menu />}
+            </button>
           </div>
-          <button className="bg-indigo-700 text-white px-6 py-2 rounded-full font-semibold hover:bg-indigo-800 transition">
-            Apply Now
-          </button>
-          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X /> : <Menu />}
-          </button>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full mb-6 font-medium">
-            <Clock size={16} />
-            <span>Fall 2024 Deadline: May 15th</span>
+      <header className="relative bg-slate-900 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-300 px-4 py-1 rounded-full mb-6 text-sm">
+            <Bell size={16} /> Deadline for Fall Enrollment: August 15th
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-8 leading-tight">
-            Shape Your Future at <br/><span className="text-indigo-700">Horizon University</span>
-          </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-10">
-            Join a global community of innovators, researchers, and leaders. Excellence in education starts here.
-          </p>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">Shape Your Future at Apex</h1>
+          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">Where academic excellence meets global innovation. Join our diverse community of scholars.</p>
           <div className="flex gap-4 justify-center">
-            <button className="bg-slate-900 text-white px-8 py-4 rounded-xl font-semibold flex items-center gap-2">
-              Explore Programs <ArrowRight size={20} />
-            </button>
+            <button className="bg-white text-slate-900 px-8 py-4 rounded-lg font-bold hover:bg-slate-100 transition-colors">View Courses</button>
+            <button className="border border-slate-700 px-8 py-4 rounded-lg font-bold hover:bg-slate-800 transition-colors">Take a Tour</button>
           </div>
         </div>
       </header>
 
       {/* Programs Grid */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold mb-12">Faculty & Programmes</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {programs.map((p, i) => (
-              <div key={i} className="p-8 border border-slate-200 rounded-2xl hover:border-indigo-300 transition group">
-                <p className="text-indigo-600 font-semibold mb-2">{p.faculty}</p>
-                <h3 className="text-xl font-bold mb-6">{p.name}</h3>
-                <button className="text-indigo-700 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
-                  Learn more <ChevronRight size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Admissions & Dates */}
-      <section className="py-20 px-6 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16">
+      <section className="py-20 max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-end mb-12">
           <div>
-            <h2 className="text-3xl font-bold mb-6">Admissions Requirements</h2>
-            <ul className="space-y-4 text-slate-300">
-              <li className="flex gap-3"><CheckCircle /> Completed Application Form</li>
-              <li className="flex gap-3"><CheckCircle /> Official Academic Transcripts</li>
-              <li className="flex gap-3"><CheckCircle /> Two Letters of Recommendation</li>
-              <li className="flex gap-3"><CheckCircle /> Personal Statement (500 words)</li>
-            </ul>
+            <h2 className="text-3xl font-bold mb-2">Academic Programs</h2>
+            <p className="text-slate-600">Find your passion across our 5 world-class faculties.</p>
           </div>
-          <div className="bg-white text-slate-900 p-8 rounded-2xl">
-            <h3 className="text-2xl font-bold mb-6">Key Dates</h3>
-            <div className="space-y-6">
-              {[
-                { date: "May 15", desc: "Fall Application Deadline" },
-                { date: "June 01", desc: "Scholarship Decision Date" },
-                { date: "Aug 28", desc: "Orientation Week Begins" }
-              ].map((d, i) => (
-                <div key={i} className="flex items-center gap-4 border-b pb-4">
-                  <div className="bg-indigo-100 text-indigo-700 p-3 rounded-lg font-bold">{d.date}</div>
-                  <p className="font-semibold">{d.desc}</p>
-                </div>
-              ))}
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 text-slate-400" size={20} />
+            <input 
+              type="text" 
+              placeholder="Search programs..." 
+              className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
           </div>
         </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold mb-12 text-center">Student Experiences</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { name: "Sarah Jenkins", role: "Engineering Senior", quote: "The research opportunities here allowed me to work on actual robotics prototypes before graduating." },
-              { name: "Marcus Chen", role: "Business Graduate", quote: "The mentorship program provided me with connections that landed me my dream internship at a top firm." },
-              { name: "Elena Rossi", role: "Arts Sophomore", quote: "The campus culture is incredibly inclusive and creative. I've never felt more at home." }
-            ].map((t, i) => (
-              <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
-                <Star className="text-yellow-400 mb-4 fill-yellow-400" />
-                <p className="text-slate-600 italic mb-6">"{t.quote}"</p>
-                <p className="font-bold">{t.name}</p>
-                <p className="text-indigo-600 text-sm">{t.role}</p>
+        <div className="grid md:grid-cols-3 gap-6">
+          {filteredPrograms.map(p => (
+            <div key={p.id} className="bg-white p-6 rounded-xl border border-slate-200 hover:shadow-lg transition-shadow">
+              <BookOpen className="text-indigo-600 mb-4" />
+              <h3 className="text-xl font-bold mb-1">{p.name}</h3>
+              <p className="text-indigo-600 text-sm mb-4">{p.faculty}</p>
+              <div className="flex justify-between items-center text-slate-500 text-sm">
+                <span>{p.duration}</span>
+                <button className="flex items-center gap-1 font-semibold text-slate-900">Details <ArrowRight size={16} /></button>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+          {filteredPrograms.length === 0 && <p className="text-center col-span-3 py-10">No programs found.</p>}
         </div>
       </section>
 
-      {/* Form */}
-      <section className="py-20 px-6 bg-indigo-50">
-        <div className="max-w-xl mx-auto bg-white p-10 rounded-3xl shadow-sm">
-          <h2 className="text-2xl font-bold mb-2">Request Information</h2>
-          <p className="text-slate-600 mb-8">Get the latest brochure and program details sent to your inbox.</p>
-          <form className="space-y-4">
-            <input type="text" placeholder="Full Name" className="w-full p-4 border rounded-xl" />
-            <input type="email" placeholder="Email Address" className="w-full p-4 border rounded-xl" />
-            <select className="w-full p-4 border rounded-xl">
-              <option>Interested Program</option>
-              <option>Robotics & AI</option>
-              <option>Global Business</option>
-            </select>
-            <button className="w-full bg-indigo-700 text-white py-4 rounded-xl font-bold hover:bg-indigo-800">
-              Submit Request
-            </button>
-          </form>
+      {/* Request Info Form */}
+      <section className="py-20 bg-indigo-50">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-indigo-100">
+            <h2 className="text-3xl font-bold mb-6">Request Information</h2>
+            {formStatus === 'success' ? (
+              <div className="text-center py-12">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold">Request Received!</h3>
+                <p className="text-slate-600">Our admissions team will contact you shortly.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleApply} className="space-y-4">
+                <input 
+                  required
+                  placeholder="Full Name"
+                  className="w-full p-4 border rounded-lg"
+                  value={formState.name}
+                  onChange={e => setFormState({...formState, name: e.target.value})}
+                />
+                <input 
+                  required
+                  type="email"
+                  placeholder="Email Address"
+                  className="w-full p-4 border rounded-lg"
+                  value={formState.email}
+                  onChange={e => setFormState({...formState, email: e.target.value})}
+                />
+                <button 
+                  disabled={formStatus === 'loading'}
+                  className="w-full bg-indigo-600 text-white p-4 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {formStatus === 'loading' ? 'Sending...' : 'Submit Request'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
+      <footer className="bg-slate-900 text-slate-400 py-12">
+        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-8">
           <div>
-            <div className="text-white text-xl font-bold mb-4">Horizon Univ.</div>
-            <p>123 Academy Way, Innovation City</p>
+            <h4 className="text-white font-bold mb-4">Apex University</h4>
+            <p className="text-sm">123 Academic Way<br/>Innovation City, CA 94000</p>
           </div>
-          <div className="flex gap-12">
-            <div>
-              <h4 className="text-white font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2">
-                <li>Admissions</li>
-                <li>Tuition</li>
-                <li>Faculty</li>
+          {['Admissions', 'Resources', 'Support'].map(section => (
+            <div key={section}>
+              <h4 className="text-white font-bold mb-4">{section}</h4>
+              <ul className="space-y-2 text-sm">
+                <li><button className="hover:text-white">Contact</button></li>
+                <li><button className="hover:text-white">Careers</button></li>
+                <li><button className="hover:text-white">FAQ</button></li>
               </ul>
             </div>
-          </div>
+          ))}
         </div>
       </footer>
     </div>
   );
-}
-
-function CheckCircle() {
-  return <div className="text-indigo-400"><Shield size={20} /></div>;
 }

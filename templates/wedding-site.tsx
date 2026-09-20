@@ -1,130 +1,177 @@
-import React, { useState } from 'react';
-import { Heart, Calendar, Clock, MapPin, Users, Gift, Plane, Mail, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Heart, Calendar, Clock, MapPin, Users, Camera, Gift, 
+  Plane, CheckCircle, XCircle, ChevronDown, ChevronRight,
+  Menu, X
+} from 'lucide-react';
 
-export default function App() {
-  const [rsvpSubmitted, setRsvpSubmitted] = useState(false);
+export default function WeddingApp() {
+  const [activeTab, setActiveTab] = useState('Home');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [rsvpStatus, setRsvpStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [rsvpForm, setRsvpForm] = useState({ name: '', meal: 'Chicken', plusOne: false });
+  const [gifts, setGifts] = useState([
+    { id: 1, name: 'Espresso Machine', pledged: false },
+    { id: 2, name: 'Ceramic Dinnerware Set', pledged: false },
+    { id: 3, name: 'Luxurious Bedding', pledged: false }
+  ]);
+
+  const toggleGift = (id: number) => {
+    setGifts(gifts.map(g => g.id === id ? { ...g, pledged: !g.pledged } : g));
+  };
+
+  const handleRsvp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rsvpForm.name) return;
+    setRsvpStatus('loading');
+    setTimeout(() => {
+      setRsvpStatus('success');
+      setRsvpForm({ name: '', meal: 'Chicken', plusOne: false });
+      setTimeout(() => setRsvpStatus('idle'), 3000);
+    }, 1000);
+  };
+
+  const navLinks = ['Our Story', 'Details', 'Bridal Party', 'Gallery', 'Registry', 'RSVP'];
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-800 font-serif">
+    <div className="min-h-screen bg-stone-50 text-stone-800 font-sans">
       {/* Navigation */}
-      <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-stone-200">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-          <span className="text-xl font-semibold tracking-tighter">E & J</span>
-          <div className="hidden md:flex space-x-8 text-sm uppercase tracking-widest text-stone-600">
-            {['Story', 'Details', 'Party', 'RSVP'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-amber-700 transition-colors">{item}</a>
+      <nav className="fixed w-full bg-white/90 backdrop-blur-sm z-50 border-b border-stone-200">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <button onClick={() => setActiveTab('Home')} className="text-2xl font-serif italic text-rose-700">Eleanor & Julian</button>
+          <div className="hidden md:flex space-x-6">
+            {navLinks.map(link => (
+              <button key={link} onClick={() => setActiveTab(link)} className="hover:text-rose-600 transition-colors">{link}</button>
             ))}
           </div>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
+        {isMenuOpen && (
+          <div className="md:hidden p-4 bg-white border-t flex flex-col space-y-4">
+            {navLinks.map(link => (
+              <button key={link} onClick={() => { setActiveTab(link); setIsMenuOpen(false); }}>{link}</button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
-      <header className="relative h-screen flex flex-col items-center justify-center text-center px-6">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-20" />
-        <div className="relative z-10">
-          <h1 className="text-6xl md:text-8xl mb-6">Elena & Julian</h1>
-          <p className="text-xl md:text-2xl font-light italic">September 14, 2024</p>
-          <div className="mt-8 flex justify-center text-amber-700"><Heart size={32} fill="currentColor" /></div>
-        </div>
+      <header className="pt-32 pb-20 text-center px-4">
+        <Heart className="mx-auto text-rose-500 mb-6" size={48} />
+        <h1 className="text-5xl md:text-7xl font-serif mb-4">Eleanor & Julian</h1>
+        <p className="text-xl text-stone-500 flex items-center justify-center gap-2">
+          <Calendar size={20} /> September 14, 2025
+        </p>
       </header>
 
-      {/* Story */}
-      <section id="story" className="py-24 max-w-3xl mx-auto px-6">
-        <h2 className="text-4xl text-center mb-16">Our Journey</h2>
-        <div className="space-y-12 border-l-2 border-amber-200 pl-8">
-          {[
-            { year: "2018", event: "First coffee at The Roasted Bean, where Julian spilled his latte." },
-            { year: "2020", event: "Moved into our first apartment in Brooklyn during the great lockdown." },
-            { year: "2023", event: "Julian proposed under the Northern Lights in Iceland." }
-          ].map((step, i) => (
-            <div key={i} className="relative">
-              <div className="absolute -left-[41px] bg-amber-700 p-1 rounded-full"><div className="w-3 h-3 bg-white rounded-full" /></div>
-              <h3 className="text-xl font-bold mb-2">{step.year}</h3>
-              <p className="text-stone-600 leading-relaxed">{step.event}</p>
+      <main className="max-w-4xl mx-auto px-4 pb-20">
+        {/* Story */}
+        <section className="mb-20">
+          <h2 className="text-3xl font-serif text-center mb-10">Our Story</h2>
+          <div className="space-y-8 border-l-2 border-rose-200 pl-8">
+            <div>
+              <h3 className="font-bold text-lg text-rose-700">2019: The First Date</h3>
+              <p>We met at a rainy bookstore in London and spent four hours discussing classic literature.</p>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Details */}
-      <section id="details" className="py-24 bg-stone-100">
-        <div className="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12">
-          <div className="bg-white p-8 rounded-lg shadow-sm">
-            <h3 className="text-2xl mb-6 flex items-center gap-3"><Calendar className="text-amber-700" /> Ceremony</h3>
-            <p className="font-semibold">St. Jude’s Chapel</p>
-            <p className="text-stone-600">4:00 PM - 5:00 PM</p>
-            <p className="mt-2 text-sm text-stone-500">123 Garden Lane, Savannah, GA</p>
+            <div>
+              <h3 className="font-bold text-lg text-rose-700">2022: The Proposal</h3>
+              <p>Under the cherry blossoms in Kyoto, Julian asked the big question.</p>
+            </div>
           </div>
-          <div className="bg-white p-8 rounded-lg shadow-sm">
-            <h3 className="text-2xl mb-6 flex items-center gap-3"><Clock className="text-amber-700" /> Reception</h3>
-            <p className="font-semibold">The Willow Estate</p>
-            <p className="text-stone-600">6:00 PM - 11:00 PM</p>
-            <p className="mt-2 text-sm text-stone-500">450 River Road, Savannah, GA</p>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Party */}
-      <section id="party" className="py-24 max-w-5xl mx-auto px-6">
-        <h2 className="text-4xl text-center mb-16">Bridal Party</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {['Sarah Jenkins', 'Marcus Thorne', 'Chloe Davis', 'David Wu'].map((name) => (
-            <div key={name} className="text-center">
-              <div className="w-32 h-32 bg-stone-200 rounded-full mx-auto mb-4 overflow-hidden">
-                <img src={`https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300`} alt={name} />
+        {/* Details */}
+        <section className="grid md:grid-cols-2 gap-10 mb-20 bg-white p-8 rounded-lg shadow-sm">
+          <div>
+            <h2 className="text-2xl font-serif mb-4 flex items-center gap-2"><MapPin /> Ceremony</h2>
+            <p className="font-bold">St. Jude’s Chapel</p>
+            <p>123 Willow Lane, Oxford</p>
+            <p className="flex items-center gap-2 mt-2"><Clock size={16} /> 2:00 PM</p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-serif mb-4 flex items-center gap-2"><MapPin /> Reception</h2>
+            <p className="font-bold">The Rosewood Garden</p>
+            <p>456 Orchard Blvd, Oxford</p>
+            <p className="flex items-center gap-2 mt-2"><Clock size={16} /> 5:00 PM</p>
+          </div>
+        </section>
+
+        {/* Registry */}
+        <section className="mb-20">
+          <h2 className="text-3xl font-serif text-center mb-10">Registry</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {gifts.map(gift => (
+              <div key={gift.id} className="p-6 bg-white rounded-lg border text-center">
+                <Gift className="mx-auto mb-4 text-rose-500" />
+                <h3 className="font-semibold mb-4">{gift.name}</h3>
+                <button 
+                  onClick={() => toggleGift(gift.id)}
+                  className={`px-4 py-2 rounded-full text-sm transition ${gift.pledged ? 'bg-stone-200 cursor-not-allowed' : 'bg-rose-600 text-white hover:bg-rose-700'}`}
+                  disabled={gift.pledged}
+                >
+                  {gift.pledged ? 'Pledged' : 'Mark as Gifted'}
+                </button>
               </div>
-              <p className="font-semibold">{name}</p>
-              <p className="text-sm text-stone-500">Bridesmaid</p>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* RSVP */}
-      <section id="rsvp" className="py-24 bg-amber-50">
-        <div className="max-w-xl mx-auto px-6">
-          <h2 className="text-4xl text-center mb-12">RSVP</h2>
-          {rsvpSubmitted ? (
-            <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-              <CheckCircle size={48} className="mx-auto text-green-600 mb-4" />
-              <p className="text-xl">Thank you! We've received your response.</p>
+        {/* RSVP Form */}
+        <section id="rsvp" className="bg-rose-50 p-8 rounded-2xl">
+          <h2 className="text-3xl font-serif text-center mb-8">RSVP</h2>
+          {rsvpStatus === 'success' ? (
+            <div className="text-center py-10 text-green-700 flex flex-col items-center">
+              <CheckCircle size={48} className="mb-4" />
+              <p className="text-xl">Thank you! Your response has been received.</p>
             </div>
           ) : (
-            <form onSubmit={(e) => { e.preventDefault(); setRsvpSubmitted(true); }} className="space-y-6 bg-white p-8 rounded-lg shadow-sm">
-              <input type="text" placeholder="Full Name" className="w-full p-3 border border-stone-200 rounded" required />
-              <select className="w-full p-3 border border-stone-200 rounded">
-                <option>Chicken Piccata</option>
-                <option>Pan-Seared Salmon</option>
-                <option>Vegetarian Risotto</option>
-              </select>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="plusone" />
-                <label htmlFor="plusone">Attending with a plus one?</label>
+            <form onSubmit={handleRsvp} className="max-w-md mx-auto space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Your Name</label>
+                <input 
+                  required
+                  value={rsvpForm.name}
+                  onChange={e => setRsvpForm({...rsvpForm, name: e.target.value})}
+                  className="w-full p-2 border rounded" 
+                />
               </div>
-              <button className="w-full bg-stone-800 text-white py-3 rounded hover:bg-amber-700 transition-colors uppercase tracking-widest text-sm">
-                Confirm Attendance
+              <div>
+                <label className="block text-sm font-medium mb-1">Meal Preference</label>
+                <select 
+                  value={rsvpForm.meal}
+                  onChange={e => setRsvpForm({...rsvpForm, meal: e.target.value})}
+                  className="w-full p-2 border rounded"
+                >
+                  <option>Chicken</option>
+                  <option>Vegetarian</option>
+                  <option>Vegan</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  checked={rsvpForm.plusOne}
+                  onChange={e => setRsvpForm({...rsvpForm, plusOne: e.target.checked})}
+                />
+                Bringing a plus one?
+              </label>
+              <button 
+                type="submit" 
+                disabled={rsvpStatus === 'loading'}
+                className="w-full bg-rose-700 text-white py-3 rounded-lg hover:bg-rose-800 disabled:opacity-50"
+              >
+                {rsvpStatus === 'loading' ? 'Sending...' : 'Confirm RSVP'}
               </button>
             </form>
           )}
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Travel & Registry */}
-      <section className="py-24 max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-16">
-        <div>
-          <h3 className="text-2xl mb-6 flex items-center gap-2"><Plane /> Travel</h3>
-          <p className="text-stone-600">We have reserved a block of rooms at The Grand Savannah Hotel. Use code "ELENAJULIAN" for a discounted rate.</p>
-        </div>
-        <div>
-          <h3 className="text-2xl mb-6 flex items-center gap-2"><Gift /> Registry</h3>
-          <p className="text-stone-600">Your presence is the greatest gift, but if you wish to contribute, we are registered at Honeyfund and Crate & Barrel.</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 text-center text-stone-500 border-t border-stone-200">
-        <p className="font-serif italic text-lg mb-2">With love,</p>
-        <p className="text-sm">Elena & Julian © 2024</p>
+      <footer className="bg-stone-900 text-stone-400 py-12 text-center">
+        <p>© 2025 Eleanor & Julian Wedding</p>
+        <p className="text-sm mt-2">With love and gratitude</p>
       </footer>
     </div>
   );

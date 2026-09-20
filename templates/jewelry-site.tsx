@@ -1,143 +1,147 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Menu, ShoppingCart, Search, User, Star, ArrowRight, 
-  Sparkles, Shield, Clock, Calendar, ChevronRight, CheckCircle 
+  ShoppingBag, Star, Shield, Clock, Calendar, Check, X, 
+  ChevronRight, ArrowRight, Menu, Search, Package, Sparkles, 
+  Zap, Heart, Trash2 
 } from 'lucide-react';
 
-export default function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+type Product = { id: number; name: string; price: number; category: string; image: string; liked: boolean };
 
-  const collections = [
-    { name: "Celestial Rings", price: "$1,250", img: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80" },
-    { name: "Eternal Pendants", price: "$890", img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80" },
-    { name: "Minimalist Hoops", price: "$420", img: "https://images.unsplash.com/photo-1630019852942-f89202989a82?auto=format&fit=crop&w=600&q=80" },
-    { name: "Heritage Bracelets", price: "$2,100", img: "https://images.unsplash.com/photo-1573408301185-985f40391629?auto=format&fit=crop&w=600&q=80" }
-  ];
+const INITIAL_PRODUCTS: Product[] = [
+  { id: 1, name: "Celestial Diamond Studs", price: 1250, category: "Earrings", image: "https://images.unsplash.com/photo-1630019852942-f89202989a82?auto=format&fit=crop&q=80&w=600", liked: false },
+  { id: 2, name: "Midnight Sapphire Ring", price: 2800, category: "Rings", image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&q=80&w=600", liked: false },
+  { id: 3, name: "Golden Aura Necklace", price: 950, category: "Necklaces", image: "https://images.unsplash.com/photo-1599643478518-a854e5da4700?auto=format&fit=crop&q=80&w=600", liked: false },
+  { id: 4, name: "Vintage Pearl Bracelet", price: 1400, category: "Bracelets", image: "https://images.unsplash.com/photo-1611591437281-460bfbe12202?auto=format&fit=crop&q=80&w=600", liked: false }
+];
+
+export default function App() {
+  const [products, setProducts] = useState<Product[]>(() => {
+    try { return JSON.parse(localStorage.getItem('jewel_products') || JSON.stringify(INITIAL_PRODUCTS)); }
+    catch { return INITIAL_PRODUCTS; }
+  });
+  const [cart, setCart] = useState<Product[]>([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [booking, setBooking] = useState({ name: '', email: '', date: '', status: 'idle' });
+
+  useEffect(() => { localStorage.setItem('jewel_products', JSON.stringify(products)); }, [products]);
+
+  const toggleLike = (id: number) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, liked: !p.liked } : p));
+  };
+
+  const addToCart = (product: Product) => setCart([...cart, product]);
+
+  const handleBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    setBooking(prev => ({ ...prev, status: 'loading' }));
+    setTimeout(() => setBooking({ name: '', email: '', date: '', status: 'success' }), 1200);
+  };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-stone-50/80 backdrop-blur-md border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="text-2xl font-serif font-bold tracking-tighter text-amber-900">AURELIA</div>
-            <div className="hidden md:flex space-x-8 font-medium text-sm uppercase tracking-widest">
-              <a href="#collections" className="hover:text-amber-700">Collections</a>
-              <a href="#custom" className="hover:text-amber-700">Custom Design</a>
-              <a href="#care" className="hover:text-amber-700">Craftsmanship</a>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Search className="w-5 h-5 cursor-pointer" />
-              <User className="w-5 h-5 cursor-pointer" />
-              <ShoppingCart className="w-5 h-5 cursor-pointer" />
-              <Menu className="w-6 h-6 md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)} />
-            </div>
+    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 bg-stone-50/80 backdrop-blur-md border-b border-stone-200 px-6 py-4 flex items-center justify-between">
+        <div className="text-2xl font-serif font-bold tracking-tight text-amber-900">AURELIA</div>
+        <div className="hidden md:flex gap-8 font-medium text-sm tracking-widest uppercase">
+          {['Collections', 'Custom', 'Craft', 'Care'].map(link => (
+            <a key={link} href={`#${link.toLowerCase()}`} className="hover:text-amber-700 transition">{link}</a>
+          ))}
+        </div>
+        <div className="flex gap-4">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden"><Menu /></button>
+          <div className="relative">
+            <ShoppingBag className="cursor-pointer" />
+            {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-amber-700 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="relative h-[80vh] flex items-center justify-center overflow-hidden">
-        <img src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=2000&q=80" alt="Jewellery" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-stone-900/40" />
-        <div className="relative text-center text-white px-4">
-          <h1 className="text-5xl md:text-7xl font-serif mb-6">Timeless Elegance</h1>
-          <p className="text-lg md:text-xl mb-8 font-light max-w-2xl mx-auto">Discover artisan-crafted pieces designed to celebrate your most precious moments.</p>
-          <button className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-4 rounded-full transition-all">Explore Collection</button>
+      <section className="relative h-[600px] flex items-center justify-center bg-stone-900 text-white">
+        <img src="https://images.unsplash.com/photo-1573408301185-98319f3e28c7?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-50" alt="Hero" />
+        <div className="relative text-center space-y-6 px-4">
+          <h1 className="text-5xl md:text-7xl font-serif">Timeless Elegance</h1>
+          <p className="max-w-lg mx-auto text-lg text-stone-300">Handcrafted jewelry defined by precision, passion, and the purity of precious stones.</p>
+          <button className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-4 uppercase tracking-widest text-sm transition">Explore Collection</button>
         </div>
-      </header>
+      </section>
 
       {/* Collections */}
-      <section id="collections" className="py-20 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-serif text-center mb-12">Featured Collections</h2>
+      <section id="collections" className="py-20 px-6 max-w-7xl mx-auto">
+        <h2 className="text-3xl font-serif text-center mb-16">Featured Pieces</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {collections.map((item, i) => (
-            <div key={i} className="group cursor-pointer">
-              <div className="overflow-hidden rounded-lg mb-4">
-                <img src={item.img} alt={item.name} className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105" />
+          {products.map(p => (
+            <div key={p.id} className="group bg-white p-4 border border-stone-200 hover:shadow-lg transition">
+              <div className="relative overflow-hidden mb-4">
+                <img src={p.image} alt={p.name} className="w-full h-80 object-cover group-hover:scale-105 transition duration-500" />
+                <button onClick={() => toggleLike(p.id)} className="absolute top-2 right-2 p-2 bg-white/50 rounded-full">
+                  <Heart className={p.liked ? "fill-red-500 text-red-500" : ""} size={20} />
+                </button>
               </div>
-              <h3 className="font-medium text-lg">{item.name}</h3>
-              <p className="text-amber-800 font-bold">{item.price}</p>
+              <h3 className="font-bold">{p.name}</h3>
+              <p className="text-sm text-stone-500 mb-4">{p.category}</p>
+              <div className="flex justify-between items-center">
+                <span className="font-serif text-lg">${p.price}</span>
+                <button onClick={() => addToCart(p)} className="text-xs bg-stone-900 text-white px-4 py-2 hover:bg-amber-700 transition">ADD TO BAG</button>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Custom Design */}
-      <section id="custom" className="bg-stone-900 text-stone-100 py-20 px-4">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <h2 className="text-4xl font-serif mb-6">Bespoke Creations</h2>
-            <p className="text-stone-300 mb-6 leading-relaxed">Work directly with our master goldsmiths to transform your vision into a unique, wearable masterpiece. From initial sketches to the final polish, we ensure perfection.</p>
-            <button className="flex items-center text-amber-500 font-semibold border-b border-amber-500 pb-1">
-              Start Your Design <ArrowRight className="ml-2 w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex-1 w-full h-80 bg-stone-700 rounded-lg overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1577903661182-3d7c1775e54d?auto=format&fit=crop&w=800&q=80" alt="Custom design" className="w-full h-full object-cover" />
-          </div>
-        </div>
-      </section>
-
-      {/* Care & Craft */}
-      <section id="care" className="py-20 px-4 max-w-7xl mx-auto grid md:grid-cols-3 gap-12 text-center">
-        {[
-          { icon: Sparkles, title: "Ethical Sourcing", desc: "Conflict-free diamonds and recycled gold." },
-          { icon: Shield, title: "Lifetime Warranty", desc: "We stand by our craft forever." },
-          { icon: Clock, title: "Artisan Care", desc: "Professional cleaning and inspection services." }
-        ].map((item, i) => (
-          <div key={i} className="flex flex-col items-center">
-            <item.icon className="w-10 h-10 text-amber-800 mb-4" />
-            <h4 className="text-xl font-bold mb-2">{item.title}</h4>
-            <p className="text-stone-600">{item.desc}</p>
-          </div>
-        ))}
-      </section>
-
-      {/* Appointment */}
-      <section className="py-20 bg-stone-100 px-4">
-        <div className="max-w-2xl mx-auto bg-white p-10 rounded-2xl shadow-sm border border-stone-200">
-          <h3 className="text-2xl font-serif text-center mb-8">Book a Private Consultation</h3>
-          <div className="space-y-4">
-            <input type="text" placeholder="Your Name" className="w-full p-4 border border-stone-300 rounded-lg" />
-            <input type="email" placeholder="Email Address" className="w-full p-4 border border-stone-300 rounded-lg" />
-            <button className="w-full bg-stone-900 text-white py-4 rounded-lg font-bold hover:bg-stone-800">Request Appointment</button>
-          </div>
+      {/* Booking */}
+      <section id="custom" className="bg-stone-100 py-20 px-6">
+        <div className="max-w-3xl mx-auto bg-white p-12 shadow-sm rounded-sm">
+          <h2 className="text-3xl font-serif mb-6">Design Your Legacy</h2>
+          {booking.status === 'success' ? (
+            <div className="text-center py-12 text-green-700 space-y-4">
+              <CheckCircle size={48} className="mx-auto" />
+              <p className="text-xl">Appointment requested successfully. We will reach out shortly.</p>
+              <button onClick={() => setBooking({ name: '', email: '', date: '', status: 'idle' })} className="underline">Make another booking</button>
+            </div>
+          ) : (
+            <form onSubmit={handleBooking} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <input required value={booking.name} onChange={e => setBooking({...booking, name: e.target.value})} placeholder="Full Name" className="w-full p-3 border border-stone-300" />
+                <input required type="email" value={booking.email} onChange={e => setBooking({...booking, email: e.target.value})} placeholder="Email Address" className="w-full p-3 border border-stone-300" />
+              </div>
+              <input required type="date" value={booking.date} onChange={e => setBooking({...booking, date: e.target.value})} className="w-full p-3 border border-stone-300" />
+              <button disabled={booking.status === 'loading'} className="w-full bg-amber-900 text-white py-4 hover:bg-amber-800 disabled:opacity-50">
+                {booking.status === 'loading' ? 'Processing...' : 'Request Consultation'}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-stone-200 py-12 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+      <footer className="bg-stone-900 text-stone-400 py-16 px-6">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-12 text-sm">
           <div>
-            <h5 className="font-bold mb-4">AURELIA</h5>
-            <p className="text-stone-600">Fine Jewellery since 1984.</p>
-          </div>
-          <div>
-            <h5 className="font-bold mb-4">Support</h5>
-            <ul className="space-y-2 text-stone-600">
-              <li>Shipping & Returns</li>
-              <li>Size Guide</li>
-              <li>Repair Service</li>
-            </ul>
-          </div>
-          <div>
-            <h5 className="font-bold mb-4">Certifications</h5>
+            <h4 className="text-white font-bold mb-4 uppercase">Quality Assurance</h4>
             <div className="flex gap-4">
-              <CheckCircle className="w-6 h-6 text-stone-500" />
-              <Shield className="w-6 h-6 text-stone-500" />
+              <Shield className="text-amber-600" />
+              <p>Certified Conflict-Free Diamonds <br/> Lifetime Warranty Included</p>
             </div>
           </div>
           <div>
-            <h5 className="font-bold mb-4">Newsletter</h5>
-            <p className="text-stone-600 mb-4">Join for updates and early access.</p>
-            <div className="flex bg-white rounded-lg p-1">
-              <input type="email" placeholder="Email" className="flex-1 p-2 outline-none" />
-              <button className="bg-amber-800 text-white px-4 rounded-md">Join</button>
-            </div>
+            <h4 className="text-white font-bold mb-4 uppercase">Care Instructions</h4>
+            <p>Store in a cool, dry place. Clean gently with a soft cloth and avoid contact with harsh chemicals or perfumes.</p>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-4 uppercase">Connect</h4>
+            <p>123 Jewelers Row, NY<br/>contact@aurelia.com<br/>+1 (555) 900-1234</p>
           </div>
         </div>
       </footer>
     </div>
   );
+}
+
+function CheckCircle(props: any) {
+  return <CheckCircleIcon {...props} />;
+}
+
+function CheckCircleIcon(props: any) {
+  return <CheckCircle {...props} />;
 }

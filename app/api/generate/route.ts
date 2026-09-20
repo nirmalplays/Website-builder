@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 import { eq } from "drizzle-orm";
 import {
   DEFAULT_MODEL,
@@ -7,8 +6,8 @@ import {
   MAX_OUTPUT_TOKENS,
   THINKING_BUDGET,
   isAllowedModel,
-  supportsThinkingConfig,
 } from "@/lib/config";
+import { getProvider } from "@/lib/providers";
 import { SYSTEM_PROMPT, REPAIR_SUFFIX, IMAGE_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
@@ -21,21 +20,14 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type Turn = { role: "user" | "assistant"; content: string };
-type GenaiContent = { role: "user" | "model"; parts: { text: string }[] };
-
-function toContents(turns: Turn[]): GenaiContent[] {
-  return turns.map((t) => ({
-    role: t.role === "assistant" ? "model" : "user",
-    // Assistant turns are code; hand them back in the same shape we asked for.
-    parts: [{ text: t.role === "assistant" ? "```tsx\n" + t.content + "\n```" : t.content }],
-  }));
-}
-
 export async function POST(req: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const provider = getProvider();
+  if (!provider.isConfigured()) {
     return NextResponse.json(
-      { error: "GEMINI_API_KEY is not set. Add it to .env.local and restart the dev server." },
+      {
+        error:
+          `No model provider configured. Set GEMINI_API_KEY for Google, or AI_PROVIDER=openai-compatible with AI_BASE_URL for a self-hosted model.`,
+      },
       { status: 500 },
     );
   }
@@ -105,15 +97,6 @@ export async function POST(req: Request) {
   }
 
   const history = (body.history ?? []).slice(-HISTORY_TURNS * 2);
-  const userParts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [
-    { text: prompt },
-  ];
-  if (image) userParts.push({ inlineData: { data: image.data, mimeType: image.mimeType } });
-
-  const contents = [
-    ...toContents(history),
-    { role: "user" as const, parts: userParts as { text: string }[] },
-  ];
   const started = Date.now();
 
   // Test/backup path: serve a known-good generation instead of calling Gemini.
@@ -131,7 +114,6 @@ export async function POST(req: Request) {
     });
   }
 
-  const ai = new GoogleGenAI({ apiKey });
   let inputTokens = 0;
   let outputTokens = 0;
 
@@ -140,22 +122,19 @@ export async function POST(req: Request) {
 ${IMAGE_SUFFIX}` : base);
 
   const call = async (systemInstruction: string) => {
-    const res = await ai.models.generateContent({
+    const res = await provider.generate({
+      system: systemFor(systemInstruction),
+      history,
+      prompt,
+      image,
       model,
-      contents,
-      config: {
-        systemInstruction: systemFor(systemInstruction),
-        temperature: 0.7,
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        // Some models reject thinkingConfig outright.
-        ...(supportsThinkingConfig(model)
-          ? { thinkingConfig: { thinkingBudget: THINKING_BUDGET } }
-          : {}),
-      },
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      temperature: 0.7,
+      thinkingBudget: THINKING_BUDGET,
     });
-    inputTokens += res.usageMetadata?.promptTokenCount ?? 0;
-    outputTokens += res.usageMetadata?.candidatesTokenCount ?? 0;
-    return res.text ?? "";
+    inputTokens += res.inputTokens;
+    outputTokens += res.outputTokens;
+    return res.text;
   };
 
   try {
@@ -205,7 +184,7 @@ ${deadControlRepairPrompt(dead)}`)),
 
     const latencyMs = Date.now() - started;
     console.log(
-      `[generate] ${model} ${latencyMs}ms ${code.length} chars in/out ${inputTokens}/${outputTokens}${repaired ? ` repaired:${repaired}` : ""}`,
+      `[generate] ${provider.id}/${model} ${latencyMs}ms ${code.length} chars in/out ${inputTokens}/${outputTokens}${repaired ? ` repaired:${repaired}` : ""}`,
     );
 
     // Persistence is best-effort: a DB problem must never fail a generation.

@@ -1,153 +1,137 @@
-import React from 'react';
-import { 
-  Mail, 
-  ArrowRight, 
-  Zap, 
-  Shield, 
-  Code, 
-  Database, 
-  Layout, 
-  Smartphone, 
-  Globe,
-  Calendar,
-  ChevronRight,
-  User,
-  Star
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Code as Github, Briefcase as Linkedin, ExternalLink, Download, Code, Briefcase, User, MessageSquare, Star, ChevronRight, CheckCircle, X, Send } from "lucide-react";
 
 export default function App() {
-  const projects = [
-    { title: "Quantum Task Manager", desc: "A real-time collaborative productivity suite built for enterprise teams.", tags: ["React", "Node.js", "WebSockets"] },
-    { title: "EcoTrack Analytics", desc: "Carbon footprint monitoring dashboard for manufacturing supply chains.", tags: ["TypeScript", "D3.js", "PostgreSQL"] },
-    { title: "Velocity Framework", desc: "Lightweight CSS animation library used by over 500+ active repositories.", tags: ["CSS", "JavaScript", "Webpack"] },
-    { title: "CyberGuard API", desc: "Automated security scanning tool for RESTful API endpoints.", tags: ["Python", "Docker", "AWS"] },
-    { title: "Nomad Travel Planner", desc: "AI-driven itinerary builder for long-term digital nomads.", tags: ["Next.js", "OpenAI API", "Tailwind"] }
-  ];
+  const [activeTab, setActiveTab] = useState('home');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [projects] = useState([
+    { id: 1, title: 'CloudScale Dashboard', tech: ['React', 'AWS', 'Tailwind'], desc: 'Real-time analytics platform for enterprise cloud infrastructure.' },
+    { id: 2, title: 'SecurePay API', tech: ['Node.js', 'PostgreSQL', 'Redis'], desc: 'High-throughput payment gateway processing 10k+ requests/sec.' },
+    { id: 3, title: 'DesignFlow', tech: ['TypeScript', 'Framer', 'React'], desc: 'Collaborative UI design tool for remote product teams.' },
+    { id: 4, title: 'DataPulse AI', tech: ['Python', 'PyTorch', 'FastAPI'], desc: 'Predictive modeling engine for retail supply chain optimization.' },
+    { id: 5, title: 'EcoTrack Mobile', tech: ['React Native', 'Firebase'], desc: 'Sustainability tracking app with 50k+ active monthly users.' },
+  ]);
 
-  const experience = [
-    { role: "Senior Frontend Engineer", company: "Nebula Systems", period: "2021 - Present" },
-    { role: "Full Stack Developer", company: "Vertex Digital", period: "2018 - 2021" },
-    { role: "Junior Web Developer", company: "Pixel Craft Studio", period: "2016 - 2018" }
-  ];
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactForm.name || !contactForm.email || !contactForm.message) return;
+    setStatus('loading');
+    setTimeout(() => {
+      setStatus('success');
+      setContactForm({ name: '', email: '', message: '' });
+      setTimeout(() => setStatus('idle'), 3000);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <nav className="max-w-5xl mx-auto px-6 py-8 flex justify-between items-center">
-        <span className="text-xl font-bold tracking-tight text-indigo-600">alex.dev</span>
-        <div className="flex gap-6 text-sm font-medium text-slate-600">
-          <a href="#about" className="hover:text-indigo-600 transition-colors">About</a>
-          <a href="#projects" className="hover:text-indigo-600 transition-colors">Projects</a>
-          <a href="#contact" className="hover:text-indigo-600 transition-colors">Contact</a>
+      <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+          <span className="font-bold text-xl text-blue-600">alex.dev</span>
+          <div className="hidden md:flex gap-8">
+            {['About', 'Projects', 'Experience', 'Contact'].map(item => (
+              <button 
+                key={item}
+                onClick={() => document.getElementById(item.toLowerCase())?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-sm font-medium hover:text-blue-600 transition-colors"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <div className="space-y-1.5"><div className="w-6 h-0.5 bg-slate-900"></div><div className="w-6 h-0.5 bg-slate-900"></div></div>}
+          </button>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6">
-        {/* Hero */}
-        <section className="py-20 md:py-32">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6">
-            Building digital <br />
-            <span className="text-indigo-600">experiences</span> that matter.
-          </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mb-10 leading-relaxed">
-            I'm Alex Rivera, a software architect specializing in scalable web applications and intuitive user interfaces. Passionate about clean code and performance.
-          </p>
-          <a href="#contact" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-700 transition-all">
-            Start a project <ArrowRight size={18} />
-          </a>
+      <main className="pt-24 pb-12 px-6 max-w-5xl mx-auto">
+        <section className="py-20 text-center">
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-6 text-slate-900">Alex Rivers</h1>
+          <p className="text-xl md:text-2xl text-slate-600 mb-8 max-w-2xl mx-auto">Full-stack software engineer building robust, scalable digital experiences that matter.</p>
+          <div className="flex gap-4 justify-center">
+            <button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })} className="bg-blue-600 text-white px-8 py-3 rounded-full font-medium hover:bg-blue-700 transition-all">Work with me</button>
+            <button className="border border-slate-300 px-8 py-3 rounded-full font-medium hover:bg-slate-100 transition-all flex items-center gap-2"><Download size={18} /> View CV</button>
+          </div>
         </section>
 
-        {/* About */}
-        <section id="about" className="py-20 border-t border-slate-200">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="bg-slate-200 rounded-2xl aspect-square w-full flex items-center justify-center text-slate-400">
-              <User size={64} strokeWidth={1} />
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Beyond the keyboard.</h2>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                With over 8 years of experience, I’ve navigated the evolution of the web from jQuery to modern meta-frameworks. I believe in the power of simplicity and data-driven design. When I'm not coding, you'll find me hiking local trails or contributing to open-source climate tech projects.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: Code, label: "Frontend Architecture" },
-                  { icon: Database, label: "Systems Design" },
-                  { icon: Zap, label: "Performance Tuning" },
-                  { icon: Shield, label: "Security Auditing" }
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg">
-                    <s.icon size={20} className="text-indigo-600" />
-                    <span className="text-sm font-medium">{s.label}</span>
-                  </div>
-                ))}
-              </div>
+        <section id="about" className="py-20 grid md:grid-cols-2 gap-12 items-center">
+          <div className="bg-slate-200 h-96 rounded-2xl overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80" alt="Alex" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold mb-6">About Me</h2>
+            <p className="text-slate-600 mb-4 leading-relaxed">I have spent the last 6 years obsessing over clean code, performance, and user-centric design. My goal is to bridge the gap between complex engineering and intuitive product experiences.</p>
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS', 'Docker'].map(skill => (
+                <div key={skill} className="flex items-center gap-2 font-medium bg-white p-3 rounded-lg border border-slate-200">
+                  <CheckCircle size={16} className="text-blue-600" /> {skill}
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Projects */}
-        <section id="projects" className="py-20 border-t border-slate-200">
-          <h2 className="text-3xl font-bold mb-12">Selected Work</h2>
-          <div className="grid gap-6">
-            {projects.map((p, i) => (
-              <div key={i} className="group p-6 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-indigo-600">{p.title}</h3>
-                    <p className="text-slate-600 mb-4">{p.desc}</p>
-                    <div className="flex gap-2">
-                      {p.tags.map(t => (
-                        <span key={t} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <ChevronRight className="text-slate-300 group-hover:text-indigo-600" />
+        <section id="projects" className="py-20">
+          <h2 className="text-3xl font-bold mb-12">Featured Projects</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map(p => (
+              <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition-shadow">
+                <div className="flex justify-between items-start mb-4">
+                  <Star className="text-blue-600" />
+                  <ExternalLink size={18} className="text-slate-400" />
+                </div>
+                <h3 className="font-bold text-lg mb-2">{p.title}</h3>
+                <p className="text-slate-600 text-sm mb-4">{p.desc}</p>
+                <div className="flex flex-wrap gap-2">
+                  {p.tech.map(t => <span key={t} className="text-xs bg-slate-100 px-2 py-1 rounded">{t}</span>)}
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Experience */}
-        <section className="py-20 border-t border-slate-200">
+        <section id="experience" className="py-20">
           <h2 className="text-3xl font-bold mb-12">Experience</h2>
           <div className="space-y-8">
-            {experience.map((ex, i) => (
-              <div key={i} className="flex items-center gap-6 border-l-2 border-indigo-100 pl-6 py-2">
-                <div className="w-full">
-                  <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-bold text-lg">{ex.role}</h4>
-                    <span className="text-sm text-slate-500 font-mono flex items-center gap-2">
-                      <Calendar size={14} /> {ex.period}
-                    </span>
-                  </div>
-                  <p className="text-indigo-600 font-medium">{ex.company}</p>
+            {[
+              { role: 'Senior Engineer', comp: 'TechFlow Inc', date: '2021 - Present' },
+              { role: 'Full Stack Dev', comp: 'Startup Hub', date: '2018 - 2021' }
+            ].map((exp, i) => (
+              <div key={i} className="flex gap-6 items-start border-l-2 border-blue-600 pl-6">
+                <div>
+                  <h3 className="font-bold text-xl">{exp.role}</h3>
+                  <p className="text-blue-600 font-medium">{exp.comp} • {exp.date}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Contact */}
-        <section id="contact" className="py-20 border-t border-slate-200 text-center">
-          <h2 className="text-3xl font-bold mb-6">Let's connect</h2>
-          <p className="text-slate-600 mb-10 max-w-md mx-auto">
-            Currently accepting new projects and consulting opportunities. Let's discuss your vision.
-          </p>
-          <a 
-            href="mailto:alex@example.com" 
-            className="inline-flex items-center gap-3 text-xl font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
-          >
-            <Mail /> alex.rivera@example.com
-          </a>
+        <section id="contact" className="py-20 bg-white rounded-3xl p-8 md:p-16 border border-slate-200">
+          <h2 className="text-3xl font-bold mb-8">Let's connect</h2>
+          <form onSubmit={handleContactSubmit} className="max-w-md">
+            <div className="space-y-4">
+              <input required type="text" placeholder="Your Name" className="w-full p-4 border rounded-xl" value={contactForm.name} onChange={e => setContactForm({...contactForm, name: e.target.value})} />
+              <input required type="email" placeholder="Your Email" className="w-full p-4 border rounded-xl" value={contactForm.email} onChange={e => setContactForm({...contactForm, email: e.target.value})} />
+              <textarea required placeholder="Your Message" className="w-full p-4 border rounded-xl h-32" value={contactForm.message} onChange={e => setContactForm({...contactForm, message: e.target.value})}></textarea>
+              <button disabled={status === 'loading'} className="w-full bg-slate-900 text-white py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 disabled:opacity-50">
+                {status === 'loading' ? 'Sending...' : status === 'success' ? 'Sent!' : <><Send size={18}/> Send Message</>}
+              </button>
+            </div>
+          </form>
         </section>
       </main>
 
-      <footer className="py-12 bg-slate-100 border-t border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} Alex Rivera. All rights reserved.
+      <footer className="py-12 text-center border-t border-slate-200">
+        <div className="flex justify-center gap-6 mb-6">
+          <button className="hover:text-blue-600"><Github /></button>
+          <button className="hover:text-blue-600"><Linkedin /></button>
+          <button className="hover:text-blue-600"><Mail /></button>
         </div>
+        <p className="text-slate-500 text-sm">© 2024 Alex Rivers. Built with React & Tailwind.</p>
       </footer>
     </div>
   );

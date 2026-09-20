@@ -5,7 +5,7 @@ import {
   SandpackPreview,
   SandpackCodeEditor,
 } from "@codesandbox/sandpack-react";
-import { SANDPACK_DEPENDENCIES } from "@/lib/config";
+import { SANDPACK_BUNDLER_URL, SANDPACK_DEPENDENCIES } from "@/lib/config";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 
 // Sandpack's bundler serves its own HTML and ignores /public/index.html, so
@@ -41,6 +41,9 @@ export function Preview({
         recompileMode: "delayed",
         recompileDelay: 500,
         externalResources: EXTERNAL_RESOURCES,
+        // Self-hosting: point at your own sandpack-bundler to stop previews
+        // reaching out to CodeSandbox.
+        ...(SANDPACK_BUNDLER_URL ? { bundlerURL: SANDPACK_BUNDLER_URL } : {}),
       }}
     >
       <div className="h-full w-full">

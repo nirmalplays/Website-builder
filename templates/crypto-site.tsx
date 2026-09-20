@@ -1,104 +1,128 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ArrowUpRight, 
-  TrendingUp, 
-  Shield, 
-  Zap, 
-  BarChart3, 
-  DollarSign, 
-  CreditCard, 
-  ChevronDown, 
-  ChevronRight,
-  Lock,
-  CheckCircle,
-  Menu,
-  X
+  ArrowUpRight, ArrowDownRight, TrendingUp, Shield, Zap, 
+  Lock, BarChart3, ChevronDown, CheckCircle, XCircle,
+  Menu, X, DollarSign, Users, Clock, Globe
 } from 'lucide-react';
 
-const assets = [
-  { name: 'Bitcoin', symbol: 'BTC', price: '$64,231.42', change: '+2.4%', volume: '$32.4B' },
-  { name: 'Ethereum', symbol: 'ETH', price: '$3,452.18', change: '+1.8%', volume: '$15.2B' },
-  { name: 'Solana', symbol: 'SOL', price: '$145.67', change: '-0.5%', volume: '$4.1B' },
-  { name: 'Chainlink', symbol: 'LINK', price: '$18.23', change: '+4.2%', volume: '$890M' },
-  { name: 'Cardano', symbol: 'ADA', price: '$0.45', change: '-1.2%', volume: '$520M' },
-  { name: 'Polkadot', symbol: 'DOT', price: '$7.12', change: '+0.9%', volume: '$340M' },
-  { name: 'Polygon', symbol: 'MATIC', price: '$0.92', change: '+1.5%', volume: '$280M' },
-  { name: 'Avalanche', symbol: 'AVAX', price: '$48.34', change: '-2.1%', volume: '$710M' },
+const INITIAL_ASSETS = [
+  { id: 1, name: 'Bitcoin', symbol: 'BTC', price: 64230.50, change: 2.4, volume: '28.4B' },
+  { id: 2, name: 'Ethereum', symbol: 'ETH', price: 3450.20, change: -1.2, volume: '12.1B' },
+  { id: 3, name: 'Solana', symbol: 'SOL', price: 145.80, change: 5.7, volume: '3.2B' },
+  { id: 4, name: 'Cardano', symbol: 'ADA', price: 0.45, change: -0.5, volume: '800M' },
+  { id: 5, name: 'Polkadot', symbol: 'DOT', price: 7.20, change: 1.1, volume: '450M' },
+  { id: 6, name: 'Chainlink', symbol: 'LINK', price: 18.40, change: 3.2, volume: '600M' },
+  { id: 7, name: 'Avalanche', symbol: 'AVAX', price: 35.60, change: -2.1, volume: '950M' },
+  { id: 8, name: 'Ripple', symbol: 'XRP', price: 0.62, change: 0.8, volume: '1.5B' },
 ];
 
 export default function App() {
-  const [mobileMenu, setMobileMenu] = useState(false);
+  const [assets, setAssets] = useState(INITIAL_ASSETS);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [email, setEmail] = useState('');
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+
+  const filteredAssets = assets.filter(a => 
+    a.name.toLowerCase().includes(search.toLowerCase()) || 
+    a.symbol.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleSignup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) return;
+    setFormStatus('loading');
+    setTimeout(() => {
+      setFormStatus('success');
+      setEmail('');
+      setTimeout(() => setFormStatus('idle'), 3000);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      {/* Nav */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Zap className="text-white w-5 h-5" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">ApexExchange</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
+            <Zap className="fill-blue-600" /> NexusExchange
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#markets" className="text-sm font-medium text-slate-600 hover:text-blue-600">Markets</a>
-            <a href="#features" className="text-sm font-medium text-slate-600 hover:text-blue-600">Features</a>
-            <a href="#security" className="text-sm font-medium text-slate-600 hover:text-blue-600">Security</a>
-            <button className="text-sm font-medium text-slate-900">Sign In</button>
-            <button className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700 transition">Get Started</button>
+          <div className="hidden md:flex gap-8 font-medium text-slate-600">
+            {['Markets', 'Security', 'Features', 'Fees'].map(item => (
+              <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-blue-600 transition-colors">{item}</a>
+            ))}
           </div>
-          <button className="md:hidden" onClick={() => setMobileMenu(!mobileMenu)}>
-            {mobileMenu ? <X /> : <Menu />}
+          <button className="bg-blue-600 text-white px-5 py-2 rounded-full font-semibold hover:bg-blue-700 transition-all">
+            Get Started
+          </button>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
       </nav>
 
-      <header className="py-20 px-4 text-center">
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter mb-6">Trade with Confidence.<br />Scale your Assets.</h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-10">The professional-grade platform for crypto traders. Low fees, deep liquidity, and institutional-grade security.</p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700">Create Account</button>
-          <button className="bg-white border border-slate-200 px-8 py-4 rounded-xl font-bold hover:bg-slate-50">View Markets</button>
-        </div>
-
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          {[
-            { name: 'BTC/USD', price: '$64,231', trend: '+2.4%' },
-            { name: 'ETH/USD', price: '$3,452', trend: '+1.8%' },
-            { name: 'SOL/USD', price: '$145.67', trend: '-0.5%' },
-            { name: 'LINK/USD', price: '$18.23', trend: '+4.2%' }
-          ].map((coin) => (
-            <div key={coin.name} className="text-left">
-              <p className="text-xs text-slate-400 font-semibold uppercase">{coin.name}</p>
-              <div className="flex items-center gap-2">
-                <span className="font-bold">{coin.price}</span>
-                <span className={`text-xs ${coin.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{coin.trend}</span>
-              </div>
-            </div>
-          ))}
+      {/* Hero & Ticker */}
+      <header className="bg-white py-16 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-slate-950 mb-6 tracking-tight">Trade Crypto with <br/><span className="text-blue-600">Confidence</span></h1>
+          <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto">The most secure and transparent platform for buying, selling, and managing your digital assets.</p>
+          <div className="flex gap-4 justify-center">
+            <input 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="px-6 py-3 rounded-full border border-slate-300 w-full max-w-xs focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <button onClick={handleSignup} disabled={formStatus === 'loading'} className="bg-slate-900 text-white px-8 py-3 rounded-full hover:bg-slate-800 transition-colors">
+              {formStatus === 'loading' ? 'Processing...' : 'Join Now'}
+            </button>
+          </div>
+          {formStatus === 'success' && <p className="text-green-600 mt-4">Welcome to the future of finance!</p>}
         </div>
       </header>
 
-      <section id="markets" className="py-20 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold mb-10">Market Overview</h2>
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr className="text-left text-xs text-slate-500 uppercase tracking-wider">
-                <th className="px-6 py-4">Asset</th>
-                <th className="px-6 py-4">Price</th>
-                <th className="px-6 py-4">24h Change</th>
-                <th className="px-6 py-4">24h Volume</th>
-                <th className="px-6 py-4">Trade</th>
+      <section className="bg-slate-900 text-white py-4 overflow-hidden border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 flex gap-12 animate-pulse text-sm">
+          {assets.slice(0, 4).map(a => (
+            <div key={a.id} className="flex gap-2">
+              <span className="font-bold">{a.symbol}</span>
+              <span>${a.price.toLocaleString()}</span>
+              <span className={a.change > 0 ? 'text-green-400' : 'text-red-400'}>{a.change}%</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Market Table */}
+      <section id="markets" className="py-20 max-w-7xl mx-auto px-4">
+        <div className="flex justify-between items-end mb-8">
+          <h2 className="text-3xl font-bold">Market Overview</h2>
+          <input 
+            placeholder="Search assets..." 
+            className="px-4 py-2 border rounded-lg"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="p-4">Asset</th>
+                <th className="p-4">Price</th>
+                <th className="p-4">24h Change</th>
+                <th className="p-4">Volume</th>
               </tr>
             </thead>
             <tbody>
-              {assets.map((asset) => (
-                <tr key={asset.symbol} className="border-b border-slate-100 hover:bg-slate-50 transition">
-                  <td className="px-6 py-4 font-semibold">{asset.name} <span className="text-slate-400">{asset.symbol}</span></td>
-                  <td className="px-6 py-4">{asset.price}</td>
-                  <td className={`px-6 py-4 ${asset.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>{asset.change}</td>
-                  <td className="px-6 py-4">{asset.volume}</td>
-                  <td className="px-6 py-4"><button className="text-blue-600 font-semibold flex items-center gap-1">Trade <ArrowUpRight className="w-4 h-4" /></button></td>
+              {filteredAssets.map(a => (
+                <tr key={a.id} className="border-b hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-bold">{a.name} <span className="text-slate-400 font-normal">{a.symbol}</span></td>
+                  <td className="p-4">${a.price.toLocaleString()}</td>
+                  <td className={`p-4 flex items-center ${a.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {a.change > 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                    {Math.abs(a.change)}%
+                  </td>
+                  <td className="p-4">{a.volume}</td>
                 </tr>
               ))}
             </tbody>
@@ -106,81 +130,51 @@ export default function App() {
         </div>
       </section>
 
+      {/* Features */}
       <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
           {[
-            { icon: BarChart3, title: 'Advanced Charts', desc: 'Real-time data with over 100+ technical indicators for precise trading.' },
-            { icon: Zap, title: 'Lightning Execution', desc: 'Our matching engine processes 1.5M orders per second with minimal latency.' },
-            { icon: DollarSign, title: 'Competitive Fees', desc: 'Tiered fee structure starting as low as 0.05% for high-volume traders.' }
+            { icon: Shield, title: 'Institutional Security', desc: 'Bank-grade cold storage for 98% of all user funds.' },
+            { icon: Zap, title: 'Lightning Fast', desc: 'High-frequency matching engine for instant execution.' },
+            { icon: BarChart3, title: 'Pro Analytics', desc: 'Advanced charting and deep liquidity depth charts.' }
           ].map((f, i) => (
-            <div key={i} className="p-8 border border-slate-100 rounded-2xl hover:shadow-lg transition">
-              <f.icon className="w-10 h-10 text-blue-600 mb-6" />
-              <h3 className="text-xl font-bold mb-3">{f.title}</h3>
-              <p className="text-slate-600 leading-relaxed">{f.desc}</p>
+            <div key={i} className="p-8 rounded-2xl bg-slate-50 border border-slate-100">
+              <f.icon className="text-blue-600 mb-4" size={32} />
+              <h3 className="text-xl font-bold mb-2">{f.title}</h3>
+              <p className="text-slate-600">{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="security" className="py-20 px-4 max-w-7xl mx-auto">
-        <div className="bg-slate-900 text-white rounded-3xl p-12 flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1">
-            <h2 className="text-4xl font-bold mb-6">Institutional Grade Security</h2>
-            <p className="text-slate-400 mb-8 text-lg">We store 98% of all digital assets in cold storage, insured by top-tier global underwriters. Your peace of mind is our priority.</p>
-            <ul className="space-y-4">
-              {['Multi-signature wallets', 'SOC 2 Type II Compliance', '24/7 Threat Monitoring'].map((item, i) => (
-                <li key={i} className="flex items-center gap-3"><CheckCircle className="text-blue-500" /> {item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="w-full md:w-1/3 h-64 bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-700">
-            <Lock className="w-20 h-20 text-blue-500" />
+      {/* Fee Comparison */}
+      <section id="fees" className="py-20 bg-slate-900 text-white">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-12">Industry Leading Fees</h2>
+          <div className="grid grid-cols-2 gap-8 text-left">
+            <div className="p-6 border border-slate-700 rounded-xl">
+              <p className="text-slate-400 mb-2">NexusExchange</p>
+              <div className="text-4xl font-bold text-blue-400">0.05%</div>
+              <p className="text-sm mt-2">Flat trading fee</p>
+            </div>
+            <div className="p-6 border border-slate-700 rounded-xl">
+              <p className="text-slate-400 mb-2">Traditional Exchanges</p>
+              <div className="text-4xl font-bold text-slate-500">0.25%</div>
+              <p className="text-sm mt-2">Hidden fees included</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4 max-w-7xl mx-auto text-center">
-        <h2 className="text-3xl font-bold mb-12">Frequently Asked Questions</h2>
-        <div className="max-w-2xl mx-auto space-y-4">
-          {[
-            { q: 'How do I deposit funds?', a: 'You can deposit via bank transfer, credit card, or SEPA transfer depending on your region.' },
-            { q: 'Is there a minimum deposit?', a: 'The minimum initial deposit is just $10 USD equivalent.' },
-            { q: 'Which countries are supported?', a: 'We currently support over 120 countries, including the US, UK, Canada, and EU member states.' }
-          ].map((faq, i) => (
-            <div key={i} className="border border-slate-200 rounded-xl p-6 text-left hover:border-blue-300 transition">
-              <div className="flex justify-between items-center cursor-pointer">
-                <h4 className="font-bold">{faq.q}</h4>
-                <ChevronDown className="w-5 h-5 text-slate-400" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <footer className="bg-slate-100 py-16 px-4 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="text-blue-600 w-5 h-5" />
-              <span className="font-bold">ApexExchange</span>
-            </div>
-            <p className="text-sm text-slate-500">The world's fastest crypto exchange for professional traders.</p>
-          </div>
-          {['Products', 'Company', 'Support'].map((col) => (
-            <div key={col}>
-              <h4 className="font-bold mb-4">{col}</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li>Spot Trading</li>
-                <li>Futures</li>
-                <li>Staking</li>
-                <li>API Docs</li>
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="max-w-7xl mx-auto pt-8 border-t border-slate-200 text-xs text-slate-400">
-          <p className="mb-4">Disclaimer: Trading digital assets involves significant risk and can result in the loss of your invested capital. ApexExchange is not a bank. Digital assets are not subject to standard deposit insurance. Please consult with a financial advisor.</p>
-          <p>&copy; 2024 Apex Exchange Ltd. All rights reserved.</p>
+      {/* Footer */}
+      <footer className="py-12 bg-slate-100 border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 text-sm text-slate-500">
+          <p className="mb-4">© 2024 NexusExchange. All rights reserved.</p>
+          <p className="max-w-3xl">
+            Regulatory Disclaimer: Trading digital assets involves significant risk. NexusExchange is not a registered broker-dealer. 
+            Past performance is not indicative of future results. Please ensure you are in compliance with your local 
+            laws before trading. Crypto assets are highly volatile and can result in the loss of your entire investment.
+          </p>
         </div>
       </footer>
     </div>

@@ -1,194 +1,178 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, Clock, Users, Utensils, MapPin, Phone, Mail, 
-  CheckCircle, XCircle, ChevronDown, Sparkles, Star, ChevronRight 
+  Calendar, Clock, Users, Utensils, ChefHat, MapPin, 
+  Phone, Mail, Star, ChevronDown, CheckCircle, XCircle 
 } from 'lucide-react';
-
-type Reservation = {
-  id: string;
-  name: string;
-  date: string;
-  time: string;
-  guests: number;
-  status: 'confirmed' | 'pending';
-};
 
 const MENU_ITEMS = {
   starters: [
-    { name: "Truffle Arancini", price: "$14", desc: "Crispy risotto balls, black truffle aioli, parmesan" },
-    { name: "Hamachi Crudo", price: "$18", desc: "Citrus-marinated yellowtail, chili oil, radish" }
+    { id: 1, name: "Truffle Mushroom Arancini", price: 14, desc: "Crispy risotto balls, black truffle aioli, parmesan" },
+    { id: 2, name: "Yellowfin Tuna Tartare", price: 18, desc: "Avocado mousse, citrus ponzu, micro cilantro" },
   ],
   mains: [
-    { name: "Pan-Seared Scallops", price: "$34", desc: "Cauliflower purée, pancetta crisp, herb oil" },
-    { name: "Braised Short Rib", price: "$38", desc: "Red wine reduction, polenta, roasted root veggies" }
+    { id: 3, name: "Pan-Seared Scallops", price: 34, desc: "Cauliflower purée, pancetta crisp, herb oil" },
+    { id: 4, name: "Aged Wagyu Ribeye", price: 48, desc: "Roasted root vegetables, bordelaise sauce" },
   ],
   desserts: [
-    { name: "Dark Chocolate Tart", price: "$12", desc: "Sea salt, hazelnut praline, creme fraiche" },
-    { name: "Lemon Basil Sorbet", price: "$10", desc: "Fresh berries, candied lemon zest" }
+    { id: 5, name: "Valrhona Chocolate Fondant", price: 12, desc: "Salted caramel core, vanilla bean gelato" },
+    { id: 6, name: "Yuzu Lemon Tart", price: 10, desc: "Meringue shards, raspberry coulis" },
   ]
 };
 
 export default function App() {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [isFormVisible, setIsFormVisible] = useState(false);
-  const [formData, setFormData] = useState({ name: '', date: '', time: '19:00', guests: '2' });
-  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('reservations');
-      if (saved) setReservations(JSON.parse(saved));
-    } catch (e) { console.error(e); }
-  }, []);
+  const [activeTab, setActiveTab] = useState('starters');
+  const [reserveStatus, setReserveStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [form, setForm] = useState({ date: '', time: '19:00', party: '2' });
 
   const handleReserve = (e: React.FormEvent) => {
     e.preventDefault();
-    setFormStatus('loading');
+    setReserveStatus('loading');
     setTimeout(() => {
-      const newRes: Reservation = {
-        id: Date.now().toString(),
-        name: formData.name,
-        date: formData.date,
-        time: formData.time,
-        guests: parseInt(formData.guests),
-        status: 'confirmed'
-      };
-      const updated = [...reservations, newRes];
-      setReservations(updated);
-      localStorage.setItem('reservations', JSON.stringify(updated));
-      setFormStatus('success');
-      setTimeout(() => {
-        setFormStatus('idle');
-        setIsFormVisible(false);
-        setFormData({ name: '', date: '', time: '19:00', guests: '2' });
-      }, 2000);
-    }, 1000);
-  };
-
-  const deleteReservation = (id: string) => {
-    const updated = reservations.filter(r => r.id !== id);
-    setReservations(updated);
-    localStorage.setItem('reservations', JSON.stringify(updated));
+      setReserveStatus('success');
+      setForm({ date: '', time: '19:00', party: '2' });
+      setTimeout(() => setReserveStatus('idle'), 3000);
+    }, 1200);
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
+    <div className="min-h-screen bg-stone-50 text-stone-800 font-sans">
       {/* Nav */}
-      <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-stone-200 py-4 px-6 flex justify-between items-center">
-        <h1 className="text-2xl font-serif tracking-tighter">LUMIÈRE</h1>
-        <button 
-          onClick={() => setIsFormVisible(true)}
-          className="bg-stone-900 text-white px-6 py-2 rounded-full hover:bg-stone-700 transition-colors"
-        >
-          Reserve a Table
-        </button>
+      <nav className="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-stone-200 px-6 py-4 flex justify-between items-center">
+        <span className="text-2xl font-serif font-bold tracking-tight text-amber-900">LUMIÈRE</span>
+        <a href="#reserve" className="bg-amber-900 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-amber-800 transition">Reserve Table</a>
       </nav>
 
       {/* Hero */}
-      <header className="relative h-[80vh] flex items-center justify-center overflow-hidden">
+      <header className="h-screen relative flex items-center justify-center text-center px-4">
         <img 
-          src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=2400" 
-          alt="Restaurant interior"
+          src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=2000" 
+          alt="Elegant restaurant interior" 
           className="absolute inset-0 w-full h-full object-cover brightness-50"
         />
-        <div className="relative text-center text-white p-6">
-          <Sparkles className="mx-auto mb-4 text-amber-400" />
-          <h2 className="text-6xl md:text-8xl font-serif mb-6">Refined Dining</h2>
-          <p className="text-xl md:text-2xl font-light italic">Seasonal ingredients, timeless technique.</p>
+        <div className="relative z-10 text-white space-y-4">
+          <h1 className="text-6xl md:text-8xl font-serif">Lumière</h1>
+          <p className="text-xl md:text-2xl font-light italic">Refined flavors, timeless elegance.</p>
         </div>
       </header>
 
       {/* About */}
       <section className="py-24 px-6 max-w-4xl mx-auto text-center">
-        <h3 className="text-3xl font-serif mb-8">Our Philosophy</h3>
-        <p className="text-lg leading-relaxed text-stone-600">
-          At Lumière, we believe that the best meals are shared. Founded in 2015, our kitchen 
-          focuses on the harmony between local producers and artisanal cooking methods. 
-          Every dish tells a story of the season, crafted with precision and passion.
+        <h2 className="text-3xl font-serif mb-8">Our Philosophy</h2>
+        <p className="text-stone-600 leading-relaxed text-lg italic">
+          At Lumière, we believe dining is an art form. Every plate tells a story, sourced from local 
+          farms and crafted with surgical precision to awaken your senses. Nestled in the heart of the 
+          city, we invite you to experience a culinary journey that celebrates the seasons.
         </p>
       </section>
 
       {/* Menu */}
       <section className="py-24 bg-stone-100 px-6">
-        <div className="max-w-5xl mx-auto">
-          <h3 className="text-4xl font-serif text-center mb-16">The Tasting Menu</h3>
-          <div className="grid md:grid-cols-3 gap-12">
-            {Object.entries(MENU_ITEMS).map(([cat, items]) => (
-              <div key={cat}>
-                <h4 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-stone-300 pb-2">{cat}</h4>
-                <div className="space-y-6">
-                  {items.map((item) => (
-                    <div key={item.name}>
-                      <div className="flex justify-between font-bold">
-                        <span>{item.name}</span>
-                        <span className="text-amber-700">{item.price}</span>
-                      </div>
-                      <p className="text-sm text-stone-600">{item.desc}</p>
-                    </div>
-                  ))}
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-serif text-center mb-12">The Seasonal Menu</h2>
+          <div className="flex justify-center gap-4 mb-12">
+            {['starters', 'mains', 'desserts'].map(tab => (
+              <button 
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`capitalize px-6 py-2 border-b-2 transition ${activeTab === tab ? 'border-amber-900 text-amber-900 font-bold' : 'border-transparent'}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-6">
+            {MENU_ITEMS[activeTab as keyof typeof MENU_ITEMS].map(item => (
+              <div key={item.id} className="flex justify-between items-start bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                <div>
+                  <h3 className="font-bold text-lg">{item.name}</h3>
+                  <p className="text-stone-500 text-sm">{item.desc}</p>
                 </div>
+                <span className="font-serif font-bold text-amber-900">${item.price}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Reservation Form */}
-      {isFormVisible && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            {formStatus === 'success' ? (
-              <div className="text-center py-12">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-serif">Reserved!</h3>
-              </div>
-            ) : (
-              <form onSubmit={handleReserve} className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-serif">Book a Table</h3>
-                  <button onClick={() => setIsFormVisible(false)}><XCircle /></button>
-                </div>
-                <input required type="text" placeholder="Your Name" className="w-full p-3 border rounded-lg" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                <input required type="date" className="w-full p-3 border rounded-lg" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-                <select className="w-full p-3 border rounded-lg" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})}>
-                  {['18:00', '19:00', '20:00', '21:00'].map(t => <option key={t}>{t}</option>)}
-                </select>
-                <input required type="number" min="1" max="10" className="w-full p-3 border rounded-lg" value={formData.guests} onChange={e => setFormData({...formData, guests: e.target.value})} />
-                <button type="submit" disabled={formStatus === 'loading'} className="w-full bg-stone-900 text-white py-3 rounded-lg hover:bg-stone-700">
-                  {formStatus === 'loading' ? 'Confirming...' : 'Confirm Reservation'}
-                </button>
-              </form>
-            )}
+      {/* Chef Highlight */}
+      <section className="py-24 px-6 grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <img 
+          src="https://images.unsplash.com/photo-1583394293214-28ded15ee548?auto=format&fit=crop&q=80&w=800" 
+          alt="Chef at work" 
+          className="rounded-2xl shadow-xl w-full h-[500px] object-cover"
+        />
+        <div className="space-y-6">
+          <ChefHat className="w-12 h-12 text-amber-900" />
+          <h2 className="text-4xl font-serif">Executive Chef Elena Rossi</h2>
+          <p className="text-stone-600">
+            With over 15 years in Michelin-starred kitchens across Europe, Chef Elena brings a 
+            Mediterranean soul to our modern techniques. She believes that the simplest ingredients, 
+            when handled with respect, produce the most profound memories.
+          </p>
+          <div className="flex gap-4 items-center">
+            <Star className="text-amber-500 fill-amber-500" />
+            <span className="font-bold">2024 Michelin Star Recipient</span>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* Reservation */}
+      <section id="reserve" className="py-24 bg-amber-950 text-stone-100 px-6">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl font-serif text-center mb-12">Book Your Table</h2>
+          {reserveStatus === 'success' ? (
+            <div className="text-center p-12 bg-white/10 rounded-xl space-y-4">
+              <CheckCircle className="w-16 h-16 text-green-400 mx-auto" />
+              <h3 className="text-2xl font-bold">Reservation Confirmed!</h3>
+              <p>We look forward to welcoming you.</p>
+              <button onClick={() => setReserveStatus('idle')} className="text-sm underline">Make another booking</button>
+            </div>
+          ) : (
+            <form onSubmit={handleReserve} className="grid gap-6 bg-white p-8 rounded-xl text-stone-800">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">Date</label>
+                  <input required type="date" className="w-full p-3 border rounded-lg" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">Time</label>
+                  <select className="w-full p-3 border rounded-lg" value={form.time} onChange={e => setForm({...form, time: e.target.value})}>
+                    {['18:00', '19:00', '20:00', '21:00'].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-semibold">Party Size</label>
+                <input required type="number" min="1" max="10" className="w-full p-3 border rounded-lg" value={form.party} onChange={e => setForm({...form, party: e.target.value})} />
+              </div>
+              <button disabled={reserveStatus === 'loading'} className="w-full py-4 bg-amber-900 text-white rounded-lg font-bold hover:bg-amber-800 transition disabled:opacity-50">
+                {reserveStatus === 'loading' ? 'Processing...' : 'Confirm Reservation'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 py-16 px-6">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12">
-          <div>
-            <h4 className="text-white font-bold mb-4">LUMIÈRE</h4>
-            <p>123 Culinary Ave, Gastown</p>
-            <p>Vancouver, BC V6B 1A1</p>
+      <footer className="py-12 bg-stone-900 text-stone-400 px-6">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12 text-sm">
+          <div className="space-y-2">
+            <h4 className="font-bold text-white mb-4">Location</h4>
+            <p className="flex items-center gap-2"><MapPin size={16}/> 123 Culinary Avenue, Metro City</p>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Hours</h4>
-            <p>Tue-Sat: 5pm - 11pm</p>
-            <p>Sun: 4pm - 10pm</p>
+          <div className="space-y-2">
+            <h4 className="font-bold text-white mb-4">Opening Hours</h4>
+            <p>Mon-Fri: 5:00 PM - 11:00 PM</p>
+            <p>Sat-Sun: 11:00 AM - 11:00 PM</p>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Your Bookings</h4>
-            {reservations.length === 0 ? <p>No upcoming reservations.</p> : (
-              <ul className="space-y-2">
-                {reservations.map(res => (
-                  <li key={res.id} className="flex justify-between items-center text-sm">
-                    {res.date} at {res.time} ({res.guests} guests)
-                    <button onClick={() => deleteReservation(res.id)}><XCircle size={16} className="text-red-400" /></button>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="space-y-2">
+            <h4 className="font-bold text-white mb-4">Contact</h4>
+            <p className="flex items-center gap-2"><Phone size={16}/> (555) 123-4567</p>
+            <p className="flex items-center gap-2"><Mail size={16}/> hello@lumiere.com</p>
           </div>
+        </div>
+        <div className="text-center mt-12 border-t border-stone-800 pt-8">
+          © 2024 Lumière Fine Dining. All rights reserved.
         </div>
       </footer>
     </div>

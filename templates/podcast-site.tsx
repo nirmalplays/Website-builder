@@ -1,153 +1,163 @@
-import React from 'react';
-import { Play, Calendar, Clock, ArrowRight, Star, Mail, Search, Menu, Zap, Users, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Play, 
+  Clock, 
+  Calendar, 
+  Search, 
+  Menu, 
+  Star, 
+  Mail, 
+  CheckCircle, 
+  X, 
+  ChevronRight, 
+  User, 
+  Users, 
+  Zap, 
+  ArrowRight 
+} from 'lucide-react';
+
+const INITIAL_EPISODES = [
+  { id: 1, title: "The Future of Artificial Intelligence", duration: "45:20", date: "Oct 24, 2023", guest: "Dr. Aris Thorne" },
+  { id: 2, title: "Building Sustainable Cities", duration: "52:10", date: "Oct 17, 2023", guest: "Sarah Jenkins" },
+  { id: 3, title: "Quantum Computing Explained", duration: "38:45", date: "Oct 10, 2023", guest: "Marcus Vane" },
+  { id: 4, title: "The Psychology of Habits", duration: "41:30", date: "Oct 03, 2023", guest: "Dr. Elena Rossi" },
+  { id: 5, title: "Space Exploration in 2024", duration: "55:00", date: "Sep 26, 2023", guest: "Commander Leo Hunt" },
+  { id: 6, title: "Economics of the Digital Age", duration: "48:15", date: "Sep 19, 2023", guest: "Julian Banks" },
+  { id: 7, title: "Music Theory for Coders", duration: "35:50", date: "Sep 12, 2023", guest: "Mia Chen" },
+  { id: 8, title: "The History of Cryptography", duration: "50:20", date: "Sep 05, 2023", guest: "Prof. Alan Turing Jr." },
+];
 
 export default function App() {
-  const episodes = [
-    { id: '08', title: 'The Future of Neural Interfaces', duration: '54:20', date: 'Oct 24, 2023' },
-    { id: '07', title: 'Sustainable Architecture in Cities', duration: '48:15', date: 'Oct 17, 2023' },
-    { id: '06', title: 'Decoding Financial Literacy', duration: '52:10', date: 'Oct 10, 2023' },
-    { id: '05', title: 'Quantum Computing Explained', duration: '61:05', date: 'Oct 03, 2023' },
-    { id: '04', title: 'Modern Culinary Traditions', duration: '45:30', date: 'Sep 26, 2023' },
-    { id: '03', title: 'The Psychology of Productivity', duration: '55:40', date: 'Sep 19, 2023' },
-    { id: '02', title: 'Renewable Energy Landscapes', duration: '49:20', date: 'Sep 12, 2023' },
-    { id: '01', title: 'The Rise of Digital Nomads', duration: '42:15', date: 'Sep 05, 2023' },
-  ];
+  const [activeTab, setActiveTab] = useState('home');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [episodes] = useState(INITIAL_EPISODES);
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) return;
+    setStatus('loading');
+    setTimeout(() => {
+      setStatus('success');
+      setEmail('');
+      setTimeout(() => setStatus('idle'), 3000);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-6 py-6 max-w-6xl mx-auto">
-        <div className="text-2xl font-bold tracking-tighter text-indigo-600">SHIFT.POD</div>
-        <div className="hidden md:flex gap-8 font-medium">
-          <a href="#" className="hover:text-indigo-600">Episodes</a>
-          <a href="#" className="hover:text-indigo-600">About</a>
-          <a href="#" className="hover:text-indigo-600">Newsletter</a>
+      <nav className="sticky top-0 bg-white/80 backdrop-blur-md z-50 border-b border-stone-200">
+        <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="text-2xl font-bold tracking-tighter text-indigo-700">TECH HORIZON</div>
+          <div className="hidden md:flex space-x-8 font-medium">
+            {['Episodes', 'Hosts', 'Reviews', 'Contact'].map(item => (
+              <button key={item} className="hover:text-indigo-600 transition-colors">{item}</button>
+            ))}
+          </div>
+          <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
-        <button className="bg-stone-900 text-white px-5 py-2 rounded-full font-semibold hover:bg-indigo-600 transition-colors">
-          Subscribe
-        </button>
       </nav>
 
       {/* Hero */}
-      <header className="px-6 py-16 md:py-24 max-w-4xl mx-auto text-center">
-        <span className="text-indigo-600 font-bold tracking-widest uppercase text-sm">New Episodes Every Tuesday</span>
-        <h1 className="text-5xl md:text-7xl font-extrabold mt-4 mb-6 tracking-tight">Exploring the edge of modern thought.</h1>
-        <p className="text-xl text-stone-600 mb-10 max-w-2xl mx-auto">Join hosts Elena Rossi and Marcus Thorne as they dissect complex ideas with world-class experts, engineers, and visionaries.</p>
-        <div className="flex gap-4 justify-center">
-          <button className="flex items-center gap-2 bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-indigo-700">
-            <Play size={20} fill="white" /> Listen Now
+      <header className="py-20 px-4 text-center">
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 text-stone-900">
+          Exploring the <span className="text-indigo-600">Frontiers</span> of Innovation.
+        </h1>
+        <p className="text-xl text-stone-600 max-w-2xl mx-auto mb-10">
+          Weekly deep dives into technology, culture, and the people building our tomorrow. Join 50,000+ curious minds.
+        </p>
+        <div className="flex justify-center gap-4">
+          <button className="bg-indigo-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
+            <Play size={20} fill="currentColor" /> Subscribe on Spotify
+          </button>
+          <button className="border border-stone-300 px-8 py-4 rounded-full font-semibold hover:bg-stone-100 transition">
+            Apple Podcasts
           </button>
         </div>
       </header>
 
       {/* Featured Episode */}
-      <section className="px-6 py-16 bg-white border-y border-stone-200">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-          <div className="aspect-square bg-indigo-100 rounded-3xl overflow-hidden">
-             <img src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&q=80&w=800" alt="Episode cover" className="w-full h-full object-cover" />
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold mb-8">Latest Episode</h2>
+        <div className="bg-white p-8 rounded-3xl border border-stone-200 shadow-sm flex flex-col md:flex-row gap-8">
+          <div className="w-full md:w-1/3 aspect-square bg-indigo-100 rounded-2xl flex items-center justify-center">
+            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=600" alt="Featured" className="w-full h-full object-cover rounded-2xl" />
           </div>
-          <div>
-            <span className="text-indigo-600 font-bold">LATEST EPISODE</span>
-            <h2 className="text-4xl font-bold mt-2 mb-6">#09: The Ethics of Artificial Intelligence</h2>
-            <div className="bg-stone-100 p-6 rounded-2xl mb-6">
-              <div className="w-full h-2 bg-stone-200 rounded-full mb-4">
-                <div className="w-1/3 h-2 bg-indigo-600 rounded-full"></div>
-              </div>
-              <div className="flex justify-between text-sm font-medium">
-                <span>12:45</span>
-                <span>58:30</span>
-              </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <span className="text-indigo-600 font-bold mb-2">EPISODE #001</span>
+            <h3 className="text-4xl font-bold mb-4">The AI Revolution: What's Next?</h3>
+            <p className="text-stone-600 mb-6 leading-relaxed">Join us as we talk to Dr. Aris Thorne about the ethical implications of AGI and how to navigate the rapid pace of development in silicon valley.</p>
+            <div className="flex items-center gap-4 text-stone-500 mb-8">
+              <span className="flex items-center gap-1"><Clock size={18} /> 45:20</span>
+              <span className="flex items-center gap-1"><Calendar size={18} /> Oct 24, 2023</span>
             </div>
-            <p className="text-stone-600 mb-6">In this episode, we sit down with Dr. Aris Thorne to discuss the shifting landscape of machine learning regulation and what it means for the future of personal privacy.</p>
-            <button className="flex items-center gap-2 font-semibold hover:text-indigo-600">Read Show Notes <ArrowRight size={18} /></button>
+            <button className="bg-stone-900 text-white py-3 rounded-xl w-full md:w-48 font-semibold hover:bg-stone-800 transition">Play Now</button>
           </div>
         </div>
       </section>
 
       {/* Episode List */}
-      <section className="px-6 py-20 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold mb-10">Past Episodes</h2>
-        <div className="space-y-4">
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="flex justify-between items-end mb-8">
+          <h2 className="text-3xl font-bold">Past Episodes</h2>
+          <button className="text-indigo-600 font-semibold flex items-center gap-1">View All <ArrowRight size={18} /></button>
+        </div>
+        <div className="grid gap-4">
           {episodes.map((ep) => (
-            <div key={ep.id} className="flex items-center justify-between p-6 bg-white border border-stone-200 rounded-xl hover:border-indigo-300 transition-colors">
+            <div key={ep.id} className="bg-white p-6 rounded-2xl border border-stone-200 flex items-center justify-between hover:border-indigo-200 transition">
               <div className="flex items-center gap-6">
-                <span className="text-stone-400 font-mono text-xl">{ep.id}</span>
+                <span className="text-2xl font-bold text-stone-300 w-8">0{ep.id}</span>
                 <div>
-                  <h3 className="font-bold text-lg">{ep.title}</h3>
-                  <div className="flex gap-4 text-sm text-stone-500 mt-1">
-                    <span className="flex items-center gap-1"><Clock size={14}/> {ep.duration}</span>
-                    <span className="flex items-center gap-1"><Calendar size={14}/> {ep.date}</span>
-                  </div>
+                  <h4 className="font-bold text-lg">{ep.title}</h4>
+                  <p className="text-sm text-stone-500">Guest: {ep.guest}</p>
                 </div>
               </div>
-              <button className="p-3 bg-stone-100 rounded-full hover:bg-indigo-100 hover:text-indigo-600"><Play size={18} fill="currentColor" /></button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Hosts */}
-      <section className="px-6 py-20 bg-indigo-900 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12">Meet the Hosts</h2>
-          <div className="grid md:grid-cols-2 gap-12">
-            <div>
-              <div className="w-32 h-32 bg-indigo-800 rounded-full mx-auto mb-6 overflow-hidden border-4 border-indigo-700">
-                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300" alt="Elena" />
+              <div className="flex items-center gap-6 text-stone-500">
+                <span className="hidden md:block">{ep.date}</span>
+                <span className="hidden md:block font-mono">{ep.duration}</span>
+                <button className="p-3 bg-stone-100 rounded-full hover:bg-indigo-50 hover:text-indigo-600 transition"><Play size={18} fill="currentColor" /></button>
               </div>
-              <h3 className="text-xl font-bold">Elena Rossi</h3>
-              <p className="text-indigo-300 text-sm mt-2">Technology Anthropologist</p>
-            </div>
-            <div>
-              <div className="w-32 h-32 bg-indigo-800 rounded-full mx-auto mb-6 overflow-hidden border-4 border-indigo-700">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300" alt="Marcus" />
-              </div>
-              <h3 className="text-xl font-bold">Marcus Thorne</h3>
-              <p className="text-indigo-300 text-sm mt-2">Systems Architect</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="px-6 py-20 max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold mb-10">Listener Reviews</h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { name: "Sarah J.", text: "The most insightful podcast I've ever heard. Changed my perspective on tech." },
-            { name: "David M.", text: "Production quality is top tier. Always look forward to my Tuesday commute." },
-            { name: "Chloe K.", text: "A breath of fresh air in a saturated market. Intellectual and grounded." }
-          ].map((r, i) => (
-            <div key={i} className="p-6 bg-white border border-stone-200 rounded-2xl">
-              <div className="flex text-yellow-400 mb-4"><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/><Star size={16} fill="currentColor"/></div>
-              <p className="text-stone-600 text-sm mb-4">"{r.text}"</p>
-              <p className="font-bold text-sm">— {r.name}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Newsletter */}
-      <section className="px-6 py-20 bg-stone-200">
-        <div className="max-w-xl mx-auto text-center">
-          <Mail className="mx-auto text-indigo-600 mb-4" size={40} />
-          <h2 className="text-3xl font-bold mb-4">Get the weekly digest</h2>
-          <p className="text-stone-600 mb-8">Join 15,000+ curious listeners getting show notes and bonus content delivered to their inbox.</p>
-          <div className="flex gap-2">
-            <input type="email" placeholder="Enter your email" className="flex-1 px-4 py-3 rounded-lg border border-stone-300" />
-            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold">Subscribe</button>
-          </div>
+      <section className="py-20 bg-indigo-900 text-white mt-16">
+        <div className="max-w-xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Never Miss an Episode</h2>
+          <p className="mb-8 opacity-80">Get exclusive show notes and guest deep-dives delivered to your inbox every Thursday.</p>
+          {status === 'success' ? (
+            <div className="bg-white/10 p-4 rounded-xl flex items-center justify-center gap-2 text-emerald-400">
+              <CheckCircle size={20} /> Thanks for subscribing!
+            </div>
+          ) : (
+            <form onSubmit={handleNewsletter} className="flex flex-col sm:flex-row gap-3">
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email" 
+                className="flex-1 px-6 py-4 rounded-full text-stone-900 outline-none"
+                required
+              />
+              <button 
+                type="submit" 
+                disabled={status === 'loading'}
+                className="bg-white text-indigo-900 px-8 py-4 rounded-full font-bold hover:bg-stone-100 transition disabled:opacity-50"
+              >
+                {status === 'loading' ? 'Sending...' : 'Subscribe'}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-6 py-12 text-center text-stone-500 text-sm">
-        <p className="mb-4">© 2023 SHIFT.POD Podcast. All rights reserved.</p>
-        <div className="flex justify-center gap-6">
-          <a href="#" className="hover:text-indigo-600">Privacy Policy</a>
-          <a href="#" className="hover:text-indigo-600">Terms of Service</a>
-          <a href="#" className="hover:text-indigo-600">Sponsorship</a>
-        </div>
+      <footer className="py-12 text-center text-stone-500 text-sm">
+        <p>&copy; 2023 Tech Horizon Podcast. All rights reserved.</p>
       </footer>
     </div>
   );

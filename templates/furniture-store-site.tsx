@@ -1,188 +1,198 @@
-import React, { useState } from 'react';
-import { ShoppingCart, Menu, Star, Truck, Shield, Zap, ArrowRight, ChevronRight, User, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  ShoppingCart, Search, Menu, Star, Package, Shield, 
+  Clock, CheckCircle, ChevronRight, X, Plus, Minus, 
+  Trash2, Zap, ArrowRight, Home
+} from 'lucide-react';
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  material: string;
+  category: string;
+  image: string;
+};
+
+const PRODUCTS: Product[] = [
+  { id: 1, name: "Nordic Oak Dining Table", price: 899, material: "Solid Oak", category: "Dining", image: "https://images.unsplash.com/photo-1577140917170-285929fb55b7?auto=format&fit=crop&q=80&w=600" },
+  { id: 2, name: "Velvet Lounge Chair", price: 450, material: "Velvet & Steel", category: "Living", image: "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&q=80&w=600" },
+  { id: 3, name: "Minimalist Bed Frame", price: 1200, material: "Walnut Wood", category: "Bedroom", image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=600" },
+  { id: 4, name: "Ceramic Table Lamp", price: 120, material: "Matte Ceramic", category: "Decor", image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&q=80&w=600" },
+];
 
 export default function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [cart, setCart] = useState<{product: Product, qty: number}[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [filter, setFilter] = useState('All');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const products = [
-    { id: 1, name: "Nordic Oak Dining Table", price: 899, material: "Solid White Oak", img: "https://images.unsplash.com/photo-1577140917170-285929fb55b7?auto=format&fit=crop&q=80&w=800" },
-    { id: 2, name: "Velvet Lounge Armchair", price: 450, material: "Performance Velvet", img: "https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&q=80&w=800" },
-    { id: 3, name: "Minimalist Bed Frame", price: 1200, material: "Walnut Veneer", img: "https://images.unsplash.com/photo-1505693416388-15ce0d65ead5?auto=format&fit=crop&q=80&w=800" },
-    { id: 4, name: "Modular Sectional Sofa", price: 2100, material: "Linen Blend", img: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800" },
-  ];
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('furniture-cart');
+      if (saved) setCart(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  const updateCart = (newCart: any[]) => {
+    setCart(newCart);
+    localStorage.setItem('furniture-cart', JSON.stringify(newCart));
+  };
+
+  const addToCart = (product: Product) => {
+    const existing = cart.find(item => item.product.id === product.id);
+    if (existing) {
+      updateCart(cart.map(item => item.product.id === product.id ? {...item, qty: item.qty + 1} : item));
+    } else {
+      updateCart([...cart, {product, qty: 1}]);
+    }
+    setIsCartOpen(true);
+  };
+
+  const removeFromCart = (id: number) => updateCart(cart.filter(item => item.product.id !== id));
+
+  const total = cart.reduce((sum, item) => sum + (item.product.price * item.qty), 0);
+
+  const handleConsultation = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 font-sans">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-              <Zap className="h-6 w-6 text-orange-600" />
-              <span className="text-xl font-bold tracking-tight">MODERNHOME</span>
-            </div>
-            <div className="hidden md:flex gap-8 font-medium text-stone-600">
-              <a href="#" className="hover:text-orange-600">Living</a>
-              <a href="#" className="hover:text-orange-600">Bedroom</a>
-              <a href="#" className="hover:text-orange-600">Dining</a>
-              <a href="#" className="hover:text-orange-600">Services</a>
-            </div>
-            <div className="flex items-center gap-4">
-              <Search className="h-5 w-5 cursor-pointer" />
-              <User className="h-5 w-5 cursor-pointer" />
-              <div className="relative cursor-pointer">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">0</span>
-              </div>
-              <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                <Menu className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
+      {/* Nav */}
+      <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-stone-200 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+          <Home className="w-6 h-6 text-emerald-700" />
+          <span>MODERNHOME</span>
         </div>
+        <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:bg-stone-100 rounded-full">
+          <ShoppingCart className="w-6 h-6" />
+          {cart.length > 0 && <span className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">{cart.reduce((a,b) => a + b.qty, 0)}</span>}
+        </button>
       </nav>
 
-      {/* Hero Section */}
-      <header className="relative py-16 lg:py-24 bg-stone-900 text-white overflow-hidden">
-        <div className="absolute top-0 right-0 w-1/2 h-full opacity-20">
-          <img src="https://images.unsplash.com/photo-1618220179428-22790b461013?auto=format&fit=crop&q=80&w=1600" alt="Interior" className="w-full h-full object-cover" />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="bg-orange-600 text-white inline-block px-4 py-1 rounded-full text-sm font-semibold mb-6">SPRING SALE: UP TO 40% OFF</div>
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 max-w-2xl leading-tight">Elevate your home, refine your space.</h1>
-          <p className="text-xl text-stone-300 mb-8 max-w-lg">Curated designs that blend comfort with modern elegance. Quality craftsmanship built for life.</p>
-          <button className="bg-white text-stone-900 px-8 py-4 rounded-lg font-semibold hover:bg-stone-200 transition">Shop Collection</button>
-        </div>
-      </header>
-
-      {/* Shop by Room */}
-      <section className="py-16 max-w-7xl mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-10">Shop by Room</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {['Living Room', 'Bedroom', 'Dining Room', 'Home Office'].map((room) => (
-            <div key={room} className="group cursor-pointer">
-              <div className="h-64 bg-stone-200 rounded-xl mb-4 overflow-hidden">
-                <img src={`https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80&w=400`} alt={room} className="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
-              </div>
-              <h3 className="font-semibold text-lg flex items-center justify-between">
-                {room} <ChevronRight className="h-4 w-4" />
-              </h3>
-            </div>
-          ))}
+      {/* Hero */}
+      <section className="relative h-[500px] flex items-center justify-center text-center px-4 bg-stone-900 text-white">
+        <img src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80&w=2000" className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
+        <div className="relative z-10 max-w-2xl">
+          <span className="inline-block py-1 px-3 bg-emerald-600 rounded-full text-sm font-medium mb-4">SEASONAL SALE: UP TO 40% OFF</span>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">Transform Your Living Space</h1>
+          <p className="text-lg text-stone-200 mb-8">Curated pieces that blend timeless design with modern comfort. Built to last a lifetime.</p>
         </div>
       </section>
 
       {/* Featured Products */}
-      <section className="py-16 bg-stone-100">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-10">Featured Arrivals</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((p) => (
-              <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition">
-                <img src={p.img} alt={p.name} className="w-full h-60 object-cover rounded-lg mb-4" />
-                <h3 className="font-bold text-lg">{p.name}</h3>
-                <p className="text-stone-500 text-sm mb-2">{p.material}</p>
-                <div className="flex justify-between items-center mt-4">
-                  <span className="font-bold text-xl">${p.price}</span>
-                  <button className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600">Add to Cart</button>
-                </div>
-              </div>
+      <section className="py-16 px-6 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold">Featured Collection</h2>
+          <div className="flex gap-2">
+            {['All', 'Dining', 'Living', 'Bedroom'].map(cat => (
+              <button 
+                key={cat} 
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2 rounded-full border transition-colors ${filter === cat ? 'bg-stone-900 text-white border-stone-900' : 'bg-white border-stone-200 hover:border-stone-400'}`}
+              >
+                {cat}
+              </button>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Design Services */}
-      <section className="py-20 max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-        <div className="flex-1">
-          <h2 className="text-4xl font-bold mb-6">Expert Design Services</h2>
-          <p className="text-lg text-stone-600 mb-6">Not sure where to start? Our professional interior designers are here to help you bring your vision to life with personalized consultations and 3D space planning.</p>
-          <button className="flex items-center gap-2 text-orange-600 font-semibold hover:underline">
-            Book a Consultation <ArrowRight className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="flex-1 w-full h-96 bg-stone-200 rounded-2xl overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=1000" alt="Design service" className="w-full h-full object-cover" />
-        </div>
-      </section>
-
-      {/* Logistics & Warranty */}
-      <section className="py-16 bg-white border-y border-stone-200">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-8">
-          <div className="flex flex-col items-center text-center p-6">
-            <Truck className="h-10 w-10 text-orange-600 mb-4" />
-            <h3 className="font-bold text-lg mb-2">White Glove Delivery</h3>
-            <p className="text-stone-600">We deliver, unpack, and assemble your furniture in the room of your choice. Clean and stress-free.</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-6">
-            <Shield className="h-10 w-10 text-orange-600 mb-4" />
-            <h3 className="font-bold text-lg mb-2">10-Year Warranty</h3>
-            <p className="text-stone-600">Every piece is crafted to last. We stand by our quality with a comprehensive 10-year structural warranty.</p>
-          </div>
-          <div className="flex flex-col items-center text-center p-6">
-            <Zap className="h-10 w-10 text-orange-600 mb-4" />
-            <h3 className="font-bold text-lg mb-2">Fast Shipping</h3>
-            <p className="text-stone-600">In-stock items ship within 48 hours. Track your delivery directly from our warehouse to your front door.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews */}
-      <section className="py-16 max-w-7xl mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-10 text-center">Loved by Homeowners</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            { name: "Sarah Jenkins", review: "The quality of the oak table is unmatched. Exceeded all my expectations!" },
-            { name: "Marcus Thorne", review: "Seamless delivery process. The team was professional and incredibly fast." },
-            { name: "Elena Rodriguez", review: "Finally found a sofa that is both stylish and comfortable. Perfect for our new home." }
-          ].map((r, i) => (
-            <div key={i} className="p-8 bg-white border border-stone-100 rounded-2xl">
-              <div className="flex text-orange-400 mb-4">
-                {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {PRODUCTS.filter(p => filter === 'All' || p.category === filter).map(product => (
+            <div key={product.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-stone-100">
+              <img src={product.image} className="w-full h-64 object-cover" alt={product.name} />
+              <div className="p-4">
+                <p className="text-sm text-stone-500 mb-1">{product.material}</p>
+                <h3 className="font-bold text-lg mb-2">{product.name}</h3>
+                <div className="flex justify-between items-center mt-4">
+                  <span className="text-xl font-bold text-emerald-700">${product.price}</span>
+                  <button onClick={() => addToCart(product)} className="p-2 bg-stone-100 hover:bg-stone-200 rounded-lg">
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-              <p className="text-stone-600 italic mb-6">"{r.review}"</p>
-              <p className="font-bold">{r.name}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-stone-900 text-stone-400 py-16">
-        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-12">
+      {/* Design Services */}
+      <section className="py-16 bg-stone-100">
+        <div className="max-w-4xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="flex items-center gap-2 text-white mb-6">
-              <Zap className="h-6 w-6 text-orange-600" />
-              <span className="text-xl font-bold">MODERNHOME</span>
-            </div>
-            <p>Redefining living spaces with timeless design and uncompromising quality since 2012.</p>
+            <h2 className="text-3xl font-bold mb-4">Professional Design Services</h2>
+            <p className="text-stone-600 mb-6">Not sure what fits your space? Our expert interior designers are here to help you curate your dream home with a personalized consultation.</p>
+            <form onSubmit={handleConsultation} className="space-y-4">
+              <input required type="email" placeholder="Your email address" className="w-full p-3 rounded-lg border border-stone-300" />
+              <button disabled={isSubmitting} type="submit" className="w-full bg-emerald-700 text-white py-3 rounded-lg hover:bg-emerald-800 disabled:opacity-50">
+                {isSubmitting ? 'Sending...' : success ? 'Request Sent!' : 'Book Free Consultation'}
+              </button>
+            </form>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Shop</h4>
-            <ul className="space-y-2">
-              <li>Living Room</li>
-              <li>Dining</li>
-              <li>Bedroom</li>
-              <li>Accessories</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Support</h4>
-            <ul className="space-y-2">
-              <li>Track Order</li>
-              <li>Shipping Info</li>
-              <li>Warranty Policy</li>
-              <li>Contact Us</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Stay Connected</h4>
-            <p className="mb-4">Subscribe for design tips and exclusive early access to seasonal sales.</p>
-            <input type="email" placeholder="Your email" className="w-full bg-stone-800 p-3 rounded-lg border border-stone-700 focus:outline-none focus:border-orange-600" />
+          <div className="h-64 bg-stone-200 rounded-2xl flex items-center justify-center">
+            <Zap className="w-16 h-16 text-emerald-600" />
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-stone-800 text-sm">
-          &copy; 2024 ModernHome Interiors. All rights reserved.
+      </section>
+
+      {/* Info Sections */}
+      <section className="py-16 px-6 max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+        {[
+          { icon: Package, title: 'White Glove Delivery', desc: 'We deliver and assemble your furniture in the room of your choice.' },
+          { icon: Shield, title: 'Lifetime Warranty', desc: 'Every piece is covered by our comprehensive structural warranty.' },
+          { icon: Clock, title: 'Easy Returns', desc: 'Not happy? Return any item within 30 days, no questions asked.' }
+        ].map((item, i) => (
+          <div key={i} className="flex gap-4 p-6 bg-white rounded-xl border border-stone-200">
+            <item.icon className="w-10 h-10 text-emerald-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-lg">{item.title}</h3>
+              <p className="text-sm text-stone-600">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* Cart Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-stone-900/50" onClick={() => setIsCartOpen(false)} />
+          <div className="relative w-full max-w-md bg-white p-6 shadow-xl flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Your Cart</h2>
+              <button onClick={() => setIsCartOpen(false)}><X className="w-6 h-6" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4">
+              {cart.map(item => (
+                <div key={item.product.id} className="flex gap-4">
+                  <img src={item.product.image} className="w-20 h-20 object-cover rounded-lg" alt="" />
+                  <div className="flex-1">
+                    <h4 className="font-bold">{item.product.name}</h4>
+                    <p className="text-emerald-700">${item.product.price} x {item.qty}</p>
+                  </div>
+                  <button onClick={() => removeFromCart(item.product.id)} className="text-stone-400 hover:text-red-500"><Trash2 className="w-5 h-5" /></button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-4 mt-4">
+              <div className="flex justify-between text-xl font-bold mb-4"><span>Total</span><span>${total}</span></div>
+              <button className="w-full bg-emerald-700 text-white py-3 rounded-lg font-bold">Checkout</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="bg-stone-900 text-stone-400 py-12 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="font-bold text-white mb-2">MODERNHOME FURNITURE</p>
+          <p className="text-sm">© 2024 ModernHome Inc. All rights reserved.</p>
         </div>
       </footer>
     </div>
