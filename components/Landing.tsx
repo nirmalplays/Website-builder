@@ -34,6 +34,10 @@ export function Landing({
 }) {
   const [filter, setFilter] = useState<Category | "All">("All");
   const [chipSeed, setChipSeed] = useState(0);
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+
+  const INITIAL = 12;
 
   // Four chips at a time, rotated by the shuffle button.
   const chips = useMemo(() => {
@@ -41,7 +45,20 @@ export function Landing({
     return Array.from({ length: 4 }, (_, i) => QUICK_STARTS[(start + i) % QUICK_STARTS.length]);
   }, [chipSeed]);
 
-  const visible = filter === "All" ? TEMPLATES : TEMPLATES.filter((t) => t.category === filter);
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return TEMPLATES.filter((t) => {
+      if (filter !== "All" && t.category !== filter) return false;
+      if (!q) return true;
+      return (
+        t.title.toLowerCase().includes(q) ||
+        t.blurb.toLowerCase().includes(q) ||
+        t.prompt.toLowerCase().includes(q)
+      );
+    });
+  }, [filter, query]);
+
+  const visible = showAll || query ? matches : matches.slice(0, INITIAL);
 
   const ready = new Set(bakedTemplates);
 
@@ -115,7 +132,21 @@ export function Landing({
 
         <section className="mt-16">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold tracking-tight">Start with a template</h2>
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-lg font-semibold tracking-tight">Start with a template</h2>
+              <span className="font-mono text-[11px] text-faint">{matches.length}</span>
+            </div>
+            <label htmlFor="template-search" className="sr-only">
+              Search templates
+            </label>
+            <input
+              id="template-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search templates"
+              className="h-8 w-full max-w-[220px] rounded-full border border-line bg-surface px-3 text-xs text-ink outline-none transition-colors duration-200 placeholder:text-faint hover:border-line-strong focus:border-line-strong"
+            />
             <div className="flex flex-wrap gap-1">
               {(["All", ...CATEGORIES] as const).map((c) => (
                 <button
@@ -167,6 +198,23 @@ export function Landing({
               </li>
             ))}
           </ul>
+
+          {matches.length === 0 && (
+            <p className="mt-8 text-center text-[13px] text-muted">
+              No template matches &ldquo;{query}&rdquo;. Describe it in the box above instead.
+            </p>
+          )}
+
+          {!showAll && !query && matches.length > INITIAL && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setShowAll(true)}
+                className="h-9 cursor-pointer rounded-full border border-line bg-surface px-4 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+              >
+                Browse all {matches.length} templates
+              </button>
+            </div>
+          )}
 
           <p className="mt-8 text-center font-mono text-[11px] text-faint">
             Templates marked Ready open instantly from shipped code. The rest load into the

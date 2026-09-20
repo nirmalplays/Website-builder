@@ -46,6 +46,276 @@ export type Template = {
 
 export const TEMPLATES: Template[] = [
   {
+    id: "wedding-site",
+    title: "Wedding",
+    blurb: "Story, schedule, RSVP",
+    category: "Websites",
+    preview: "landing",
+    prompt:
+      "A complete wedding website as one page: elegant nav, a hero with the couple names and wedding date, an our story timeline, ceremony and reception details with times and addresses, a bridal party grid, a photo gallery, an RSVP form with meal choice and plus-one, a gift registry list, travel and accommodation notes, and a footer",
+  },
+  {
+    id: "law-firm-site",
+    title: "Law Firm",
+    blurb: "Practice areas, attorneys",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete law firm website as one page: professional nav with a phone number, a hero with a confident headline and free consultation CTA, a practice areas grid of six, attorney profiles with credentials and bar admissions, case results with figures, client testimonials, an about the firm section, a consultation request form, and a footer with office addresses",
+  },
+  {
+    id: "construction-site",
+    title: "Construction",
+    blurb: "Projects, services, quote",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete construction company website as one page: nav with a Get a quote button, a hero over a site photo placeholder, a services grid of six, a completed projects gallery with project type and year, a process timeline of five steps, certifications and safety record, team foremen, a quote request form with project type and budget range, and a footer",
+  },
+  {
+    id: "barbershop-site",
+    title: "Barbershop",
+    blurb: "Services, barbers, booking",
+    category: "Websites",
+    preview: "menu",
+    prompt:
+      "A complete barbershop website as one page: bold nav, a hero with a book now CTA, a services price list of cuts and shaves, barber profiles with specialities and years of experience, a gallery of cuts, opening hours by day, a booking form with barber and time selection, customer reviews, and a footer with address",
+  },
+  {
+    id: "coffee-shop-site",
+    title: "Coffee Shop",
+    blurb: "Menu, story, locations",
+    category: "Websites",
+    preview: "menu",
+    prompt:
+      "A complete coffee shop website as one page: warm nav, a hero with the shop name and tagline, a drinks menu by category with prices, a food menu, a roastery story section, a bean sourcing section, locations with hours, a loyalty programme block, and a footer",
+  },
+  {
+    id: "bakery-site",
+    title: "Bakery",
+    blurb: "Products, orders, gallery",
+    category: "Websites",
+    preview: "grid",
+    prompt:
+      "A complete artisan bakery website as one page: nav with a cart, a hero featuring the daily bakes, a product grid of breads and pastries with prices, a custom cake ordering section with tiers and flavours, a bakers story section, a gallery, delivery and pickup info, a contact form, and a footer",
+  },
+  {
+    id: "dentist-site",
+    title: "Dental Practice",
+    blurb: "Services, team, appointments",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete dental practice website as one page: nav with an emergency number, a reassuring hero with a book appointment CTA, a treatments grid including cosmetic and general dentistry, meet the dentists with qualifications, a before and after gallery with image placeholders, insurance and payment plans, patient reviews, an appointment form, and a footer",
+  },
+  {
+    id: "veterinary-site",
+    title: "Veterinary Clinic",
+    blurb: "Services, vets, booking",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete veterinary clinic website as one page: friendly nav, a hero with an emergency banner, services for dogs cats and exotics, veterinarian profiles with specialities, a pet wellness plans pricing section, clinic hours, patient stories with pet names, an appointment booking form with pet type, and a footer",
+  },
+  {
+    id: "yoga-studio-site",
+    title: "Yoga Studio",
+    blurb: "Classes, teachers, passes",
+    category: "Websites",
+    preview: "calendar",
+    prompt:
+      "A complete yoga studio website as one page: calm nav, a hero with a first class free offer, a weekly class schedule grid by day and time, class type descriptions, teacher profiles, membership and class pass pricing, a studio gallery, student testimonials, a trial signup form, and a footer",
+  },
+  {
+    id: "spa-site",
+    title: "Spa and Wellness",
+    blurb: "Treatments, packages, booking",
+    category: "Websites",
+    preview: "menu",
+    prompt:
+      "A complete spa website as one page: serene nav, a hero with a book a treatment CTA, a treatments menu with durations and prices, spa packages, a facilities list, therapist profiles, a gift vouchers block, opening hours, a booking enquiry form, and a footer",
+  },
+  {
+    id: "music-band-site",
+    title: "Music Band",
+    blurb: "Tour dates, music, merch",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete band website as one page: nav, a full-bleed hero with the band name and a new album banner, upcoming tour dates with venue city and ticket buttons, a discography grid of albums, a music player mockup with a track list, a photo gallery, a merch row, a mailing list signup, and a footer",
+  },
+  {
+    id: "podcast-site",
+    title: "Podcast",
+    blurb: "Episodes, hosts, subscribe",
+    category: "Websites",
+    preview: "article",
+    prompt:
+      "A complete podcast website as one page: nav, a hero with the show name, tagline and subscribe buttons, the latest episode featured with a player mockup and show notes, an episode list of eight with numbers durations and dates, about the hosts, guest highlights, listener reviews, a newsletter signup, and a footer",
+  },
+  {
+    id: "news-magazine-site",
+    title: "News Magazine",
+    blurb: "Headlines, sections, ticker",
+    category: "Websites",
+    preview: "article",
+    prompt:
+      "A complete news magazine homepage as one page: a top bar with the date and a breaking news ticker, nav with sections, a lead story with a large image placeholder, a secondary stories grid, a most read sidebar list, sections for business technology and culture each with three stories, an opinion column block, a newsletter signup, and a footer",
+  },
+  {
+    id: "job-board-site",
+    title: "Job Board",
+    blurb: "Listings, filters, apply",
+    category: "Websites",
+    preview: "table",
+    prompt:
+      "A complete job board website as one page: nav with a post a job button, a hero with a job search bar for role location and type, filter chips for remote and seniority, a job listings list of eight with company role salary range and posted date, a featured companies row, a candidate signup block, and a footer",
+  },
+  {
+    id: "crypto-site",
+    title: "Crypto Platform",
+    blurb: "Markets, features, security",
+    category: "Websites",
+    preview: "dashboard",
+    prompt:
+      "A complete crypto exchange landing page as one page: nav with a sign up CTA, a hero with a price ticker strip of four coins, a market table of eight assets with price change and volume, a platform features grid, a security and custody section, a fee comparison, supported countries, an FAQ, and a footer with a regulatory disclaimer",
+  },
+  {
+    id: "mobile-app-site",
+    title: "Mobile App",
+    blurb: "Features, screens, download",
+    category: "Websites",
+    preview: "landing",
+    prompt:
+      "A complete mobile app landing page as one page: nav, a hero with the app name, a value line, app store download buttons and a phone mockup placeholder, a features grid of six with icons, a three-screen walkthrough, user reviews with star ratings, a free tier block, an FAQ, and a footer",
+  },
+  {
+    id: "game-studio-site",
+    title: "Game Studio",
+    blurb: "Games, trailer, team",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete game studio website as one page: dark nav, a hero with the flagship game title and a watch trailer CTA, a games grid of six with platform tags and release years, a features showcase for the latest title, the studio team, press quotes with outlet names, a wishlist and newsletter block, and a footer",
+  },
+  {
+    id: "interior-design-site",
+    title: "Interior Design",
+    blurb: "Projects, process, consult",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete interior design studio website as one page: refined nav, a hero with a portfolio image placeholder, a projects gallery with room type and location, a design process in four steps, services and packages with starting prices, designer profiles, client testimonials, a consultation booking form, and a footer",
+  },
+  {
+    id: "architecture-site",
+    title: "Architecture Firm",
+    blurb: "Works, practice, contact",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete architecture firm website as one page: minimal nav, a hero with a signature building image placeholder, a selected works grid with project name year and typology, a practice philosophy section, a services list, awards and publications, the team, a contact block with studio address, and a footer",
+  },
+  {
+    id: "car-dealership-site",
+    title: "Car Dealership",
+    blurb: "Inventory, finance, trade-in",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete car dealership website as one page: nav with a phone number, a hero with an inventory search by make model and price, a featured vehicles grid of six with mileage year and price, a finance calculator teaser, a trade-in valuation form, a why buy from us section, customer reviews, a service department block, and a footer",
+  },
+  {
+    id: "hotel-site",
+    title: "Hotel",
+    blurb: "Rooms, amenities, booking",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete hotel website as one page: elegant nav, a hero with a check-in check-out and guests booking bar, room types with image placeholders rates and occupancy, an amenities grid, dining and spa sections, a location and nearby attractions block, guest reviews with ratings, an offers section, and a footer",
+  },
+  {
+    id: "university-site",
+    title: "University",
+    blurb: "Programmes, campus, apply",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete university website as one page: nav with an Apply button, a hero with an admissions deadline banner, a programmes grid by faculty, a campus life gallery, admissions requirements and key dates, tuition and scholarships, student testimonials, faculty highlights, a request info form, and a footer",
+  },
+  {
+    id: "daycare-site",
+    title: "Daycare and Preschool",
+    blurb: "Programmes, staff, enrol",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete daycare and preschool website as one page: warm friendly nav, a hero with an enrol now CTA, age-group programmes with daily schedules, teachers with certifications, safety and licensing information, a typical day timeline, tuition rates, parent testimonials, an enrolment enquiry form, and a footer",
+  },
+  {
+    id: "pet-store-site",
+    title: "Pet Store",
+    blurb: "Products, grooming, deals",
+    category: "Websites",
+    preview: "grid",
+    prompt:
+      "A complete pet store website as one page: playful nav with a cart, a hero promo banner, category tiles for dogs cats and small pets, a bestselling products grid with prices and ratings, a grooming services section with prices, a subscription box offer, a customer pet photos section, a newsletter block, and a footer",
+  },
+  {
+    id: "fashion-brand-site",
+    title: "Fashion Brand",
+    blurb: "Lookbook, collection, shop",
+    category: "Websites",
+    preview: "gallery",
+    prompt:
+      "A complete fashion brand website as one page: minimal nav with a cart, a full-bleed campaign hero, a new collection product grid with prices, a lookbook gallery, a brand story and materials section, a sizing and fit block, press mentions, an email signup for drops, and a footer",
+  },
+  {
+    id: "jewelry-site",
+    title: "Jewelry Store",
+    blurb: "Collections, craft, custom",
+    category: "Websites",
+    preview: "grid",
+    prompt:
+      "A complete jewellery store website as one page: refined nav, a hero with a featured collection, a collections grid with prices, a custom design consultation section, materials and craftsmanship, care instructions, customer stories, an appointment booking block, and a footer with certifications",
+  },
+  {
+    id: "furniture-store-site",
+    title: "Furniture Store",
+    blurb: "Rooms, products, delivery",
+    category: "Websites",
+    preview: "grid",
+    prompt:
+      "A complete furniture store website as one page: nav with a cart, a hero with a seasonal sale banner, shop by room tiles, a featured products grid with prices and materials, a design services block, delivery and assembly information, a warranty section, customer reviews, and a footer",
+  },
+  {
+    id: "home-services-site",
+    title: "Home Services",
+    blurb: "Services, quote, coverage",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete home services company website as one page: nav with a 24/7 phone number, a hero with an emergency callout CTA, a services grid for plumbing heating and electrical, a transparent pricing table for common jobs, a service area coverage list, technicians with certifications, customer reviews, a booking form with urgency selection, and a footer",
+  },
+  {
+    id: "accounting-site",
+    title: "Accounting Firm",
+    blurb: "Services, industries, consult",
+    category: "Websites",
+    preview: "website",
+    prompt:
+      "A complete accounting firm website as one page: professional nav, a hero with a free consultation CTA, a services grid including tax bookkeeping and advisory, industries served, pricing packages for individuals and businesses, accountants with qualifications, client testimonials with company names, key tax deadlines, a contact form, and a footer",
+  },
+  {
+    id: "coworking-site",
+    title: "Coworking Space",
+    blurb: "Spaces, plans, tour",
+    category: "Websites",
+    preview: "listing",
+    prompt:
+      "A complete coworking space website as one page: nav with a book a tour button, a hero with the space name and a day pass offer, workspace types with capacity and pricing, an amenities grid, a photo gallery of the space, a membership plans comparison, a community events list, member testimonials, a tour booking form, and a footer with location",
+  },
+  {
     id: "agency-site",
     title: "Creative Agency",
     blurb: "Hero, services, work, contact",
