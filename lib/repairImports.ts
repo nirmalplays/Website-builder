@@ -47,8 +47,13 @@ function importedNames(code: string): Set<string> {
 
 function usedComponents(code: string): Set<string> {
   const names = new Set<string>();
-  // <Icon ...> and <Icon/>, but not <div> or <Foo.Bar>
-  for (const m of code.matchAll(/<([A-Z]\w*)[\s/>]/g)) names.add(m[1]);
+  // <Icon ...> and <Icon/>, but not <div> or <Foo.Bar>.
+  //
+  // The lookbehind is what separates JSX from a type argument: a JSX "<" follows
+  // whitespace, "(", "{", ">" or a comma, while the "<" in useState<BoardState>
+  // or React.FC<Props> always follows an identifier character. Without it, every
+  // generic type name looked like a missing component and failed the generation.
+  for (const m of code.matchAll(/(?<![\w$)\]])<([A-Z]\w*)[\s/>]/g)) names.add(m[1]);
   return names;
 }
 

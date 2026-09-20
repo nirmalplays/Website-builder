@@ -3,7 +3,21 @@
 import { useRef } from "react";
 import { MODELS } from "@/lib/config";
 
-export type Attachment = { data: string; mimeType: string; name: string; preview: string };
+export type Attachment = {
+  kind: "image" | "pdf" | "text";
+  name: string;
+  /** Base64 for image/pdf. */
+  data?: string;
+  mimeType?: string;
+  /** Extracted text for code, markdown, JSON and other plain files. */
+  text?: string;
+  /** Data URL, only for images. */
+  preview?: string;
+  size: number;
+};
+
+const TEXT_EXTENSIONS =
+  /\.(md|markdown|txt|tsx|ts|jsx|js|mjs|cjs|json|csv|css|scss|html|yml|yaml|env|sql)$/i;
 
 export function Composer({
   value,
@@ -33,24 +47,39 @@ export function Composer({
   const hero = size === "hero";
   const fileRef = useRef<HTMLInputElement>(null);
 
-  async function pickImage(file: File | undefined) {
+  /** Images and PDFs go up as base64; anything text-shaped goes up as text. */
+  async function pickFile(file: File | undefined) {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       onAttach(null);
       return;
     }
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-    onAttach({
-      data: dataUrl.split(",")[1],
-      mimeType: file.type,
-      name: file.name,
-      preview: dataUrl,
-    });
+
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+
+    if (isImage || isPdf) {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      onAttach({
+        kind: isPdf ? "pdf" : "image",
+        name: file.name,
+        data: dataUrl.split(",")[1],
+        mimeType: isPdf ? "application/pdf" : file.type,
+        preview: isImage ? dataUrl : undefined,
+        size: file.size,
+      });
+      return;
+    }
+
+    if (file.type.startsWith("text/") || TEXT_EXTENSIONS.test(file.name) || file.type === "application/json") {
+      const text = await file.text();
+      onAttach({ kind: "text", name: file.name, text, size: file.size });
+    }
   }
   const active = MODELS.find((m) => m.id === model);
 
@@ -90,10 +119,24 @@ export function Composer({
 
       {attachment && (
         <div className="mx-3 mb-1 flex items-center gap-2 rounded-lg border border-line bg-raised p-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={attachment.preview} alt="" className="h-9 w-9 rounded object-cover" />
+          {attachment.preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={attachment.preview} alt="" className="h-9 w-9 rounded object-cover" />
+          ) : (
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-canvas text-faint">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <path d="M14 3v5h5" strokeLinejoin="round" />
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" strokeLinejoin="round" />
+              </svg>
+            </span>
+          )}
           <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted">
             {attachment.name}
+            <span className="ml-1.5 text-faint">
+              {attachment.kind === "text"
+                ? `${Math.max(1, Math.round((attachment.text?.length ?? 0) / 1000))}k chars`
+                : `${Math.round(attachment.size / 1024)} KB`}
+            </span>
           </span>
           <button
             onClick={() => onAttach(null)}
@@ -112,17 +155,17 @@ export function Composer({
           <input
             ref={fileRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/png,image/jpeg,image/webp,application/pdf,.md,.txt,.tsx,.ts,.jsx,.js,.json,.csv,.css,.html"
             className="hidden"
             onChange={(e) => {
-              void pickImage(e.target.files?.[0]);
+              void pickFile(e.target.files?.[0]);
               e.target.value = "";
             }}
           />
           <button
             onClick={() => fileRef.current?.click()}
-            title="Attach a screenshot or wireframe"
-            aria-label="Attach an image"
+            title="Attach a screenshot, PRD, spec or code file"
+            aria-label="Attach a file"
             className="grid h-8 w-8 cursor-pointer place-items-center rounded-lg border border-line bg-raised text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">

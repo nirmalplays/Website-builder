@@ -7,13 +7,18 @@
 
 export type Turn = { role: "user" | "assistant"; content: string };
 
-export type ImageInput = { data: string; mimeType: string };
+/** Base64 payload sent inline: an image, or a PDF where the provider supports it. */
+export type BinaryInput = { data: string; mimeType: string };
+
+/** Text pulled from an uploaded spec, brief or source file. */
+export type DocumentInput = { name: string; text: string };
 
 export type GenerateRequest = {
   system: string;
   history: Turn[];
   prompt: string;
-  image?: ImageInput;
+  image?: BinaryInput;
+  document?: DocumentInput;
   model: string;
   maxOutputTokens: number;
   temperature: number;

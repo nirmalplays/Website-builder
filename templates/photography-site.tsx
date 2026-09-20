@@ -1,152 +1,157 @@
-import React, { useState } from 'react';
-import { Camera, Mail, Calendar, ChevronRight, Star, Zap, Shield, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Camera, 
+  Menu, 
+  X, 
+  Check, 
+  Star, 
+  Mail, 
+  Clock, 
+  DollarSign, 
+  ArrowRight,
+  Sparkles,
+  Shield
+} from 'lucide-react';
+
+const INITIAL_IMAGES = [
+  { id: 1, src: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e", title: "Urban Portraits" },
+  { id: 2, src: "https://images.unsplash.com/photo-1493863641943-9b68992a8d07", title: "Film Aesthetics" },
+  { id: 3, src: "https://images.unsplash.com/photo-1554080353-a576cf803bda", title: "Nature Capture" },
+  { id: 4, src: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32", title: "Events & Life" },
+  { id: 5, src: "https://images.unsplash.com/photo-1554995207-c18c203602cb", title: "Minimalist Studio" },
+  { id: 6, src: "https://images.unsplash.com/photo-1520390138845-fd2d229dd553", title: "Golden Hour" },
+  { id: 7, src: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745", title: "Night Vibes" },
+  { id: 8, src: "https://images.unsplash.com/photo-1519741497674-611481863552", title: "Candid Moments" },
+  { id: 9, src: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32", title: "Editorial Style" },
+];
+
+const PACKAGES = [
+  { id: 'basic', name: 'Essential Session', price: 299, desc: '1 hour shoot, 20 edited photos, digital gallery.' },
+  { id: 'pro', name: 'Professional Package', price: 599, desc: '3 hours, 60 edited photos, print release, custom moodboard.' },
+  { id: 'event', name: 'Full Event Coverage', price: 1200, desc: 'Full day coverage, 200+ photos, highlight reel, priority editing.' },
+];
 
 export default function App() {
-  const galleryImages = [
-    { id: 1, src: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e", title: "Urban Portraits" },
-    { id: 2, src: "https://images.unsplash.com/photo-1554080353-a576cf803bda", title: "Golden Hour" },
-    { id: 3, src: "https://images.unsplash.com/photo-1493863641943-9b68992a8d07", title: "Street Life" },
-    { id: 4, src: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32", title: "Candid Moments" },
-    { id: 5, src: "https://images.unsplash.com/photo-1551632811-56eda731724d", title: "Studio Sessions" },
-    { id: 6, src: "https://images.unsplash.com/photo-1520390138845-fd2d229dd553", title: "Event Coverage" },
-    { id: 7, src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb", title: "Natural Light" },
-    { id: 8, src: "https://images.unsplash.com/photo-1519741497674-611481863552", title: "Editorial" },
-    { id: 9, src: "https://images.unsplash.com/photo-1517841905240-472988babdf9", title: "Lifestyle" },
-  ];
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', date: '', type: 'portrait' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setTimeout(() => {
+      setStatus('success');
+      setForm({ name: '', email: '', date: '', type: 'portrait' });
+      setTimeout(() => setStatus('idle'), 3000);
+    }, 1000);
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans">
-      <nav className="fixed w-full z-50 bg-white/80 backdrop-blur-md border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <span className="text-xl font-bold tracking-tighter">ELARA VANCE</span>
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans selection:bg-neutral-900 selection:text-white">
+      {/* Navigation */}
+      <nav className="fixed w-full z-50 bg-neutral-50/80 backdrop-blur-md border-b border-neutral-200">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <span className="font-bold text-xl tracking-tight">ELARA VANCE</span>
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden">
+            {isMenuOpen ? <X /> : <Menu />}
+          </button>
           <div className="hidden md:flex gap-8 text-sm font-medium">
-            <a href="#gallery" className="hover:text-amber-600 transition">Gallery</a>
-            <a href="#services" className="hover:text-amber-600 transition">Services</a>
-            <a href="#contact" className="hover:text-amber-600 transition">Enquire</a>
+            {['Portfolio', 'Services', 'About', 'Contact'].map(link => (
+              <a key={link} href={`#${link.toLowerCase()}`} className="hover:text-emerald-600 transition-colors">{link}</a>
+            ))}
           </div>
         </div>
       </nav>
 
-      <header className="relative h-[80vh] flex items-center justify-center overflow-hidden">
-        <img 
-          src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4" 
-          alt="Hero background" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="relative z-10 text-center text-white px-6">
-          <h1 className="text-6xl md:text-8xl font-serif mb-6">Capturing Essence.</h1>
-          <p className="text-lg md:text-xl font-light opacity-90">Visual storytelling for brands and individuals.</p>
+      {/* Hero */}
+      <header className="relative h-[80vh] flex items-center justify-center pt-16">
+        <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4" className="absolute inset-0 w-full h-full object-cover" alt="Hero background" />
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative text-center text-white p-6">
+          <h1 className="text-5xl md:text-7xl font-light mb-4">Capturing Time</h1>
+          <p className="text-lg opacity-90">Visual stories for modern brands and people.</p>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-24">
-        <section id="gallery" className="mb-32">
-          <h2 className="text-3xl font-bold mb-12">Recent Work</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {galleryImages.map((img) => (
-              <div key={img.id} className="group relative aspect-[3/4] overflow-hidden bg-neutral-200">
-                <img src={img.src} alt={img.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6 text-white font-medium">
-                  {img.title}
-                </div>
+      {/* Portfolio */}
+      <section id="portfolio" className="max-w-6xl mx-auto px-6 py-24">
+        <h2 className="text-3xl font-bold mb-12">Latest Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {INITIAL_IMAGES.map((img) => (
+            <div key={img.id} className="group relative aspect-[4/5] overflow-hidden bg-neutral-200">
+              <img src={img.src} alt={img.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                <span className="text-white font-medium">{img.title}</span>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <section id="services" className="mb-32">
+      {/* Services */}
+      <section id="services" className="bg-white py-24">
+        <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-12">Packages</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { title: "Standard", price: "$450", desc: "Perfect for portraits and headshots.", icon: Camera },
-              { title: "Commercial", price: "$1,200", desc: "Full day brand photography.", icon: Zap },
-              { title: "Event", price: "$850", desc: "Up to 4 hours of coverage.", icon: Shield },
-            ].map((pkg, i) => (
-              <div key={i} className="p-8 border border-neutral-200 rounded-2xl hover:border-amber-600 transition group">
-                <pkg.icon className="w-8 h-8 text-amber-600 mb-6" />
-                <h3 className="text-xl font-bold mb-2">{pkg.title}</h3>
-                <p className="text-neutral-500 text-sm mb-6">{pkg.desc}</p>
-                <div className="text-3xl font-bold mb-6">{pkg.price}</div>
-                <button className="flex items-center gap-2 text-sm font-bold group-hover:text-amber-600">
-                  Select Plan <ArrowUpRight className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-32 bg-white p-12 md:p-20 rounded-3xl border border-neutral-100 shadow-sm">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">About Elara</h2>
-              <p className="text-neutral-600 leading-relaxed mb-6">
-                Based in the Pacific Northwest, I specialize in finding the quiet beauty in chaotic environments. 
-                With over 8 years of experience, my approach is collaborative, detail-oriented, and focused on 
-                creating images that stand the test of time.
-              </p>
-              <div className="flex gap-4 text-sm">
-                <span className="bg-neutral-100 px-4 py-2 rounded-full">Portrait Specialist</span>
-                <span className="bg-neutral-100 px-4 py-2 rounded-full">Available Worldwide</span>
-              </div>
-            </div>
-            <img 
-              src="https://images.unsplash.com/photo-1554744512-78d783bb463c" 
-              alt="Photographer" 
-              className="rounded-2xl w-full h-[400px] object-cover"
-            />
-          </div>
-        </section>
-
-        <section className="mb-32">
-          <h2 className="text-3xl font-bold mb-12">Client Notes</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              { text: "Elara captured the exact vibe we wanted for our brand launch. Truly professional.", name: "Sarah Jenkins", role: "Creative Director" },
-              { text: "The photos from our wedding are absolutely timeless. We couldn't be happier.", name: "Mark & Elena", role: "Newlyweds" },
-            ].map((test, i) => (
-              <div key={i} className="p-8 border-l-4 border-amber-600 bg-white">
-                <div className="flex gap-1 mb-4">
-                  {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-amber-500 text-amber-500" />)}
+            {PACKAGES.map(pkg => (
+              <div key={pkg.id} className="border border-neutral-200 p-8 rounded-lg flex flex-col gap-4">
+                <h3 className="text-xl font-bold">{pkg.name}</h3>
+                <div className="text-3xl font-bold text-emerald-600 flex items-center gap-1">
+                  <DollarSign size={24} />{pkg.price}
                 </div>
-                <p className="text-lg italic mb-6">"{test.text}"</p>
-                <div className="font-bold">{test.name}</div>
-                <div className="text-sm text-neutral-500">{test.role}</div>
+                <p className="text-neutral-600 flex-grow">{pkg.desc}</p>
+                <a href="#contact" className="w-full py-3 bg-neutral-900 text-white rounded-md text-center hover:bg-emerald-600 transition-colors">Book Now</a>
               </div>
             ))}
           </div>
-        </section>
-
-        <section id="contact" className="max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold mb-8 text-center">Let's Create</h2>
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-            <div className="grid grid-cols-2 gap-6">
-              <input type="text" placeholder="Name" className="w-full p-4 bg-white border border-neutral-200 rounded-xl" />
-              <input type="email" placeholder="Email" className="w-full p-4 bg-white border border-neutral-200 rounded-xl" />
-            </div>
-            <select className="w-full p-4 bg-white border border-neutral-200 rounded-xl">
-              <option>Standard Session</option>
-              <option>Commercial Project</option>
-              <option>Event Coverage</option>
-            </select>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-4 text-neutral-400 w-5 h-5" />
-              <input type="date" className="w-full pl-12 p-4 bg-white border border-neutral-200 rounded-xl" />
-            </div>
-            <textarea placeholder="Tell me about your vision..." className="w-full p-4 bg-white border border-neutral-200 rounded-xl h-32" />
-            <button className="w-full bg-neutral-900 text-white py-4 rounded-xl font-bold hover:bg-amber-600 transition">
-              Send Enquiry
-            </button>
-          </form>
-        </section>
-      </main>
-
-      <footer className="border-t border-neutral-200 py-12 text-center text-neutral-500 text-sm">
-        <p className="mb-4">© 2024 Elara Vance Photography. All Rights Reserved.</p>
-        <div className="flex justify-center gap-6">
-          <Mail className="w-5 h-5 cursor-pointer hover:text-amber-600" />
-          <Camera className="w-5 h-5 cursor-pointer hover:text-amber-600" />
         </div>
+      </section>
+
+      {/* About */}
+      <section id="about" className="py-24 max-w-4xl mx-auto px-6 text-center">
+        <div className="w-32 h-32 rounded-full mx-auto mb-8 overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb" alt="Photographer" />
+        </div>
+        <h2 className="text-3xl font-bold mb-6">About Elara</h2>
+        <p className="text-lg text-neutral-600 leading-relaxed mb-8">
+          With over 8 years of experience, I specialize in finding the authentic spark in every subject. Whether it's the quiet intensity of a portrait or the kinetic energy of a live event, my goal is to create images that feel like memories you haven't lived yet.
+        </p>
+        <div className="flex justify-center gap-6 text-emerald-600">
+          <div className="flex flex-col items-center gap-2"><Sparkles /><span className="text-xs">Certified</span></div>
+          <div className="flex flex-col items-center gap-2"><Shield /><span className="text-xs">Insured</span></div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="bg-neutral-900 text-white py-24">
+        <div className="max-w-xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-8">Enquire Today</h2>
+          {status === 'success' ? (
+            <div className="p-8 bg-emerald-600 text-white rounded-lg text-center font-bold">
+              Message received! I'll be in touch within 24 hours.
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input required type="text" placeholder="Your Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full p-3 bg-neutral-800 rounded border border-neutral-700 outline-none focus:border-emerald-500" />
+              <input required type="email" placeholder="Email Address" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full p-3 bg-neutral-800 rounded border border-neutral-700 outline-none focus:border-emerald-500" />
+              <div className="grid grid-cols-2 gap-4">
+                <input required type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full p-3 bg-neutral-800 rounded border border-neutral-700 outline-none focus:border-emerald-500" />
+                <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full p-3 bg-neutral-800 rounded border border-neutral-700 outline-none focus:border-emerald-500">
+                  <option value="portrait">Portrait</option>
+                  <option value="event">Event</option>
+                  <option value="brand">Branding</option>
+                </select>
+              </div>
+              <button disabled={status === 'loading'} type="submit" className="w-full py-4 bg-emerald-600 font-bold rounded hover:bg-emerald-500 transition-colors disabled:opacity-50">
+                {status === 'loading' ? 'Sending...' : 'Send Inquiry'}
+              </button>
+            </form>
+          )}
+        </div>
+      </section>
+
+      <footer className="py-12 text-center text-neutral-500 text-sm">
+        <p>© 2024 Elara Vance Photography. Built with craft and care.</p>
       </footer>
     </div>
   );

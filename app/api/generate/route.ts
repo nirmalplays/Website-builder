@@ -8,7 +8,7 @@ import {
   isAllowedModel,
 } from "@/lib/config";
 import { getProvider } from "@/lib/providers";
-import { SYSTEM_PROMPT, REPAIR_SUFFIX, IMAGE_SUFFIX } from "@/lib/systemPrompt";
+import { SYSTEM_PROMPT, REPAIR_SUFFIX, IMAGE_SUFFIX, DOCUMENT_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInteractivity";
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     projectId?: string;
     model?: string;
     image?: { data: string; mimeType: string };
+    document?: { name: string; text: string };
   };
   try {
     body = await req.json();
@@ -67,13 +68,28 @@ export async function POST(req: Request) {
     );
   }
 
-  // Image input (FR-11): PNG/JPG/WebP, 5 MB ceiling before base64 overhead.
-  const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+  // Attachments: images and PDFs ride inline; text files come through as text.
+  const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+  const MAX_DOCUMENT_CHARS = 200_000;
+
+  const document = body.document?.text
+    ? {
+        name: (body.document.name || "attachment").slice(0, 120),
+        // A very long spec would blow the context window; keep the head, which
+        // is where requirements live, and say plainly that it was cut.
+        text:
+          body.document.text.length > MAX_DOCUMENT_CHARS
+            ? `${body.document.text.slice(0, MAX_DOCUMENT_CHARS)}
+
+[file truncated at ${MAX_DOCUMENT_CHARS} characters]`
+            : body.document.text,
+      }
+    : undefined;
   const image = body.image;
   if (image) {
     if (!ALLOWED_IMAGE_TYPES.includes(image.mimeType)) {
       return NextResponse.json(
-        { error: "Attach a PNG, JPG or WebP image." },
+        { error: "Attach a PNG, JPG, WebP or PDF." },
         { status: 400 },
       );
     }
@@ -117,9 +133,16 @@ export async function POST(req: Request) {
   let inputTokens = 0;
   let outputTokens = 0;
 
-  const systemFor = (base: string) => (image ? `${base}
+  const systemFor = (base: string) => {
+    let out = base;
+    if (image) out += `
 
-${IMAGE_SUFFIX}` : base);
+${IMAGE_SUFFIX}`;
+    if (document) out += `
+
+${DOCUMENT_SUFFIX}`;
+    return out;
+  };
 
   const call = async (systemInstruction: string) => {
     const res = await provider.generate({
@@ -127,6 +150,7 @@ ${IMAGE_SUFFIX}` : base);
       history,
       prompt,
       image,
+      document,
       model,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       temperature: 0.7,

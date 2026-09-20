@@ -57,6 +57,21 @@ export const openAiCompatibleProvider: Provider = {
       })),
     ];
 
+    if (req.document) {
+      messages.push({
+        role: "user",
+        content: `<attached-file name="${req.document.name}">
+${req.document.text}
+</attached-file>`,
+      });
+    }
+
+    if (req.image && req.image.mimeType === "application/pdf") {
+      throw new Error(
+        "This provider cannot read PDFs inline. Upload the text, or use the Gemini provider.",
+      );
+    }
+
     if (req.image) {
       // Vision models take the image alongside the text in one user turn.
       messages.push({

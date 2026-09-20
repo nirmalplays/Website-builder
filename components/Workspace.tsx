@@ -249,10 +249,16 @@ Fix it and return the complete corrected file.`,
     setLoading(true);
     setMobileView("result");
     const sentHistory = history;
-    const label = trimmed || "Build this screenshot";
+    const label =
+      trimmed ||
+      (sentImage?.kind === "text"
+        ? `Build what ${sentImage.name} describes`
+        : sentImage?.kind === "pdf"
+          ? `Build what ${sentImage.name} describes`
+          : "Build this screenshot");
     setHistory((h) => [
       ...h,
-      { role: "user", content: sentImage ? `${label}  [image: ${sentImage.name}]` : label },
+      { role: "user", content: sentImage ? `${label}  [${sentImage.name}]` : label },
     ]);
 
     try {
@@ -260,11 +266,19 @@ Fix it and return the complete corrected file.`,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: trimmed || "Recreate the attached screenshot as a React component.",
+          prompt:
+            trimmed ||
+            (sentImage?.kind === "image"
+              ? "Recreate the attached screenshot as a React component."
+              : "Build the app described in the attached file."),
           history: sentHistory,
           projectId,
           model,
-          ...(sentImage ? { image: { data: sentImage.data, mimeType: sentImage.mimeType } } : {}),
+          ...(sentImage?.kind === "text"
+            ? { document: { name: sentImage.name, text: sentImage.text } }
+            : sentImage
+              ? { image: { data: sentImage.data, mimeType: sentImage.mimeType } }
+              : {}),
         }),
       });
       const data = await res.json();

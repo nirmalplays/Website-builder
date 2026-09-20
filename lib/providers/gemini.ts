@@ -40,6 +40,11 @@ export const geminiProvider: Provider = {
       {
         role: "user" as const,
         parts: [
+          ...(req.document
+            ? [{ text: `<attached-file name="${req.document.name}">
+${req.document.text}
+</attached-file>` }]
+            : []),
           { text: req.prompt },
           ...(req.image
             ? [{ inlineData: { data: req.image.data, mimeType: req.image.mimeType } }]
