@@ -15,6 +15,13 @@
       "when": 1789915703080,
       "tag": "0001_busy_madelyne_pryor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789915774855,
+      "tag": "0002_enable_rls",
+      "breakpoints": true
     }
   ]
 }
