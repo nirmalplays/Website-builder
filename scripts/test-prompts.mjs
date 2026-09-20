@@ -1,7 +1,8 @@
 // Hour 2 checkpoint: does the system prompt return one clean, sandbox-safe file every time?
 // Run the dev server first, then: npm run test:prompts
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import * as Lucide from "lucide-react";
+import { execSync } from "node:child_process";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = "tmp/prompt-tests";
@@ -44,7 +45,10 @@ mkdirSync(OUT, { recursive: true });
 let pass = 0;
 const times = [];
 
+const DELAY_MS = Number(process.env.DELAY_MS ?? 7000); // free-tier limits are per minute
+
 for (const [i, prompt] of PROMPTS.entries()) {
+  if (i > 0) await new Promise((r) => setTimeout(r, DELAY_MS));
   const started = Date.now();
   let code = null;
   let error = null;
@@ -78,6 +82,23 @@ for (const [i, prompt] of PROMPTS.entries()) {
     );
   }
 }
+
+// tsc is the only thing that reliably catches "used but never imported".
+let compiles = "SKIPPED (no files)";
+try {
+  // Windows shells do not expand globs, so list the files explicitly.
+  const files = readdirSync(OUT)
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => `${OUT}/${f}`);
+  execSync(
+    `npx tsc --noEmit --jsx react-jsx --esModuleInterop --skipLibCheck --target es2020 --moduleResolution bundler --module esnext ${files.join(" ")}`,
+    { stdio: "pipe" },
+  );
+  compiles = "all files compile";
+} catch (err) {
+  compiles = "COMPILE ERRORS:\n" + err.stdout.toString().trim();
+}
+console.log("\n" + compiles);
 
 times.sort((a, b) => a - b);
 console.log(

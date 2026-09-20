@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { GEMINI_MODEL, HISTORY_TURNS, MAX_OUTPUT_TOKENS, THINKING_BUDGET } from "@/lib/config";
 import { SYSTEM_PROMPT, REPAIR_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
+import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,16 +60,35 @@ export async function POST(req: Request) {
   };
 
   const started = Date.now();
+
+  // Test/backup path: serve a known-good generation instead of calling Gemini.
+  // Off unless GEMINI_FIXTURES=1. Lets the preview half be exercised without quota.
+  if (process.env.GEMINI_FIXTURES === "1") {
+    console.warn("[generate] FIXTURE MODE - not calling Gemini");
+    const { readFileSync } = await import("node:fs");
+    const name = /pricing|plan|tier/i.test(prompt) ? "pricing" : "dashboard";
+    const code = readFileSync(`fixtures/${name}.tsx`, "utf8");
+    await new Promise((r) => setTimeout(r, 800));
+    return NextResponse.json({ code, fixture: true });
+  }
+
   try {
-    let raw = await call(SYSTEM_PROMPT);
     let code: string;
     try {
-      code = extractCode(raw);
+      // repairImports fixes icons used but never imported, deterministically.
+      // It throws when the undefined name is not a lucide icon, which the retry handles.
+      code = repairImports(extractCode(await call(SYSTEM_PROMPT)));
     } catch (err) {
-      if (!(err instanceof NoComponentError)) throw err;
+      const recoverable =
+        err instanceof NoComponentError || err instanceof UnknownComponentError;
+      if (!recoverable) throw err;
+      console.warn(`[generate] repair retry: ${(err as Error).message}`);
+      const suffix =
+        err instanceof UnknownComponentError
+          ? `${REPAIR_SUFFIX}\n\nAlso: ${err.message}. Every component you render must be defined in the file or imported from an allowed package.`
+          : REPAIR_SUFFIX;
       // One automatic repair retry, then surface it.
-      raw = await call(SYSTEM_PROMPT + "\n\n" + REPAIR_SUFFIX);
-      code = extractCode(raw);
+      code = repairImports(extractCode(await call(SYSTEM_PROMPT + "\n\n" + suffix)));
     }
     console.log(`[generate] ${GEMINI_MODEL} ${Date.now() - started}ms ${code.length} chars`);
     return NextResponse.json({ code });
