@@ -14,7 +14,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false, ssl: "require" });
+const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false, ssl: "require", onnotice: () => {} });
 try {
   await migrate(drizzle(client), { migrationsFolder: "drizzle" });
   console.log("OK: migrations applied");

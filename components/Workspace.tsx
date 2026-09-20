@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Preview } from "./Preview";
 import { MODELS } from "@/lib/config";
 import { AuthButton, type SessionUser } from "./AuthButton";
 import type { OAuthProvider } from "@/lib/supabase/config";
+import { UsageMeter, type Usage } from "./UsageMeter";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -35,13 +36,29 @@ export function Workspace({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const isEdit = code !== "";
+  const outOfQuota = usage?.enforced === true && usage.remaining <= 0;
+
+  // Seed the meter on load; every generation refreshes it from its own response.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/usage")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u) => {
+        if (!cancelled && u) setUsage(u);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function send(prompt: string) {
     const trimmed = prompt.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || outOfQuota) return;
 
     setInput("");
     setError(null);
@@ -59,6 +76,7 @@ export function Workspace({
         body: JSON.stringify({ prompt: trimmed, history: sentHistory, projectId, model }),
       });
       const data = await res.json();
+      if (data.usage) setUsage(data.usage);
       if (!res.ok) throw new Error(data.error ?? "Generation failed.");
 
       // Only swap the sandbox files once a generation is complete.
@@ -157,8 +175,9 @@ export function Workspace({
           )}
         </div>
 
-        <div className="border-t border-neutral-800 p-3">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 focus-within:border-neutral-600">
+        <div className="border-t border-neutral-800 pb-3 pt-2">
+          <UsageMeter usage={usage} />
+          <div className="mx-3 rounded-xl border border-neutral-800 bg-neutral-900 focus-within:border-neutral-600">
             <label htmlFor="prompt" className="sr-only">
               Describe the UI you want
             </label>
@@ -185,10 +204,10 @@ export function Workspace({
               <span className="text-[11px] text-neutral-600">Enter to send</span>
               <button
                 onClick={() => send(input)}
-                disabled={loading || !input.trim()}
+                disabled={loading || !input.trim() || outOfQuota}
                 className="rounded-md bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition enabled:hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500"
               >
-                {loading ? "Generating" : isEdit ? "Edit" : "Generate"}
+                {outOfQuota ? "Limit reached" : loading ? "Generating" : isEdit ? "Edit" : "Generate"}
               </button>
             </div>
           </div>

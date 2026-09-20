@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { randomUUID } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
 import { eq } from "drizzle-orm";
 import {
@@ -15,7 +13,8 @@ import { SYSTEM_PROMPT, REPAIR_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 import { db, tryPersist, schema } from "@/lib/db";
-import { getUser } from "@/lib/supabase/server";
+import { getIdentity } from "@/lib/identity";
+import { getUsage } from "@/lib/limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -29,22 +28,6 @@ function toContents(turns: Turn[]): GenaiContent[] {
     // Assistant turns are code; hand them back in the same shape we asked for.
     parts: [{ text: t.role === "assistant" ? "```tsx\n" + t.content + "\n```" : t.content }],
   }));
-}
-
-/** Anonymous owner id, so projects can be listed before auth exists. */
-async function sessionId(): Promise<string> {
-  const jar = await cookies();
-  const existing = jar.get("uigen_session")?.value;
-  if (existing) return existing;
-  const id = randomUUID();
-  jar.set("uigen_session", id, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 365,
-    path: "/",
-  });
-  return id;
 }
 
 export async function POST(req: Request) {
@@ -69,6 +52,22 @@ export async function POST(req: Request) {
   // Never pass an arbitrary client string to the provider.
   const model = body.model && isAllowedModel(body.model) ? body.model : DEFAULT_MODEL;
 
+  // Identity and quota first: never spend a model call the user is not allowed to make.
+  const identity = await getIdentity();
+  const usageBefore = await getUsage(identity);
+  if (usageBefore.enforced && usageBefore.remaining <= 0) {
+    return NextResponse.json(
+      {
+        error: identity.signedIn
+          ? `Daily limit reached (${usageBefore.limit} generations). Resets at midnight UTC.`
+          : `Free trial used up (${usageBefore.limit} generations). Sign in to keep going.`,
+        usage: usageBefore,
+        limitReached: true,
+      },
+      { status: 429 },
+    );
+  }
+
   const history = (body.history ?? []).slice(-HISTORY_TURNS * 2);
   const contents = [...toContents(history), ...toContents([{ role: "user", content: prompt }])];
   const started = Date.now();
@@ -84,6 +83,7 @@ export async function POST(req: Request) {
       code: readFileSync(`fixtures/${name}.tsx`, "utf8"),
       fixture: true,
       model,
+      usage: usageBefore,
     });
   }
 
@@ -139,8 +139,8 @@ export async function POST(req: Request) {
 
     // Persistence is best-effort: a DB problem must never fail a generation.
     const projectId = await tryPersist("save version", async () => {
-      const owner = await sessionId();
-      const user = await getUser();
+      const owner = identity.sessionId;
+      const user = identity.userId ? { id: identity.userId } : null;
       let id = body.projectId ?? null;
 
       if (id) {
@@ -181,6 +181,8 @@ export async function POST(req: Request) {
 
       await db!.insert(schema.usage).values({
         projectId: id,
+        sessionId: identity.sessionId,
+        userId: identity.userId,
         model,
         inputTokens,
         outputTokens,
@@ -191,7 +193,9 @@ export async function POST(req: Request) {
       return id;
     });
 
-    return NextResponse.json({ code, projectId, model });
+    // Report the count after this generation so the meter cannot drift.
+    const usageAfter = await getUsage(identity);
+    return NextResponse.json({ code, projectId, model, usage: usageAfter });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Generation failed.";
     console.error("[generate] failed:", message);

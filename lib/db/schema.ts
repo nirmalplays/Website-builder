@@ -40,6 +40,9 @@ export const versions = pgTable("versions", {
 export const usage = pgTable("usage", {
   id: uuid("id").primaryKey().defaultRandom(),
   projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  // Denormalised owner so quota counting is one indexed scan, not a join.
+  sessionId: text("session_id"),
+  userId: uuid("user_id"),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),
   outputTokens: integer("output_tokens").notNull().default(0),
