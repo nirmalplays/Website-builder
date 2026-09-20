@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_MODEL, HISTORY_TURNS, MAX_OUTPUT_TOKENS } from "@/lib/config";
+import { GEMINI_MODEL, HISTORY_TURNS, MAX_OUTPUT_TOKENS, THINKING_BUDGET } from "@/lib/config";
 import { SYSTEM_PROMPT, REPAIR_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 
@@ -52,6 +52,7 @@ export async function POST(req: Request) {
         systemInstruction,
         temperature: 0.7,
         maxOutputTokens: MAX_OUTPUT_TOKENS,
+        thinkingConfig: { thinkingBudget: THINKING_BUDGET },
       },
     });
     return res.text ?? "";

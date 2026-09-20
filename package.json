@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check": "node scripts/check-gemini.mjs"
+    "check": "node scripts/check-gemini.mjs",
+    "test:prompts": "node scripts/test-prompts.mjs"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
     "@google/genai": "^2.23.0",
+    "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8"
