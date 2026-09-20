@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Preview } from "./Preview";
 import { MODELS } from "@/lib/config";
+import { AuthButton, type SessionUser } from "./AuthButton";
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -13,7 +14,15 @@ const EXAMPLES = [
   "A landing hero for a running shoe brand with a big product photo and an email capture",
 ];
 
-export function Workspace({ defaultModel }: { defaultModel: string }) {
+export function Workspace({
+  defaultModel,
+  authEnabled,
+  user,
+}: {
+  defaultModel: string;
+  authEnabled: boolean;
+  user: SessionUser;
+}) {
   const [history, setHistory] = useState<Turn[]>([]);
   const [code, setCode] = useState("");
   const [model, setModel] = useState(defaultModel);
@@ -79,7 +88,7 @@ export function Workspace({ defaultModel }: { defaultModel: string }) {
             value={model}
             onChange={(e) => setModel(e.target.value)}
             title={MODELS.find((m) => m.id === model)?.note}
-            className="ml-auto max-w-[9.5rem] truncate rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 outline-none hover:border-neutral-700 focus:border-neutral-600"
+            className="ml-auto max-w-[8.5rem] truncate rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 outline-none hover:border-neutral-700 focus:border-neutral-600"
           >
             {MODELS.map((m) => (
               <option key={m.id} value={m.id}>
@@ -87,6 +96,7 @@ export function Workspace({ defaultModel }: { defaultModel: string }) {
               </option>
             ))}
           </select>
+          <AuthButton user={user} enabled={authEnabled} />
         </header>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-5">

@@ -15,6 +15,7 @@ import { SYSTEM_PROMPT, REPAIR_SUFFIX } from "@/lib/systemPrompt";
 import { extractCode, NoComponentError } from "@/lib/extractCode";
 import { repairImports, UnknownComponentError } from "@/lib/repairImports";
 import { db, tryPersist, schema } from "@/lib/db";
+import { getUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -139,6 +140,7 @@ export async function POST(req: Request) {
     // Persistence is best-effort: a DB problem must never fail a generation.
     const projectId = await tryPersist("save version", async () => {
       const owner = await sessionId();
+      const user = await getUser();
       let id = body.projectId ?? null;
 
       if (id) {
@@ -153,13 +155,14 @@ export async function POST(req: Request) {
       if (!id) {
         const [created] = await db!
           .insert(schema.projects)
-          .values({ sessionId: owner, title: prompt.slice(0, 80) })
+          .values({ sessionId: owner, userId: user?.id ?? null, title: prompt.slice(0, 80) })
           .returning({ id: schema.projects.id });
         id = created.id;
       } else {
+        // Signing in mid-session claims the anonymous project.
         await db!
           .update(schema.projects)
-          .set({ updatedAt: new Date() })
+          .set({ updatedAt: new Date(), ...(user ? { userId: user.id } : {}) })
           .where(eq(schema.projects.id, id));
       }
 

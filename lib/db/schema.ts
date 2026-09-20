@@ -1,10 +1,14 @@
 import { integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-// No auth yet, so a project belongs to an anonymous session cookie.
-// When OAuth lands, add users.id and backfill session_id -> user_id.
+// A project is owned by a Supabase auth user once signed in, and by an anonymous
+// session cookie before that. Keeping both means a signed-out visitor still gets
+// saved work, and signing in can claim it later.
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().defaultRandom(),
   sessionId: text("session_id").notNull(),
+  // References auth.users(id) in Supabase; no FK here because that table lives
+  // in the auth schema, which Drizzle does not manage.
+  userId: uuid("user_id"),
   title: text("title").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
