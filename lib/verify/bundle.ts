@@ -14,7 +14,10 @@ const CDN = "https://esm.sh";
 
 export type BundleResult = {
   code: string;
+  /** Package roots, for matching against the project's dependency list. */
   externals: string[];
+  /** Every bare specifier as written, subpaths included - what the import map needs. */
+  externalSpecifiers: string[];
   warnings: string[];
 };
 
@@ -65,6 +68,7 @@ function resolveVirtual(spec: string, importer: string, files: GeneratedFiles): 
 
 export async function bundleProject(files: GeneratedFiles): Promise<BundleResult> {
   const externals = new Set<string>();
+  const externalSpecifiers = new Set<string>();
 
   const virtualFs: esbuild.Plugin = {
     name: "virtual-fs",
@@ -88,6 +92,7 @@ export async function bundleProject(files: GeneratedFiles): Promise<BundleResult
           ? args.path.split("/").slice(0, 2).join("/")
           : args.path.split("/")[0];
         externals.add(pkg);
+        externalSpecifiers.add(args.path);
         return { path: args.path, external: true };
       });
 
@@ -119,6 +124,7 @@ export async function bundleProject(files: GeneratedFiles): Promise<BundleResult
     return {
       code: result.outputFiles?.[0]?.text ?? "",
       externals: [...externals],
+      externalSpecifiers: [...externalSpecifiers],
       warnings: result.warnings.map((w) => w.text),
     };
   } catch (err) {
@@ -136,7 +142,7 @@ export async function bundleProject(files: GeneratedFiles): Promise<BundleResult
 }
 
 /** Import map so the browser can fetch the packages we left external. */
-export function importMap(externals: string[], dependencies: Record<string, string>): string {
+export function importMap(specifiers: string[], dependencies: Record<string, string>): string {
   const imports: Record<string, string> = {
     react: `${CDN}/react@18.3.1`,
     "react/jsx-runtime": `${CDN}/react@18.3.1/jsx-runtime`,
@@ -144,13 +150,30 @@ export function importMap(externals: string[], dependencies: Record<string, stri
     "react-dom/client": `${CDN}/react-dom@18.3.1/client`,
   };
 
-  for (const pkg of externals) {
-    if (imports[pkg]) continue;
+  /*
+   * Map every specifier exactly as it was written, subpaths included.
+   *
+   * Mapping only the package root was not enough: a React Bits component
+   * imports "motion/react", the map held only "motion", and the browser
+   * refuses an unmapped bare specifier - so the app threw on mount and the
+   * preview went blank while esbuild reported a clean compile, because to the
+   * bundler it was simply an external.
+   *
+   * A trailing-slash prefix mapping would cover subpaths in one entry but
+   * cannot carry a query string, which forces esm.sh's "*" form and
+   * externalises every transitive dependency - swapping the missing subpath
+   * for a missing "framer-motion". Listing the specifiers esbuild actually saw
+   * keeps ?external=react,react-dom on each, so React stays a single copy and
+   * nothing else has to be resolvable.
+   */
+  for (const spec of specifiers) {
+    if (imports[spec]) continue;
+    const pkg = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
+    const subpath = spec.slice(pkg.length);
     const version = dependencies[pkg];
     // Pin when we know the version; let the CDN pick otherwise.
-    imports[pkg] = version
-      ? `${CDN}/${pkg}@${version.replace(/^[\^~]/, "")}?external=react,react-dom`
-      : `${CDN}/${pkg}?external=react,react-dom`;
+    const pinned = version ? `${pkg}@${version.replace(/^[\^~]/, "")}` : pkg;
+    imports[spec] = `${CDN}/${pinned}${subpath}?external=react,react-dom`;
   }
 
   return JSON.stringify({ imports }, null, 2);

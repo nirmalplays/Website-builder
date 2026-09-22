@@ -130,7 +130,7 @@ export async function verifyProject(
 
   const ctx = await browser.newContext({ viewport: VIEWPORT });
   const p = await ctx.newPage();
-  const html = page(bundled.code, importMap(bundled.externals, dependencies));
+  const html = page(bundled.code, importMap(bundled.externalSpecifiers, dependencies));
 
   try {
     await p.route("http://generated.local/**", (route) =>

@@ -338,7 +338,12 @@ export async function POST(req: Request) {
     let repaired: string | null = null;
     const firstReply = await call(system, userPrompt);
     try {
-      files = parseFiles(firstReply);
+      // An edit reply contains only the files it is changing, and /App.tsx is
+      // usually not one of them - the existing project already has it, and it
+      // is merged back in below. Demanding an entry point here failed every
+      // edit that did not happen to touch the root file ("make it dark and add
+      // a testimonials section" being exactly that shape).
+      files = parseFiles(firstReply, !isEdit);
     } catch (err) {
       if (!(err instanceof NoFilesError)) throw err;
 
