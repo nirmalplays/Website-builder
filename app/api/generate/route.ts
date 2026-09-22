@@ -32,6 +32,7 @@ import { repairImports } from "@/lib/repairImports";
 import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInteractivity";
 import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
+import { BundleError, bundleProject } from "@/lib/verify/bundle";
 import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/inspect";
 import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
@@ -511,37 +512,6 @@ ${repairPrompt(report)}`, userPrompt), false);
         }
       }
 
-      if (report) {
-        const remaining = report.findings.filter((f) => f.severity !== "warning");
-        const fatal = remaining.filter((f) => f.severity === "fatal");
-        const fixed =
-          fixRounds > 0
-            ? `fixed ${fixRounds === 1 ? "1 round of issues" : `${fixRounds} rounds of issues`}, `
-            : "";
-
-        // A fatal finding means the app does not run at all - the preview will
-        // be blank. Saying "1 issue left" about that reads as a minor blemish,
-        // so name it for what it is.
-        // Hosts without a Chromium binary (Vercel's serverless runtime, for
-        // one) skip the headless pass and return ok with a warning. That
-        // warning is filtered out of `remaining`, so without this branch the
-        // build reports "ran it in a browser: no problems found" having never
-        // opened one. The compile check still ran, so say exactly that much.
-        const ranInBrowser = !report.findings.some((f) => f.kind === "verification-unavailable");
-        const how = ranInBrowser ? "Ran it in a browser" : "Compiled it (no browser on this host)";
-
-        notes.push(
-          fatal.length > 0
-            ? `${how}: ${fixed}but this build still does not compile (${fatal
-                .map((f) => f.kind)
-                .join(", ")}), so the preview will be empty. Ask for a fix and it will try again with the error in hand.`
-            : remaining.length > 0
-              ? `${how}: ${fixed}${remaining.length} issue(s) left.`
-              : fixRounds > 0
-                ? `${how}: ${fixed}all clear.`
-                : `${how}: no problems found.`,
-        );
-      }
     }
 
     // Last resort, once the repair rounds have had their chance: a dangling
@@ -552,6 +522,64 @@ ${repairPrompt(report)}`, userPrompt), false);
       notes.push(
         `Could not get ${stub.stubbed.join(", ")} written, so ${stub.stubbed.length === 1 ? "it was" : "they were"} stubbed out to keep the rest of the app running - those sections will be empty. Ask for a fix and it will fill them in.`,
       );
+    }
+
+    /*
+     * Say whether the build that is actually being shipped compiles.
+     *
+     * `report` is whatever the last verify round produced, and the loop can
+     * stop between a fix and the re-verify it never got to - so the findings
+     * could describe files that have since been rewritten. A build was
+     * reported as five fatal errors when the repair had already written every
+     * missing component. Bundling is local and takes milliseconds, so the
+     * honest answer is simply to compile the final set once more.
+     */
+    if (report) {
+      const fixedLabel =
+        fixRounds > 0
+          ? `fixed ${fixRounds === 1 ? "1 round of issues" : `${fixRounds} rounds of issues`}, `
+          : "";
+      const ranInBrowser = !report.findings.some((f) => f.kind === "verification-unavailable");
+      const how = ranInBrowser ? "Ran it in a browser" : "Compiled it (no browser on this host)";
+
+      let compileErrors: string[] = [];
+      try {
+        await bundleProject(files);
+      } catch (err) {
+        compileErrors =
+          err instanceof BundleError
+            ? err.errors.slice(0, 5).map((e) => `${e.file}${e.line ? `:${e.line}` : ""} - ${e.text}`)
+            : [err instanceof Error ? err.message : String(err)];
+      }
+
+      const behaviour = report.findings.filter(
+        (f) => f.severity !== "warning" && f.kind !== "compile-error",
+      );
+
+      notes.push(
+        compileErrors.length > 0
+          ? `${how}: ${fixedLabel}but this build still does not compile (${compileErrors.length} error(s)), so the preview will be empty. Ask for a fix and it will try again with the error in hand.`
+          : behaviour.length > 0
+            ? `${how}: ${fixedLabel}${behaviour.length} issue(s) left.`
+            : fixRounds > 0
+              ? `${how}: ${fixedLabel}all clear.`
+              : `${how}: no problems found.`,
+      );
+
+      // The response carries the truth about the shipped files, not a snapshot
+      // from a round that has since been repaired.
+      report = {
+        ...report,
+        ok: compileErrors.length === 0,
+        findings: [
+          ...report.findings.filter((f) => f.kind !== "compile-error"),
+          ...compileErrors.map((detail) => ({
+            severity: "fatal" as const,
+            kind: "compile-error",
+            detail,
+          })),
+        ],
+      };
     }
 
     // Ship only dependencies something actually imports.
