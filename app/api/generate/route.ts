@@ -16,6 +16,7 @@ import {
   dependencyNote,
   ICON_NOTE,
   FILES_REPAIR_SUFFIX,
+  entryPointPrompt,
   missingFilesPrompt,
 } from "@/lib/buildPrompt";
 import { IMAGE_SUFFIX, DOCUMENT_SUFFIX } from "@/lib/systemPrompt";
@@ -324,12 +325,42 @@ export async function POST(req: Request) {
 
     let files: GeneratedFiles;
     let repaired: string | null = null;
+    const firstReply = await call(system, userPrompt);
     try {
-      files = parseFiles(await call(system, userPrompt));
+      files = parseFiles(firstReply);
     } catch (err) {
       if (!(err instanceof NoFilesError)) throw err;
-      files = parseFiles(await call(`${system}\n\n${FILES_REPAIR_SUFFIX}`, userPrompt));
-      repaired = "format";
+
+      // Did the sections arrive and only the entry point get lost? That is what
+      // an output limit does, because /App.tsx is written last. Asking again for
+      // the whole build would truncate in the same place; asking for the one
+      // small file that wires up what already exists will not.
+      let salvaged: GeneratedFiles = {};
+      try {
+        salvaged = parseFiles(firstReply, false);
+      } catch {
+        // Nothing usable came back at all; fall through to the format retry.
+      }
+
+      if (Object.keys(salvaged).length > 0) {
+        const entry = parseFiles(
+          await call(`${system}
+
+${entryPointPrompt(salvaged)}`, userPrompt),
+          false,
+        );
+        files = { ...salvaged, ...entry };
+        if (!files["/App.tsx"]) throw err;
+        notes.push(
+          `The build ran past its output limit, so ${Object.keys(salvaged).length} section(s) were kept and the entry point was rewritten around them.`,
+        );
+        repaired = "entry-point";
+      } else {
+        files = parseFiles(await call(`${system}
+
+${FILES_REPAIR_SUFFIX}`, userPrompt));
+        repaired = "format";
+      }
     }
 
     // Component source is merged after generation so the model cannot mangle it.

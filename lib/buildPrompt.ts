@@ -20,7 +20,13 @@ OUTPUT FORMAT - follow exactly:
 \`\`\`
 
 - Nothing outside the blocks. No commentary, no explanations, no plan recap.
-- /App.tsx is required and must \`export default function App()\`.
+- /App.tsx is required, must \`export default function App()\`, and must be the
+  FIRST block you emit. A long reply can be cut off by the output limit, and
+  losing the entry point loses the whole build, while losing a trailing section
+  loses only that section.
+- Keep the whole reply inside roughly ten files. Seed arrays get 3-6 records,
+  not twenty - enough to show the UI working. Padding the data is the usual
+  reason a build runs out of output and arrives half-written.
 - Every file you import must be a file you wrote, or a package listed as
   available. Before you finish, re-read your own import lines and confirm each
   relative path matches a block you actually emitted in THIS reply.
@@ -127,5 +133,33 @@ export function missingFilesPrompt(
     "  with types and data shaped to how they are already used there.",
     "- Real content, not placeholders: if it is a data module, write the actual",
     "  records the UI renders.",
+  ].join("\n");
+}
+
+/**
+ * Asks for the entry point alone, when everything else arrived.
+ *
+ * Models write /App.tsx last, so it is the first casualty when a reply runs
+ * past the output limit. Re-running the whole build would very likely truncate
+ * in the same place; asking for one small file that imports what already
+ * exists will not.
+ */
+export function entryPointPrompt(files: Record<string, string>): string {
+  const components = Object.keys(files).filter((p) => p !== "/App.tsx");
+  return [
+    "Your reply was cut off before /App.tsx. These files did arrive and are kept:",
+    "",
+    ...components.map((p) => {
+      const exported = [...files[p].matchAll(/export\s+(?:default\s+)?(?:function|const)\s+(\w+)/g)]
+        .map((m) => m[1])
+        .join(", ");
+      return `- ${p}${exported ? ` (exports ${exported})` : ""}`;
+    }),
+    "",
+    "Output ONLY /App.tsx, in one fenced block, nothing else. It must:",
+    "- `export default function App()`",
+    "- import and lay out the components above in a sensible order",
+    "- own any state two of them share and pass it down as props",
+    "- import nothing that is not listed above or an available package",
   ].join("\n");
 }
