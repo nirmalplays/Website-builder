@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import {
+  BUILD_BUDGET_MS,
   BUILD_DEADLINE_MS,
   DEFAULT_MODEL,
   HISTORY_TURNS,
@@ -156,6 +157,15 @@ export async function POST(req: Request) {
   const isEdit = Boolean(existingFiles);
   const started = Date.now();
 
+  /**
+   * Can another model call still fit? `reserve` is time to keep back for work
+   * that matters more than the caller: the interactivity pass yields to the
+   * compile-fix rounds this way, because a button wired to nothing is a
+   * blemish and a build that does not compile is a blank screen.
+   */
+  const canAfford = (reserve = 0) =>
+    Date.now() - started + lastCallMs * 1.15 + reserve < BUILD_BUDGET_MS;
+
   let inputTokens = 0;
   let outputTokens = 0;
   // The model that actually answers. Starts as the requested model, but a
@@ -164,7 +174,14 @@ export async function POST(req: Request) {
   let activeModel = model;
   const notes: string[] = [];
 
+  // Each optional pass is one more model call, and on a capped runtime there is
+  // not room for all of them. Rather than guess, time the calls we have already
+  // made and only start a pass we can expect to finish. lastCallMs starts at a
+  // pessimistic 60s so the first decision is not made on no evidence at all.
+  let lastCallMs = 60_000;
+
   const call = async (system: string, userPrompt: string) => {
+    const callStarted = Date.now();
     const res = await generateWithFallback({
       system,
       history,
@@ -176,6 +193,7 @@ export async function POST(req: Request) {
       temperature: 0.8,
       thinkingBudget: THINKING_BUDGET,
     });
+    lastCallMs = Date.now() - callStarted;
     inputTokens += res.inputTokens;
     outputTokens += res.outputTokens;
     if (res.switchedFrom) {
@@ -321,7 +339,11 @@ export async function POST(req: Request) {
     // reliably fix them. Ask for exactly the missing files, before spending a
     // browser round on an app that cannot possibly compile.
     let missing = missingLocalImportDetails(files);
-    if (missing.length > 0) {
+    if (missing.length > 0 && !canAfford()) {
+      notes.push(
+        `Ran out of build time before writing ${missing.length} missing file(s); the preview may be incomplete.`,
+      );
+    } else if (missing.length > 0) {
       emit({
         type: "stage",
         stage: "missing-files",
@@ -346,7 +368,11 @@ export async function POST(req: Request) {
     }
 
     const dead = findDeadControls(Object.values(files).join("\n"));
-    if (dead.length > 0 && !isEdit) {
+    if (dead.length > 0 && !isEdit && !canAfford(lastCallMs)) {
+      notes.push(
+        `Skipped the interactivity pass to leave time for the compile check; ${dead.length} control(s) may do nothing yet. Ask for a fix and it will wire them up.`,
+      );
+    } else if (dead.length > 0 && !isEdit) {
       emit({ type: "stage", stage: "wiring", detail: `${dead.length} dead control(s)` });
       try {
         const wired = parseFiles(
@@ -381,7 +407,7 @@ export async function POST(req: Request) {
         // being cut off by the platform would throw it away and return an
         // error instead. Stop early and ship the best version we have.
         const spent = Date.now() - started;
-        if (round > 0 && spent > BUILD_DEADLINE_MS) {
+        if (round > 0 && (spent > BUILD_DEADLINE_MS || !canAfford())) {
           notes.push(
             `Stopped after ${Math.round(spent / 1000)}s to return a working build rather than run out of time.`,
           );

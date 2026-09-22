@@ -72,6 +72,18 @@ export { AI_CALL_TIMEOUT_MS } from "./providers/timeouts";
  */
 export const BUILD_DEADLINE_MS = Number(process.env.BUILD_DEADLINE_MS ?? 700_000);
 
+/**
+ * Wall-clock target for a build, as opposed to BUILD_DEADLINE_MS, which is the
+ * hard stop. The route checks this before starting each optional pass - writing
+ * files the model forgot, wiring dead controls, each compile-fix round - and
+ * skips the pass rather than overshoot, saying in the notes what it skipped.
+ *
+ * Set below the platform's function timeout with room for one call to overrun:
+ * a build cut off by the platform returns an error and throws away an app that
+ * was very likely fine.
+ */
+export const BUILD_BUDGET_MS = Number(process.env.BUILD_BUDGET_MS ?? 170_000);
+
 // Packages Sandpack is allowed to resolve. Must match the system prompt's allowlist.
 export const SANDPACK_DEPENDENCIES: Record<string, string> = {
   // Pinned: "latest" could resolve to a build missing an icon the model used.
