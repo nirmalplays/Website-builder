@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import type { ModelOption } from "@/lib/config";
 
 export type Attachment = {
   kind: "image" | "pdf" | "text";
@@ -23,9 +22,6 @@ export function Composer({
   value,
   onChange,
   onSubmit,
-  model,
-  models,
-  onModelChange,
   loading,
   outOfQuota,
   isEdit,
@@ -36,14 +32,11 @@ export function Composer({
   value: string;
   onChange: (v: string) => void;
   onSubmit: (v: string) => void;
-  model: string;
   /**
    * Passed down from the server. Deriving it here would read provider env
    * vars that only exist server-side, so the server would render one list
    * and the client another - a hydration mismatch.
    */
-  models: ModelOption[];
-  onModelChange: (id: string) => void;
   loading: boolean;
   outOfQuota: boolean;
   isEdit: boolean;
@@ -88,7 +81,6 @@ export function Composer({
       onAttach({ kind: "text", name: file.name, text, size: file.size });
     }
   }
-  const active = models.find((m) => m.id === model);
 
   return (
     <div
@@ -181,27 +173,6 @@ export function Composer({
               <circle cx="8.5" cy="8.5" r="1.5" />
             </svg>
           </button>
-          <label htmlFor="model" className="sr-only">
-            Model
-          </label>
-          <select
-            id="model"
-            value={model}
-            onChange={(e) => onModelChange(e.target.value)}
-            title={active?.note}
-            className="h-8 max-w-[10rem] cursor-pointer truncate rounded-lg border border-line bg-raised px-2 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
-          >
-            {models.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-          {hero && (
-            <span className="hidden truncate font-mono text-[11px] text-faint sm:inline">
-              {active?.note}
-            </span>
-          )}
         </div>
 
         <button

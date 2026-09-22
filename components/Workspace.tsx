@@ -32,14 +32,12 @@ const MAX_CHAT = 560;
 
 export function Workspace({
   defaultModel,
-  models,
   authEnabled,
   providers,
   user,
   bakedTemplates,
 }: {
   defaultModel: string;
-  models: ModelOption[];
   authEnabled: boolean;
   providers: OAuthProvider[];
   user: SessionUser;
@@ -431,9 +429,6 @@ Fix it and return the complete corrected file.`,
             input={input}
             onInput={setInput}
             onSubmit={send}
-            model={model}
-            models={models}
-            onModelChange={setModel}
             loading={loading}
             outOfQuota={outOfQuota}
             error={error}
@@ -474,10 +469,7 @@ Fix it and return the complete corrected file.`,
                 input={input}
                 onInput={setInput}
                 onSend={send}
-                model={model}
-                models={models}
-                onModelChange={setModel}
-                outOfQuota={outOfQuota}
+                            outOfQuota={outOfQuota}
                 isEdit={isEdit}
                 buildNotes={buildNotes}
                 stage={stage}

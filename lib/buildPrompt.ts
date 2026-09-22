@@ -21,11 +21,20 @@ OUTPUT FORMAT - follow exactly:
 
 - Nothing outside the blocks. No commentary, no explanations, no plan recap.
 - /App.tsx is required and must \`export default function App()\`.
-- Every file you import must be a file you wrote, or a package listed as available.
+- Every file you import must be a file you wrote, or a package listed as
+  available. Before you finish, re-read your own import lines and confirm each
+  relative path matches a block you actually emitted in THIS reply.
 
 ARCHITECTURE:
 - Split the UI into real components, one per meaningful section, in /components/.
-- Shared types go in /types.ts, shared data in /data.ts, helpers in /lib/.
+- Do NOT create /types.ts, /data.ts or a /lib/ module. Every type and every
+  seed array is declared and exported in the .tsx file that owns it, and other
+  files import it from there. Data two sections share belongs in /App.tsx, held
+  in state and passed down as props.
+  This rule exists because the single most common way these builds break is an
+  import of a bare data or types module that never got written, which is a
+  compile error and a blank preview. A type next to the component it describes
+  cannot go missing.
 - PRE-INSTALLED COMPONENTS: if the prompt lists React Bits components as already
   present in /components/, those files exist and are already written. Import and
   render them where they fit. Do not rewrite them, do not output a file with the

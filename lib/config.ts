@@ -84,6 +84,15 @@ export const BUILD_DEADLINE_MS = Number(process.env.BUILD_DEADLINE_MS ?? 700_000
  */
 export const BUILD_BUDGET_MS = Number(process.env.BUILD_BUDGET_MS ?? 170_000);
 
+/**
+ * What the host kills the request at - keep it in step with the route's
+ * maxDuration. Every model call is given at most the time left before this,
+ * less a moment to write the response, so no single call can take the whole
+ * build down with it. BUILD_BUDGET_MS decides what work to start; this decides
+ * what a call is allowed to spend, and is the one that must never be wrong.
+ */
+export const FUNCTION_LIMIT_MS = Number(process.env.FUNCTION_LIMIT_MS ?? 300_000);
+
 // Packages Sandpack is allowed to resolve. Must match the system prompt's allowlist.
 export const SANDPACK_DEPENDENCIES: Record<string, string> = {
   // Pinned: "latest" could resolve to a build missing an icon the model used.

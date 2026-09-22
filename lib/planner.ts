@@ -95,6 +95,8 @@ export async function buildPlan(options: {
   document?: { name: string; text: string };
   image?: { data: string; mimeType: string };
   allowHeavyComponents?: boolean;
+  /** Time left in the request. Planning must not eat the build's whole budget. */
+  timeoutMs?: number;
 }): Promise<BuildPlan> {
   const res = await generateWithFallback({
     system: PLANNER_SYSTEM,
@@ -107,6 +109,7 @@ export async function buildPlan(options: {
     temperature: 0.8,
     // Planning is exactly where reasoning earns its cost.
     thinkingBudget: PLANNER_THINKING_BUDGET,
+    timeoutMs: options.timeoutMs,
   });
 
   const parsed = extractJson(res.text) as BuildPlan;

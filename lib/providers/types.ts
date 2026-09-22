@@ -24,6 +24,13 @@ export type GenerateRequest = {
   temperature: number;
   /** 0 disables provider-side reasoning where supported. */
   thinkingBudget?: number;
+  /**
+   * Abort this call after this long, overriding AI_CALL_TIMEOUT_MS. The caller
+   * knows how much of its own deadline is left; the provider does not. Without
+   * this a single slow call can outlive the whole request - a serverless host
+   * then kills the function and the finished work is lost with it.
+   */
+  timeoutMs?: number;
 };
 
 export type GenerateResult = {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import {
   BUILD_BUDGET_MS,
+  FUNCTION_LIMIT_MS,
   BUILD_DEADLINE_MS,
   DEFAULT_MODEL,
   HISTORY_TURNS,
@@ -21,6 +22,7 @@ import { IMAGE_SUFFIX, DOCUMENT_SUFFIX } from "@/lib/systemPrompt";
 import {
   parseFiles,
   missingLocalImportDetails,
+  stubMissingModules,
   externalImports,
   NoFilesError,
   type GeneratedFiles,
@@ -192,6 +194,10 @@ export async function POST(req: Request) {
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       temperature: 0.8,
       thinkingBudget: THINKING_BUDGET,
+      // Never let one call run past the host's own limit: 8s is kept back to
+      // finish the response, and 15s is the floor below which asking at all is
+      // pointless. A build killed by the platform returns nothing at all.
+      timeoutMs: Math.max(15_000, FUNCTION_LIMIT_MS - (Date.now() - started) - 8_000),
     });
     lastCallMs = Date.now() - callStarted;
     inputTokens += res.inputTokens;
@@ -249,7 +255,15 @@ export async function POST(req: Request) {
       ].join("\n");
     } else {
       // ---- 1. THINK ---------------------------------------------------
-      const plan = await buildPlan({ prompt, model: activeModel, document, image });
+      const plan = await buildPlan({
+        prompt,
+        model: activeModel,
+        document,
+        image,
+        // Planning is one call of several; cap it so a slow plan cannot leave
+        // the build with no time to actually write anything.
+        timeoutMs: Math.min(60_000, FUNCTION_LIMIT_MS - (Date.now() - started) - 8_000),
+      });
       planSummary = plan.summary;
       if (plan.switchedFrom) {
         notes.push(`${plan.switchedFrom} was busy - switched to ${plan.modelUsed}.`);
@@ -494,11 +508,13 @@ ${repairPrompt(report)}`, userPrompt), false);
       }
     }
 
-    // Now that the repair rounds are done, say what is genuinely still absent.
-    const stillMissing = missingLocalImportDetails(files);
-    if (stillMissing.length > 0) {
+    // Last resort, once the repair rounds have had their chance: a dangling
+    // import is a blank preview, so fake the module rather than lose the app.
+    const stub = stubMissingModules(files);
+    if (stub.stubbed.length > 0) {
+      files = stub.files;
       notes.push(
-        `Imports with no matching file: ${[...new Set(stillMissing.map((m) => m.spec))].join(", ")}`,
+        `Could not get ${stub.stubbed.join(", ")} written, so ${stub.stubbed.length === 1 ? "it was" : "they were"} stubbed out to keep the rest of the app running - those sections will be empty. Ask for a fix and it will fill them in.`,
       );
     }
 

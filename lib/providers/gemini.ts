@@ -77,7 +77,7 @@ ${req.document.text}
       config: {
         // Without this the SDK call is unbounded: a wedged connection would
         // hang until the whole serverless function was killed, losing the build.
-        abortSignal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
+        abortSignal: AbortSignal.timeout(req.timeoutMs ?? AI_CALL_TIMEOUT_MS),
         systemInstruction: req.system,
         temperature: req.temperature,
         maxOutputTokens: req.maxOutputTokens,

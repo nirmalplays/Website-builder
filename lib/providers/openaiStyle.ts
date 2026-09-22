@@ -114,7 +114,7 @@ ${req.document.text}
         }),
         // Reasoning models think before they answer, and a full multi-file app
         // is a long completion - 60s was cutting real builds off mid-thought.
-        signal: AbortSignal.timeout(config.timeoutMs ?? AI_CALL_TIMEOUT_MS),
+        signal: AbortSignal.timeout(req.timeoutMs ?? config.timeoutMs ?? AI_CALL_TIMEOUT_MS),
       });
 
       if (!res.ok) {

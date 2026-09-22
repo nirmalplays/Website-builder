@@ -136,3 +136,61 @@ export function externalImports(files: GeneratedFiles): string[] {
 export function totalSize(files: GeneratedFiles): number {
   return Object.values(files).reduce((n, c) => n + c.length, 0);
 }
+
+/**
+ * Writes a stub for any module still imported but never produced, as the last
+ * step before the build ships.
+ *
+ * A dangling import is a compile error, and a compile error is a blank preview
+ * - the whole app is lost over one file the model forgot. A stub that exports
+ * the right names costs those sections their content and saves everything
+ * else, which is the better trade when the alternative is a white screen. The
+ * prompt and the repair round both try to make this unnecessary; this only
+ * runs when they have already failed, and it tells the caller what it faked so
+ * the user is not told the build is fine.
+ */
+export function stubMissingModules(files: GeneratedFiles): {
+  files: GeneratedFiles;
+  stubbed: string[];
+} {
+  const missing = missingLocalImportDetails(files);
+  if (missing.length === 0) return { files, stubbed: [] };
+
+  const out = { ...files };
+  const stubbed: string[] = [];
+
+  // One module can be imported from several files, each wanting different names.
+  const byTarget = new Map<string, { types: Set<string>; values: Set<string> }>();
+
+  for (const [from, content] of Object.entries(files)) {
+    for (const m of content.matchAll(/import\s+(type\s+)?\{([^}]*)\}\s*from\s*["'](\.[^"']+|\/[^"']+)["']/g)) {
+      const target = resolveRelative(from, m[3]);
+      if (!missing.some((x) => x.resolved === target)) continue;
+
+      const entry = byTarget.get(target) ?? { types: new Set(), values: new Set() };
+      const allType = Boolean(m[1]);
+      for (const raw of m[2].split(",")) {
+        const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop()?.trim();
+        if (!name) continue;
+        (allType || /^type\s/.test(raw.trim()) ? entry.types : entry.values).add(name);
+      }
+      byTarget.set(target, entry);
+    }
+  }
+
+  for (const [target, { types, values }] of byTarget) {
+    const lines = [
+      "// Written automatically: the build imported this module but never wrote it.",
+      "// The names are real so the app compiles; the contents are not.",
+      "",
+      ...[...types].map((t) => `export type ${t} = Record<string, unknown>;`),
+      // `unknown[]` would fail every use site, so these are deliberately loose.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...[...values].map((v) => `export const ${v}: any = [];`),
+    ];
+    out[`${target}.ts`] = lines.join("\n");
+    stubbed.push(`${target}.ts`);
+  }
+
+  return { files: out, stubbed };
+}

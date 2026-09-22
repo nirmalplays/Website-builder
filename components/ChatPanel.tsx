@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Composer, type Attachment } from "./Composer";
-import type { ModelOption } from "@/lib/config";
 
 /** `lines` is set when a turn is restored from history and the file body was not sent. */
 export type Turn = { role: "user" | "assistant"; content: string; lines?: number };
@@ -105,9 +104,6 @@ export function ChatPanel({
   input,
   onInput,
   onSend,
-  model,
-  models,
-  onModelChange,
   outOfQuota,
   isEdit,
   buildNotes,
@@ -122,9 +118,6 @@ export function ChatPanel({
   input: string;
   onInput: (value: string) => void;
   onSend: (prompt: string) => void;
-  model: string;
-  models: ModelOption[];
-  onModelChange: (id: string) => void;
   outOfQuota: boolean;
   isEdit: boolean;
   buildNotes: string[];
@@ -196,9 +189,6 @@ export function ChatPanel({
           value={input}
           onChange={onInput}
           onSubmit={onSend}
-          model={model}
-          models={models}
-          onModelChange={onModelChange}
           loading={loading}
           outOfQuota={outOfQuota}
           isEdit={isEdit}

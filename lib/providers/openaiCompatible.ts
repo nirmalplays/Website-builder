@@ -104,7 +104,7 @@ ${req.document.text}
         stream: false,
       }),
       // Local models on modest hardware are slow; do not cut them off early.
-      signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
+      signal: AbortSignal.timeout(req.timeoutMs ?? AI_CALL_TIMEOUT_MS),
     });
 
     if (!res.ok) {

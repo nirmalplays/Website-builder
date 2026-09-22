@@ -4,15 +4,11 @@ import { useMemo, useState } from "react";
 import { CATEGORIES, QUICK_STARTS, TEMPLATES, type Category } from "@/lib/templates";
 import { TemplateCardImage } from "./TemplateCardImage";
 import { Composer, type Attachment } from "./Composer";
-import type { ModelOption } from "@/lib/config";
 
 export function Landing({
   input,
   onInput,
   onSubmit,
-  model,
-  models,
-  onModelChange,
   loading,
   outOfQuota,
   error,
@@ -24,9 +20,6 @@ export function Landing({
   input: string;
   onInput: (v: string) => void;
   onSubmit: (v: string) => void;
-  model: string;
-  models: ModelOption[];
-  onModelChange: (id: string) => void;
   loading: boolean;
   outOfQuota: boolean;
   error: string | null;
@@ -88,9 +81,6 @@ export function Landing({
               value={input}
               onChange={onInput}
               onSubmit={onSubmit}
-              model={model}
-              models={models}
-              onModelChange={onModelChange}
               loading={loading}
               outOfQuota={outOfQuota}
               isEdit={false}
