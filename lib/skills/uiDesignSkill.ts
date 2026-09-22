@@ -1,4 +1,5 @@
 import { REACT_BITS_MANIFEST, REACT_BITS_COMPONENT_COUNT } from "./reactBitsManifest";
+import { fontManifest } from "./typography";
 
 /**
  * The art-direction half of the build system prompt.
@@ -56,6 +57,22 @@ BANNED - THESE ARE WHAT GENERIC LOOKS LIKE
   the real subject.
 - A glassmorphism card on a blurred blob background.
 - Shadow on every surface. Shadows should be rare enough to mean something.
+
+TYPEFACES - THESE ARE LOADED AND READY, USE THEM
+The preview loads the families below. Tailwind's default stack is the system UI
+font, which is what "generic" looks like, so ALWAYS set a family explicitly.
+
+Apply with a Tailwind arbitrary value, quoting the name and giving a fallback:
+  className="font-['Fraunces',serif]"        on the display face
+  className="font-['Manrope',sans-serif]"    on body copy
+  className="font-['JetBrains_Mono',monospace]"  on metadata and figures
+Underscores stand in for spaces inside the arbitrary value. Set body once on
+the outermost wrapper and let it inherit; set display and mono where used.
+
+Pair one display with one body, and use mono for metadata. Three families is a
+design; five is a ransom note.
+
+${fontManifest()}
 
 TYPOGRAPHY CARRIES THE PAGE
 - One display moment that is genuinely large - text-6xl and up, tracking-tight
@@ -147,6 +164,9 @@ start.
   accent, and do not "modernise" the palette.
 - Match the existing type scale. If headings are text-7xl tracking-tight, a new
   heading is too.
+- Reuse the exact font families already in the markup - copy the
+  font-['Name',fallback] classes off a neighbouring section rather than
+  choosing a typeface, and never leave new markup on the default system font.
 - Match the existing radius and border treatment exactly.
 - Match the spacing rhythm of neighbouring sections rather than adding your own.
 

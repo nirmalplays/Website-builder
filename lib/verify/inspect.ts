@@ -1,6 +1,7 @@
 import type { Browser } from "playwright";
 import { bundleProject, importMap, BundleError } from "./bundle";
 import type { GeneratedFiles } from "@/lib/parseFiles";
+import { googleFontsUrl } from "@/lib/skills/typography";
 
 /**
  * Runs a generated project in a headless browser and reports what is wrong.
@@ -40,6 +41,8 @@ function page(bundle: string, map: string): string {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Same fonts the live preview loads, so verification sees what the user sees. -->
+    <link rel="stylesheet" href="${googleFontsUrl()}" />
     <script type="importmap">${map}</script>
     <style>body{margin:0}</style>
   </head>

@@ -6,11 +6,14 @@ import {
   SandpackCodeEditor,
 } from "@codesandbox/sandpack-react";
 import { SANDPACK_BUNDLER_URL, SANDPACK_DEPENDENCIES } from "@/lib/config";
+import { googleFontsUrl } from "@/lib/skills/typography";
 import { PreviewErrorOverlay } from "./PreviewErrorOverlay";
 
 // Sandpack's bundler serves its own HTML and ignores /public/index.html, so
-// Tailwind has to come in through externalResources.
-const EXTERNAL_RESOURCES = ["https://cdn.tailwindcss.com"];
+// Tailwind has to come in through externalResources - and so do the fonts.
+// Without this line the sandbox has nothing but the system UI stack, which is
+// why generated pages looked generic no matter what the prompt asked for.
+const EXTERNAL_RESOURCES = ["https://cdn.tailwindcss.com", googleFontsUrl()];
 
 export function Preview({
   code,
