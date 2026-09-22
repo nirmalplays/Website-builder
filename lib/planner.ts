@@ -1,7 +1,7 @@
 import { PLANNER_THINKING_BUDGET } from "@/lib/config";
 import { generateWithFallback } from "@/lib/providers";
 import { resolveComponents, type PageKind } from "@/lib/react-bits/resolver";
-import { getComponent, packageName } from "@/lib/react-bits/search";
+import { getComponent, packageName, searchComponents } from "@/lib/react-bits/search";
 
 /**
  * The thinking step.
@@ -189,18 +189,70 @@ export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = f
     return { selections: [], dependencies: {}, notes: ["The plan asked for no motion."] };
   }
 
+  const searchPrompt = `${prompt} ${plan.design.mood} ${plan.animationOpportunities.join(" ")}`;
+  const sections = plan.animationOpportunities.length
+    ? plan.animationOpportunities.map(mapSection)
+    : undefined;
+
   const resolved = resolveComponents({
-    prompt: `${prompt} ${plan.design.mood} ${plan.animationOpportunities.join(" ")}`,
+    prompt: searchPrompt,
     kind: plan.kind,
-    sections: plan.animationOpportunities.length
-      ? plan.animationOpportunities.map(mapSection)
-      : undefined,
+    sections,
     // "light" excluded every medium component - MagicBento, ScrollReveal,
     // DotGrid and most of the catalogue's best work - unless the prompt
     // happened to say "3d" or "webgl". Medium is the sensible ceiling; heavy
     // (WebGL, three.js) still has to be asked for.
     maxWeight: allowHeavy ? "heavy" : "medium",
   });
+
+  const selections = [...resolved.selections];
+  const newDependencies = [...resolved.newDependencies];
+  const notes = [...resolved.notes];
+
+  /*
+   * An ambient backdrop behind the hero is the single biggest difference
+   * between a generated page and a designed one, and the medium ceiling made
+   * it unreachable: 51 of the 58 background components are heavy, so unless
+   * the prompt happened to say "webgl" the search could only ever return the
+   * seven light ones, and usually returned none. The design skill asks for a
+   * hero backdrop; this is what lets it actually have one.
+   *
+   * Exactly one, and only when nothing else already covers the hero. The
+   * weight ceiling still applies to everything else, so the page pays for one
+   * canvas rather than five.
+   */
+  const hasBackdrop = selections.some((sel) => getComponent(sel.component)?.layer === "background");
+
+  if (!hasBackdrop && !allowHeavy && plan.kind !== "form") {
+    // Searched rather than resolved: the resolver has no layer filter, and a
+    // backdrop is exactly the one axis that has to be pinned here.
+    const [hit] = searchComponents({
+      q: searchPrompt,
+      layer: "background",
+      section: "hero",
+      maxWeight: "heavy",
+      limit: 1,
+    });
+
+    if (hit) {
+      const meta = hit.component;
+      selections.push({
+        component: meta.name,
+        reason: "ambient backdrop behind the hero",
+        section: "hero",
+        weight: meta.weight,
+        dependencies: meta.dependencies,
+      });
+      for (const spec of meta.dependencies) {
+        if (!newDependencies.includes(spec)) newDependencies.push(spec);
+      }
+      notes.push(`Added ${meta.name} as the hero backdrop.`);
+    }
+  }
+
+  resolved.selections = selections;
+  resolved.newDependencies = newDependencies;
+  resolved.notes = notes;
 
   const dependencies: Record<string, string> = {};
   for (const spec of resolved.newDependencies) {
