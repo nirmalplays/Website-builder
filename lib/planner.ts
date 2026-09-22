@@ -37,10 +37,43 @@ export type BuildPlan = {
   switchedFrom?: string;
 };
 
+/**
+ * The art direction the planner works to.
+ *
+ * The plan is where a page stops being generic or fails to: it fixes the mood,
+ * the palette and which animated components get installed, and the build step
+ * can only execute what the plan asked for. Putting the direction only in the
+ * build prompt was too late - by then the component list was already decided.
+ */
+const ART_DIRECTION_BRIEF = `ART DIRECTION - the plan is where a page stops being generic.
+
+Choose ONE identity and let it decide every value you write below. Dark luxury,
+editorial, technical density, brutalist, soft physical - or something the brief
+itself implies, which beats all of them.
+
+The design block is not decoration, it is the contract the build step follows:
+- palette: 4-6 real hex values, each with a job. One accent, used sparingly.
+- typography: a real scale with obvious contrast between display and body, and
+  a decision about tracking. Timid steps read as a template.
+- signatureDetails: concrete and specific to THIS subject. "Modern and clean"
+  is not a detail. "Prices set in tabular figures against a hairline rule" is.
+
+Do not plan: purple-to-blue gradient headings, three equal cards in a row,
+identical padding on every section, rounded-xl everywhere, or a centred hero
+with two side-by-side buttons. These are the average, and the average is what
+we are trying to avoid.
+
+Ask for animated components where they carry weight: one ambient backdrop
+behind the hero, one kinetic treatment on the primary headline, pointer-
+reactive surfaces for a feature or pricing cluster. Not everywhere - a page
+that animates in every section reads as a showcase rather than a product.`;
+
 const PLANNER_SYSTEM = `You are the architect for a UI generation system. You do not write code in this step.
 
 Given a request, produce a build plan as JSON. Think about what would make this
 specific and excellent rather than a generic template.
+
+${ART_DIRECTION_BRIEF}
 
 Return ONLY a JSON object, no fences, no commentary, with exactly these keys:
 

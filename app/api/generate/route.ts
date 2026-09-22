@@ -32,6 +32,7 @@ import { repairImports } from "@/lib/repairImports";
 import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInteractivity";
 import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
+import { UI_DESIGN_SKILL } from "@/lib/skills/uiDesignSkill";
 import { BundleError, bundleProject } from "@/lib/verify/bundle";
 import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/inspect";
 import { db, tryPersist, schema } from "@/lib/db";
@@ -312,6 +313,11 @@ export async function POST(req: Request) {
     // ---- 3. BUILD -------------------------------------------------------
     const system = [
       BUILD_SYSTEM_PROMPT,
+      // Art direction goes in the system instruction alongside the output
+      // protocol, not in the user turn: it applies to every reply in the
+      // conversation, including the repair rounds, which would otherwise
+      // quietly rewrite a considered layout back towards the average.
+      UI_DESIGN_SKILL,
       dependencyNote(dependencies),
       ICON_NOTE,
       image ? IMAGE_SUFFIX : "",
