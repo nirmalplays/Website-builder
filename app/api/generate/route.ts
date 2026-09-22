@@ -34,6 +34,7 @@ import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInterac
 import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
 import { UI_DESIGN_SKILL, UI_DESIGN_SKILL_EDIT } from "@/lib/skills/uiDesignSkill";
+import { upstreamManifest } from "@/lib/proxy/upstreams";
 import { BundleError, bundleProject } from "@/lib/verify/bundle";
 import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/inspect";
 import { db, tryPersist, schema } from "@/lib/db";
@@ -328,6 +329,10 @@ export async function POST(req: Request) {
       // conversation, including the repair rounds, which would otherwise
       // quietly rewrite a considered layout back towards the average.
       isEdit ? UI_DESIGN_SKILL_EDIT : UI_DESIGN_SKILL,
+      // Empty string when nothing is configured, so an unwired deployment
+      // keeps the simulate-a-server behaviour rather than being told about
+      // endpoints that do not exist.
+      upstreamManifest(),
       dependencyNote(dependencies),
       ICON_NOTE,
       image ? IMAGE_SUFFIX : "",

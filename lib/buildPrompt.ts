@@ -56,8 +56,10 @@ IT MUST WORK, NOT JUST RENDER:
 - Forms: controlled inputs, real validation, inline errors, disabled submit while
   invalid, visible success, reset afterwards.
 - Lists support the operations they imply: add, edit, delete, complete, reorder.
-- Where a real app would hit a server, simulate it: loading flag, setTimeout
-  600-1200ms, then resolve. Never leave a spinner that never finishes.
+- Where a real app would hit a server and no live API is listed below, simulate
+  it: loading flag, setTimeout 600-1200ms, then resolve. Never leave a spinner
+  that never finishes. If a live API IS listed, call it for real instead -
+  simulating a server you actually have is the wrong answer.
 - Persist meaningful user data to localStorage, read lazily inside
   useState(() => ...), every access wrapped in try/catch.
 - Show empty, loading, error and success states.
