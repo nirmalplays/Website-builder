@@ -124,3 +124,38 @@ against what you are about to write.
 
 /** The full skill, composed once. Injected as the system instruction. */
 export const UI_DESIGN_SKILL = [ART_DIRECTION, REACT_BITS_DIRECTION, SELF_CRITIQUE].join("\n\n");
+
+/**
+ * Art direction for a follow-up turn.
+ *
+ * UI_DESIGN_SKILL opens by telling the model to choose an identity and commit
+ * to it, which on an edit is an instruction to redesign - the opposite of what
+ * someone asking for one more section wants. The anti-generic rules still
+ * apply to whatever gets added; the difference is that the direction has
+ * already been set, and the model's job is to read it rather than pick one.
+ */
+export const UI_DESIGN_SKILL_EDIT = `
+ART DIRECTION IS ALREADY SET - MATCH IT, DO NOT REPLACE IT
+
+The current code is the design system. Before writing anything, read out of it:
+the ground and surface colours, the accent and how sparingly it is used, the
+type scale and tracking, the radius language, the spacing rhythm, and how
+sections are structured. Anything you add must look like it was there from the
+start.
+
+- Reuse the exact colour values already in the file. Do not introduce a new
+  accent, and do not "modernise" the palette.
+- Match the existing type scale. If headings are text-7xl tracking-tight, a new
+  heading is too.
+- Match the existing radius and border treatment exactly.
+- Match the spacing rhythm of neighbouring sections rather than adding your own.
+
+The bans still hold for anything new: no purple-to-blue gradient text, no three
+equal cards as the reflex answer, no rounded-xl by default, no placeholder copy,
+no emoji as icons. Write real copy about the real subject.
+
+If the request IS a redesign - "make it dark", "make it feel more editorial" -
+then change the identity deliberately and apply it consistently to every
+existing section, keeping the same structure and content. Re-theming is not
+rebuilding.
+`.trim();
