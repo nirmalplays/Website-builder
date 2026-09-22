@@ -3,7 +3,12 @@
  * Free-tier daily quota is per project PER MODEL, so switching model is also how you
  * recover from a daily quota wall mid-session.
  */
-import { listConfiguredProviders, qualifyModel, resolveQualifiedModel } from "./providers";
+import {
+  getProvider,
+  listConfiguredProviders,
+  qualifyModel,
+  resolveQualifiedModel,
+} from "./providers";
 export type { ModelOption } from "./providers";
 
 /**
@@ -30,8 +35,12 @@ export const MODELS = listConfiguredProviders().flatMap((provider) => {
  * flash-lite, say, now that the non-reasoning tiers are gone - would otherwise
  * make every build fail with "not a configured model" before it started.
  */
+// Qualify against whichever provider is actually in use, not a hardcoded
+// "gemini": with AI_PROVIDER pinned to a second key, "gemini" is not in the
+// list at all and the pin would resolve to nothing (or, worse, to the key the
+// pin exists to retire).
 const pinned = process.env.GEMINI_MODEL
-  ? qualifyModel("gemini", process.env.GEMINI_MODEL)
+  ? qualifyModel(getProvider().id, process.env.GEMINI_MODEL)
   : undefined;
 
 export const DEFAULT_MODEL =
@@ -103,7 +112,17 @@ export const SANDPACK_DEPENDENCIES: Record<string, string> = {
 /** Self-hosted sandpack-bundler, if you run one. Empty = CodeSandbox's public one. */
 export const SANDPACK_BUNDLER_URL = process.env.NEXT_PUBLIC_SANDPACK_BUNDLER_URL ?? "";
 
-export const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 32768);
+/**
+ * 32768 truncated real builds: a dashboard came back at 44432 output tokens
+ * with /App.tsx missing, because the reply was cut off mid-file. Every Gemini
+ * model this key can reach reports outputTokenLimit 65536, so the old value
+ * was throwing away half the available room.
+ *
+ * Raise this only as far as the WEAKEST configured provider allows - several
+ * free-tier vendors cap well below Gemini and reject an over-large request
+ * outright, which would turn a truncated build into no build at all.
+ */
+export const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS ?? 65536);
 
 // How many prior turns to send back with an edit. More context is not the bottleneck today.
 export const HISTORY_TURNS = 3;

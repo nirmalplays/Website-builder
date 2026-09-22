@@ -26,7 +26,22 @@ export function listProviders(): Provider[] {
 
 /** Every provider that is actually usable right now - has its key set, or needs none. */
 export function listConfiguredProviders(): Provider[] {
-  return PROVIDER_LIST.filter((p) => p.isConfigured());
+  const configured = PROVIDER_LIST.filter((p) => p.isConfigured());
+
+  /*
+   * AI_PROVIDER says "use this backend and no other", and until now it only
+   * reached getProvider() - the fallback chain read this function directly and
+   * happily reached for every other configured vendor, so pinning did not
+   * actually pin anything. Applying it here makes one key mean one key, while
+   * still allowing fallback BETWEEN that provider's own models, which is what
+   * you want when the strongest one is rate-limited.
+   *
+   * Ignored when it names a provider with no key, so a stale pin cannot leave
+   * the app with no backend at all.
+   */
+  const pinned = process.env.AI_PROVIDER;
+  const only = pinned ? configured.filter((p) => p.id === pinned) : [];
+  return only.length > 0 ? only : configured;
 }
 
 /**
@@ -60,8 +75,12 @@ export function resolveQualifiedModel(
   const providerId = qualifiedId.slice(0, sep);
   const modelId = qualifiedId.slice(sep + 1);
 
-  const provider = PROVIDERS[providerId];
-  if (!provider || !provider.isConfigured()) return null;
+  // Resolve through the configured list rather than the raw map, so a provider
+  // excluded by an AI_PROVIDER pin cannot be reached by naming it directly -
+  // otherwise GEMINI_MODEL, or a model id in the request body, quietly routes
+  // around the pin and spends a key the operator meant to stop using.
+  const provider = listConfiguredProviders().find((p) => p.id === providerId);
+  if (!provider) return null;
   if (!provider.listModels().some((m) => m.id === modelId)) return null;
 
   return { provider, modelId };

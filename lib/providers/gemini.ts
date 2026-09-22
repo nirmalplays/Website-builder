@@ -3,7 +3,13 @@ import { AI_CALL_TIMEOUT_MS } from "./timeouts";
 import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./types";
 
 /**
- * Thinking-capable models only. The flash-lite tiers (3.1, 3.5) were dropped:
+ * Thinking-capable models only, strongest first - the head of this list is the
+ * default and the rest are what the fallback chain walks when it is busy.
+ *
+ * Pro leads because output quality is the whole point; Flash follows because
+ * when Pro is rate-limited a slightly weaker build beats no build. Every one
+ * of these reports outputTokenLimit 65536.
+ * The flash-lite tiers (3.1, 3.5) were dropped:
  * they reject thinkingConfig outright, so the build step's reasoning budget is
  * silently discarded on them and the model goes straight to writing JSX. They
  * were the fastest of the set, which is exactly why they kept winning the
@@ -13,8 +19,10 @@ import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./t
  * of these are slower now that they actually reason first.
  */
 const MODELS: ModelOption[] = [
-  { id: "gemini-3.5-flash", label: "Flash 3.5", note: "thinks · solid default" },
+  { id: "gemini-3.1-pro-preview", label: "Pro 3.1", note: "thinks hardest · best output" },
+  { id: "gemini-3.5-flash", label: "Flash 3.5", note: "thinks · fast fallback" },
   { id: "gemini-3.8-flash", label: "Flash 3.8", note: "thinks · newest · was 503ing under load" },
+  { id: "gemini-2.5-pro", label: "Pro 2.5", note: "thinks · older pro tier" },
   { id: "gemini-2.5-flash", label: "Flash 2.5", note: "thinks · only 20/day on free tier" },
 ];
 
