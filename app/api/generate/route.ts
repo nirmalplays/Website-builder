@@ -39,11 +39,15 @@ export const runtime = "nodejs";
  *
  * 300 was not enough once the non-reasoning models were dropped: a measured
  * kanban build took 413s (plan, install, write, then three browser-verified
- * repair passes, each on a model that thinks first). Vercel needs fluid
- * compute for anything above 300 - if a deploy caps out, lower
- * MAX_FIX_ROUNDS rather than putting the fast non-thinking models back.
+ * repair passes, each on a model that thinks first).
+ *
+ * 300 is nonetheless the ceiling the Hobby plan allows with fluid compute, so
+ * that is what deploys there get; Pro allows 800. Next reads this by static
+ * analysis, so it has to stay a literal - env vars cannot reach it. Running
+ * locally ignores it entirely and builds take as long as they take. On a plan
+ * that permits it, put 800 back and raise BUILD_DEADLINE_MS to match.
  */
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 type Turn = { role: "user" | "assistant"; content: string };
 
