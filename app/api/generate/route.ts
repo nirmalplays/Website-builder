@@ -339,11 +339,10 @@ export async function POST(req: Request) {
           notes.push(`Wrote ${Object.keys(written).length} file(s) the app imported but had not written.`);
         }
       } catch {
-        notes.push("Could not write the missing files.");
+        // Deliberately silent. A compile-error round later on usually writes
+        // these files anyway, so anything said here is stale by the time the
+        // response is assembled - the honest count is taken after the rounds.
       }
-    }
-    if (missing.length > 0) {
-      notes.push(`Imports with no matching file: ${missing.map((m) => m.spec).join(", ")}`);
     }
 
     const dead = findDeadControls(Object.values(files).join("\n"));
@@ -447,18 +446,34 @@ ${repairPrompt(report)}`, userPrompt), false);
         // A fatal finding means the app does not run at all - the preview will
         // be blank. Saying "1 issue left" about that reads as a minor blemish,
         // so name it for what it is.
+        // Hosts without a Chromium binary (Vercel's serverless runtime, for
+        // one) skip the headless pass and return ok with a warning. That
+        // warning is filtered out of `remaining`, so without this branch the
+        // build reports "ran it in a browser: no problems found" having never
+        // opened one. The compile check still ran, so say exactly that much.
+        const ranInBrowser = !report.findings.some((f) => f.kind === "verification-unavailable");
+        const how = ranInBrowser ? "Ran it in a browser" : "Compiled it (no browser on this host)";
+
         notes.push(
           fatal.length > 0
-            ? `Ran it in a browser: ${fixed}but this build still does not compile (${fatal
+            ? `${how}: ${fixed}but this build still does not compile (${fatal
                 .map((f) => f.kind)
                 .join(", ")}), so the preview will be empty. Ask for a fix and it will try again with the error in hand.`
             : remaining.length > 0
-              ? `Ran it in a browser: ${fixed}${remaining.length} issue(s) left.`
+              ? `${how}: ${fixed}${remaining.length} issue(s) left.`
               : fixRounds > 0
-                ? `Ran it in a browser: ${fixed}all clear.`
-                : "Ran it in a browser: no problems found.",
+                ? `${how}: ${fixed}all clear.`
+                : `${how}: no problems found.`,
         );
       }
+    }
+
+    // Now that the repair rounds are done, say what is genuinely still absent.
+    const stillMissing = missingLocalImportDetails(files);
+    if (stillMissing.length > 0) {
+      notes.push(
+        `Imports with no matching file: ${[...new Set(stillMissing.map((m) => m.spec))].join(", ")}`,
+      );
     }
 
     // Ship only dependencies something actually imports.
