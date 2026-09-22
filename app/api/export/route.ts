@@ -20,15 +20,21 @@ function slug(title: string): string {
 }
 
 export async function POST(req: Request) {
-  let body: { code?: string; title?: string };
+  let body: { code?: string; files?: Record<string, string>; title?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const code = body.code;
-  if (!code || typeof code !== "string") {
+  // Multi-file projects send `files`; legacy callers send just `code`.
+  const projectFiles = body.files && Object.keys(body.files).length > 0
+    ? body.files
+    : body.code
+      ? { "/App.tsx": body.code }
+      : null;
+
+  if (!projectFiles) {
     return NextResponse.json({ error: "No code to export." }, { status: 400 });
   }
 
@@ -157,7 +163,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 `,
   );
 
-  zip.file("src/App.tsx", code);
+  // Write every project file under src/, mapping sandbox paths like
+  // /App.tsx → src/App.tsx, /components/Hero.tsx → src/components/Hero.tsx.
+  for (const [path, content] of Object.entries(projectFiles)) {
+    const dest = `src${path.startsWith("/") ? path : `/${path}`}`;
+    zip.file(dest, content);
+  }
 
   zip.file(
     "README.md",

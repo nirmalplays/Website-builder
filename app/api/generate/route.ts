@@ -326,6 +326,7 @@ export async function POST(req: Request) {
       try {
         const written = parseFiles(
           await call(`${system}\n\n${missingFilesPrompt(missing)}`, userPrompt),
+          false,
         );
         files = { ...written, ...files };
         missing = missingLocalImportDetails(files);
@@ -347,6 +348,7 @@ export async function POST(req: Request) {
       try {
         const wired = parseFiles(
           await call(`${system}\n\n${deadControlRepairPrompt(dead)}`, userPrompt),
+          false,
         );
         const merged = { ...files, ...wired };
         if (findDeadControls(Object.values(merged).join("\n")).length < dead.length) {
@@ -420,7 +422,7 @@ export async function POST(req: Request) {
           });
           const fixed = parseFiles(await call(`${system}
 
-${repairPrompt(report)}`, userPrompt));
+${repairPrompt(report)}`, userPrompt), false);
           files = { ...files, ...fixed };
           fixRounds++;
           repaired = repaired ? `${repaired}+browser` : "browser";

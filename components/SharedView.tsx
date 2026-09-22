@@ -6,7 +6,7 @@ import { Preview } from "./Preview";
 
 const REMIX_KEY = "uigen_remix";
 
-export function SharedView({ title, code }: { title: string; code: string }) {
+export function SharedView({ title, code, files }: { title: string; code: string; files?: Record<string, string> }) {
   const router = useRouter();
   const [tab, setTab] = useState<"preview" | "code">("preview");
 
@@ -57,6 +57,7 @@ export function SharedView({ title, code }: { title: string; code: string }) {
       <main className="min-h-0 flex-1">
         <Preview
           code={code}
+          files={files}
           generation={0}
           tab={tab}
           deviceWidth={null}

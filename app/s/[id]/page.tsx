@@ -26,8 +26,9 @@ export default async function SharedProject({ params }: { params: Promise<{ id: 
     .orderBy(desc(schema.versions.createdAt))
     .limit(1);
 
-  const code = version?.files?.["/App.tsx"];
+  const allFiles = (version?.files ?? {}) as Record<string, string>;
+  const code = allFiles["/App.tsx"];
   if (!code) notFound();
 
-  return <SharedView title={project.title} code={code} />;
+  return <SharedView title={project.title} code={code} files={allFiles} />;
 }

@@ -29,7 +29,7 @@ function normalisePath(raw: string): string {
   return path.replace(/\/{2,}/g, "/").replace(/\/\.\./g, "");
 }
 
-export function parseFiles(raw: string): GeneratedFiles {
+export function parseFiles(raw: string, requireMain = true): GeneratedFiles {
   const files: GeneratedFiles = {};
 
   for (const match of raw.matchAll(FENCE)) {
@@ -50,12 +50,14 @@ export function parseFiles(raw: string): GeneratedFiles {
 
   if (Object.keys(files).length === 0) throw new NoFilesError();
 
-  const entry = files["/App.tsx"] ?? files["/app.tsx"];
-  if (!entry) {
-    throw new NoFilesError("No /App.tsx in the returned files");
-  }
-  if (!entry.includes("export default")) {
-    throw new NoFilesError("/App.tsx has no default export");
+  if (requireMain) {
+    const entry = files["/App.tsx"] ?? files["/app.tsx"];
+    if (!entry) {
+      throw new NoFilesError("No /App.tsx in the returned files");
+    }
+    if (!entry.includes("export default")) {
+      throw new NoFilesError("/App.tsx has no default export");
+    }
   }
 
   return files;
