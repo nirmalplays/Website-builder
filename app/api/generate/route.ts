@@ -188,7 +188,7 @@ export async function POST(req: Request) {
   // not room for all of them. Rather than guess, time the calls we have already
   // made and only start a pass we can expect to finish. lastCallMs starts at a
   // pessimistic 60s so the first decision is not made on no evidence at all.
-  let lastCallMs = 60_000;
+  let lastCallMs = 45_000;
 
   const call = async (system: string, userPrompt: string) => {
     const callStarted = Date.now();
@@ -207,7 +207,11 @@ export async function POST(req: Request) {
       // pointless. A build killed by the platform returns nothing at all.
       timeoutMs: Math.max(15_000, FUNCTION_LIMIT_MS - (Date.now() - started) - 8_000),
     });
-    lastCallMs = Date.now() - callStarted;
+    // Track the WORST call, not the last one. A build overran its 170s budget
+    // and finished at 198s because it sized a round off a fast 27s call and
+    // then drew a 64s one. Calls vary by several times, so budgeting on the
+    // most recent is optimistic exactly when it is most expensive to be wrong.
+    lastCallMs = Math.max(lastCallMs, Date.now() - callStarted);
     inputTokens += res.inputTokens;
     outputTokens += res.outputTokens;
     if (res.switchedFrom) {
