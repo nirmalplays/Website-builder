@@ -159,37 +159,70 @@ export function stubMissingModules(files: GeneratedFiles): {
   const out = { ...files };
   const stubbed: string[] = [];
 
-  // One module can be imported from several files, each wanting different names.
-  const byTarget = new Map<string, { types: Set<string>; values: Set<string> }>();
+  // One module can be imported from several files, each wanting different
+  // names, and in any of the three shapes: a default, a named list, or both.
+  // Only handling `import { x }` was not enough - a section is imported as a
+  // default, which is exactly the case that left a build uncompilable.
+  type Want = { default?: string; types: Set<string>; values: Set<string> };
+  const byTarget = new Map<string, Want>();
+
+  const IMPORT = /import\s+(type\s+)?([\s\S]*?)\s*from\s*["'](\.[^"']+|\/[^"']+)["']/g;
 
   for (const [from, content] of Object.entries(files)) {
-    for (const m of content.matchAll(/import\s+(type\s+)?\{([^}]*)\}\s*from\s*["'](\.[^"']+|\/[^"']+)["']/g)) {
+    for (const m of content.matchAll(IMPORT)) {
       const target = resolveRelative(from, m[3]);
       if (!missing.some((x) => x.resolved === target)) continue;
 
-      const entry = byTarget.get(target) ?? { types: new Set(), values: new Set() };
+      const want = byTarget.get(target) ?? { types: new Set(), values: new Set() };
       const allType = Boolean(m[1]);
-      for (const raw of m[2].split(",")) {
-        const name = raw.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop()?.trim();
+      const clause = m[2].trim();
+
+      const braced = clause.match(/\{([\s\S]*)\}/);
+      const defaultName = clause.replace(/\{[\s\S]*\}/, "").replace(/,/g, "").trim();
+      if (defaultName && !defaultName.startsWith("*")) want.default = defaultName;
+
+      for (const raw of (braced?.[1] ?? "").split(",")) {
+        const piece = raw.trim();
+        if (!piece) continue;
+        const name = piece.replace(/^type\s+/, "").split(/\s+as\s+/).pop()?.trim();
         if (!name) continue;
-        (allType || /^type\s/.test(raw.trim()) ? entry.types : entry.values).add(name);
+        (allType || /^type\s/.test(piece) ? want.types : want.values).add(name);
       }
-      byTarget.set(target, entry);
+      byTarget.set(target, want);
     }
   }
 
-  for (const [target, { types, values }] of byTarget) {
+  for (const [target, want] of byTarget) {
+    const name = target.split("/").pop() || "Section";
     const lines = [
       "// Written automatically: the build imported this module but never wrote it.",
       "// The names are real so the app compiles; the contents are not.",
       "",
-      ...[...types].map((t) => `export type ${t} = Record<string, unknown>;`),
-      // `unknown[]` would fail every use site, so these are deliberately loose.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...[...values].map((v) => `export const ${v}: any = [];`),
+      ...[...want.types].map((t) => `export type ${t} = Record<string, unknown>;`),
+      // `unknown[]` would fail at every use site, so these are deliberately loose.
+      ...[...want.values].map((v) => `export const ${v}: any = [];`),
     ];
-    out[`${target}.ts`] = lines.join("\n");
-    stubbed.push(`${target}.ts`);
+
+    if (want.default) {
+      // A default import is almost always a component. Rendering null would
+      // leave a silent gap that reads as a design choice; a visible marker
+      // says which section is missing and that the rest of the app is real.
+      lines.push(
+        "",
+        `export default function ${want.default}() {`,
+        "  return (",
+        '    <div className="rounded-lg border border-dashed border-neutral-600 p-6 text-sm text-neutral-400">',
+        `      ${name} could not be generated.`,
+        "    </div>",
+        "  );",
+        "}",
+      );
+    }
+
+    // JSX needs .tsx; a data-only module stays .ts so nothing else changes.
+    const path = `${target}${want.default ? ".tsx" : ".ts"}`;
+    out[path] = lines.join("\n");
+    stubbed.push(path);
   }
 
   return { files: out, stubbed };
