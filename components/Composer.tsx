@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { MODELS } from "@/lib/config";
+import type { ModelOption } from "@/lib/config";
 
 export type Attachment = {
   kind: "image" | "pdf" | "text";
@@ -24,6 +24,7 @@ export function Composer({
   onChange,
   onSubmit,
   model,
+  models,
   onModelChange,
   loading,
   outOfQuota,
@@ -36,6 +37,12 @@ export function Composer({
   onChange: (v: string) => void;
   onSubmit: (v: string) => void;
   model: string;
+  /**
+   * Passed down from the server. Deriving it here would read provider env
+   * vars that only exist server-side, so the server would render one list
+   * and the client another - a hydration mismatch.
+   */
+  models: ModelOption[];
   onModelChange: (id: string) => void;
   loading: boolean;
   outOfQuota: boolean;
@@ -81,7 +88,7 @@ export function Composer({
       onAttach({ kind: "text", name: file.name, text, size: file.size });
     }
   }
-  const active = MODELS.find((m) => m.id === model);
+  const active = models.find((m) => m.id === model);
 
   return (
     <div
@@ -184,7 +191,7 @@ export function Composer({
             title={active?.note}
             className="h-8 max-w-[10rem] cursor-pointer truncate rounded-lg border border-line bg-raised px-2 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
           >
-            {MODELS.map((m) => (
+            {models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.label}
               </option>

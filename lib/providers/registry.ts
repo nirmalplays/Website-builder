@@ -1,4 +1,4 @@
-import { geminiProvider } from "./gemini";
+import { geminiProvider, geminiProvider2 } from "./gemini";
 import { openAiCompatibleProvider } from "./openaiCompatible";
 import { FREE_TIER_PROVIDERS } from "./freeTier";
 import type { Provider } from "./types";
@@ -9,7 +9,12 @@ import type { Provider } from "./types";
  * setups), then the free-tier vendors in roughly the order they appear in
  * https://github.com/mnfst/awesome-free-llm-apis.
  */
-const PROVIDER_LIST: Provider[] = [geminiProvider, openAiCompatibleProvider, ...FREE_TIER_PROVIDERS];
+const PROVIDER_LIST: Provider[] = [
+  geminiProvider,
+  geminiProvider2,
+  openAiCompatibleProvider,
+  ...FREE_TIER_PROVIDERS,
+];
 
 const PROVIDERS: Record<string, Provider> = Object.fromEntries(
   PROVIDER_LIST.map((p) => [p.id, p]),

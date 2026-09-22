@@ -14,11 +14,12 @@ import {
   dependencyNote,
   ICON_NOTE,
   FILES_REPAIR_SUFFIX,
+  missingFilesPrompt,
 } from "@/lib/buildPrompt";
 import { IMAGE_SUFFIX, DOCUMENT_SUFFIX } from "@/lib/systemPrompt";
 import {
   parseFiles,
-  missingLocalImports,
+  missingLocalImportDetails,
   externalImports,
   NoFilesError,
   type GeneratedFiles,
@@ -192,6 +193,17 @@ export async function POST(req: Request) {
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       };
 
+      /*
+       * A single model call can think for minutes without producing a byte,
+       * and an idle connection gets cut long before that: Node's own fetch
+       * (undici) drops the body after 300s of silence, and proxies are
+       * usually stricter. A measured build finished server-side in 7 minutes
+       * while the client had already given up with "terminated". The ping
+       * keeps the stream alive; clients ignore any event type they do not
+       * know, so this is safe for older ones too.
+       */
+      const heartbeat = setInterval(() => emit({ type: "ping" }), 15_000);
+
       try {
     let planBlock = "";
     let componentSelections: { component: string; reason: string; section: string }[] = [];
@@ -300,8 +312,34 @@ export async function POST(req: Request) {
       }),
     );
 
-    const missing = missingLocalImports(files);
-    if (missing.length > 0) notes.push(`Imports with no matching file: ${missing.join(", ")}`);
+    // Files the model imported but never wrote are the most common way a
+    // multi-file build fails, and the generic browser-findings repair does not
+    // reliably fix them. Ask for exactly the missing files, before spending a
+    // browser round on an app that cannot possibly compile.
+    let missing = missingLocalImportDetails(files);
+    if (missing.length > 0) {
+      emit({
+        type: "stage",
+        stage: "missing-files",
+        detail: missing.map((m) => m.spec).join(", "),
+      });
+      try {
+        const written = parseFiles(
+          await call(`${system}\n\n${missingFilesPrompt(missing)}`, userPrompt),
+        );
+        files = { ...written, ...files };
+        missing = missingLocalImportDetails(files);
+        if (missing.length === 0) {
+          repaired = repaired ? `${repaired}+missing-files` : "missing-files";
+          notes.push(`Wrote ${Object.keys(written).length} file(s) the app imported but had not written.`);
+        }
+      } catch {
+        notes.push("Could not write the missing files.");
+      }
+    }
+    if (missing.length > 0) {
+      notes.push(`Imports with no matching file: ${missing.map((m) => m.spec).join(", ")}`);
+    }
 
     const dead = findDeadControls(Object.values(files).join("\n"));
     if (dead.length > 0 && !isEdit) {
@@ -346,7 +384,21 @@ export async function POST(req: Request) {
         }
 
         emit({ type: "stage", stage: "verifying", round: round + 1, of: MAX_FIX_ROUNDS + 1 });
-        report = await verifyProject(files, deps);
+        try {
+          report = await verifyProject(files, deps);
+        } catch (err) {
+          // Running the project needs a real Chromium, which is not there on
+          // every host - a serverless runtime has no browser binary. Not being
+          // able to look at the app is not a reason to throw away an app that
+          // may be perfectly fine: ship it and say it went unchecked.
+          notes.push(
+            `Could not run it in a browser here, so this build is unverified: ${
+              err instanceof Error ? err.message.slice(0, 120) : String(err)
+            }`,
+          );
+          report = null;
+          break;
+        }
 
         const actionable = report.findings.filter((f) => f.severity !== "warning");
         if (actionable.length === 0) break;
@@ -380,12 +432,25 @@ ${repairPrompt(report)}`, userPrompt));
 
       if (report) {
         const remaining = report.findings.filter((f) => f.severity !== "warning");
-        notes.push(
+        const fatal = remaining.filter((f) => f.severity === "fatal");
+        const fixed =
           fixRounds > 0
-            ? `Ran it in a browser: fixed ${fixRounds === 1 ? "1 round of issues" : `${fixRounds} rounds of issues`}${remaining.length ? `, ${remaining.length} left` : ""}.`
-            : remaining.length === 0
-              ? "Ran it in a browser: no problems found."
-              : `Ran it in a browser: ${remaining.length} issue(s) found.`,
+            ? `fixed ${fixRounds === 1 ? "1 round of issues" : `${fixRounds} rounds of issues`}, `
+            : "";
+
+        // A fatal finding means the app does not run at all - the preview will
+        // be blank. Saying "1 issue left" about that reads as a minor blemish,
+        // so name it for what it is.
+        notes.push(
+          fatal.length > 0
+            ? `Ran it in a browser: ${fixed}but this build still does not compile (${fatal
+                .map((f) => f.kind)
+                .join(", ")}), so the preview will be empty. Ask for a fix and it will try again with the error in hand.`
+            : remaining.length > 0
+              ? `Ran it in a browser: ${fixed}${remaining.length} issue(s) left.`
+              : fixRounds > 0
+                ? `Ran it in a browser: ${fixed}all clear.`
+                : "Ran it in a browser: no problems found.",
         );
       }
     }
@@ -491,6 +556,7 @@ ${repairPrompt(report)}`, userPrompt));
             : `Generation failed: ${message}`,
         });
       } finally {
+        clearInterval(heartbeat);
         closed = true;
         controller.close();
       }

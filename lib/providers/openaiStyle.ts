@@ -1,4 +1,4 @@
-import { AI_CALL_TIMEOUT_MS } from "../config";
+import { AI_CALL_TIMEOUT_MS } from "./timeouts";
 import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./types";
 
 /**
@@ -118,8 +118,14 @@ ${req.document.text}
       });
 
       if (!res.ok) {
-        const detail = await res.text().catch(() => "");
-        const err = new Error(`${res.status} from ${config.label}: ${detail.slice(0, 200)}`);
+        const body = await res.text().catch(() => "");
+        // Gateways answer with a full HTML error page when they time out; the
+        // whole <!DOCTYPE html> document used to end up in the user's error
+        // message. Keep JSON detail, summarise anything else.
+        const detail = /^\s*</.test(body)
+          ? `${body.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120)}`
+          : body.slice(0, 200);
+        const err = new Error(`${res.status} from ${config.label}: ${detail}`);
         (err as Error & { status?: number }).status = res.status;
         throw err;
       }

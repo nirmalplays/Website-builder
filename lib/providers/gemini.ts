@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { AI_CALL_TIMEOUT_MS } from "../config";
+import { AI_CALL_TIMEOUT_MS } from "./timeouts";
 import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./types";
 
 /**
@@ -23,21 +23,29 @@ function supportsThinkingConfig(model: string): boolean {
   return !/flash-lite/.test(model);
 }
 
-export const geminiProvider: Provider = {
-  id: "gemini",
-  label: "Google Gemini",
-  supportsImage: true,
+/**
+ * One provider per API key. Gemini's free tier is metered per project, so a
+ * second key is a second quota pool of the same strong models - the chain
+ * treats it as an independent vendor and gets two shots at them instead of
+ * one. It does not help with "high demand" 503s, which are capacity-side
+ * rather than quota-side, but it does help when a key is spent.
+ */
+function createGeminiProvider(id: string, label: string, apiKeyEnv: string): Provider {
+  return {
+    id,
+    label,
+    supportsImage: true,
 
-  isConfigured() {
-    return Boolean(process.env.GEMINI_API_KEY);
-  },
+    isConfigured() {
+      return Boolean(process.env[apiKeyEnv]);
+    },
 
-  listModels() {
-    return MODELS;
-  },
+    listModels() {
+      return MODELS;
+    },
 
-  async generate(req: GenerateRequest): Promise<GenerateResult> {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      const ai = new GoogleGenAI({ apiKey: process.env[apiKeyEnv]! });
 
     const contents = [
       ...req.history.map((t) => ({
@@ -79,10 +87,20 @@ ${req.document.text}
       },
     });
 
-    return {
-      text: res.text ?? "",
-      inputTokens: res.usageMetadata?.promptTokenCount ?? 0,
-      outputTokens: res.usageMetadata?.candidatesTokenCount ?? 0,
-    };
-  },
-};
+      return {
+        text: res.text ?? "",
+        inputTokens: res.usageMetadata?.promptTokenCount ?? 0,
+        outputTokens: res.usageMetadata?.candidatesTokenCount ?? 0,
+      };
+    },
+  };
+}
+
+export const geminiProvider = createGeminiProvider("gemini", "Google Gemini", "GEMINI_API_KEY");
+
+/** Optional second key: a separate free-tier project, so a separate quota. */
+export const geminiProvider2 = createGeminiProvider(
+  "gemini-2",
+  "Google Gemini (2nd key)",
+  "GEMINI_API_KEY_2",
+);

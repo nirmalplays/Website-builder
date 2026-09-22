@@ -30,9 +30,26 @@ export class BundleError extends Error {
 
 function resolveVirtual(spec: string, importer: string, files: GeneratedFiles): string | null {
   const dir = importer.slice(0, importer.lastIndexOf("/")) || "/";
-  const base = spec.startsWith("/")
-    ? spec
-    : `${dir}/${spec.replace(/^\.\//, "")}`.replace(/\/{2,}/g, "/");
+
+  /*
+   * Collapse "." and ".." the way a real bundler does. This used only to strip
+   * a leading "./", so "../data" from /components/Foo.tsx became the literal
+   * "/components/../data" and matched nothing - reporting a fatal compile
+   * error for a file that was right there. A component importing a
+   * parent-level module is completely ordinary, so this failed a lot of
+   * perfectly good builds, and the repair rounds then burned themselves out
+   * "fixing" code that was never broken. lib/parseFiles.ts already resolved
+   * this correctly; the two disagreeing is what hid the bug.
+   */
+  const base = (() => {
+    const parts: string[] = [];
+    for (const segment of (spec.startsWith("/") ? spec : `${dir}/${spec}`).split("/")) {
+      if (segment === "" || segment === ".") continue;
+      if (segment === "..") parts.pop();
+      else parts.push(segment);
+    }
+    return `/${parts.join("/")}`;
+  })();
 
   const candidates = [
     base,

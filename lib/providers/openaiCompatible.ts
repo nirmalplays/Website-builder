@@ -1,4 +1,4 @@
-import { AI_CALL_TIMEOUT_MS } from "../config";
+import { AI_CALL_TIMEOUT_MS } from "./timeouts";
 import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./types";
 
 /**

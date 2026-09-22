@@ -58,15 +58,11 @@ export const THINKING_BUDGET = Number(process.env.GEMINI_THINKING_BUDGET ?? 8192
 export const PLANNER_THINKING_BUDGET = Number(process.env.PLANNER_THINKING_BUDGET ?? 4096);
 
 /**
- * How long any single model call may take. Deliberately generous: a reasoning
- * model writing a whole multi-file application is doing minutes of work, and
- * cutting it off mid-thought wastes everything it had done. It is a backstop
- * against a wedged connection, not a latency target.
- *
- * This is per call, and a build makes several (plan, build, then a model call
- * per repair round), so it is not the total - see BUILD_DEADLINE_MS.
+ * Per-call timeout, defined in the provider layer and re-exported here so
+ * callers have one place to look. A build makes several calls (plan, build,
+ * then one per repair round), so this is not the total - see BUILD_DEADLINE_MS.
  */
-export const AI_CALL_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 240_000);
+export { AI_CALL_TIMEOUT_MS } from "./providers/timeouts";
 
 /**
  * Total wall-clock budget for one build, kept under the route's maxDuration.

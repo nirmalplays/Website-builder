@@ -24,10 +24,14 @@ export type FallbackResult = GenerateResult & {
 
 function isBusyError(err: unknown): boolean {
   const status = (err as { status?: number } | null | undefined)?.status;
-  if (status === 429 || status === 503) return true;
+  // Any 5xx is the vendor's problem, not the prompt's, so another model is
+  // worth a try: a concurrency test caught a Cloudflare 524 from one gateway
+  // killing a whole build because only 503 was recognised. 4xx stays fatal
+  // apart from 429, since a bad request will be just as bad everywhere else.
+  if (status === 429 || (status !== undefined && status >= 500 && status < 600)) return true;
   const message = err instanceof Error ? err.message : String(err);
   return (
-    /\b(429|503)\b/.test(message) ||
+    /\b(429|5\d\d)\b/.test(message) ||
     /rate.?limit|quota|overloaded|unavailable|too many requests|resource_exhausted/i.test(message) ||
     // A 200 carrying no content: the vendor answered but produced nothing.
     // Another model is far more useful than surfacing this to the user.
@@ -48,6 +52,41 @@ function isBusyError(err: unknown): boolean {
  * three vendors without ever reaching a working one.
  */
 const MAX_ATTEMPTS = Number(process.env.FALLBACK_MAX_ATTEMPTS ?? 10);
+
+/**
+ * Which models have recently said no, and until when.
+ *
+ * Without this the chain has no memory: a build makes five to eight calls, and
+ * every one of them would re-ask the model that just returned 429, wasting a
+ * round trip each time - then the next build would do it all again. A measured
+ * build burned two of three Gemini tiers this way before reaching a working
+ * one, on time that was needed to fix a compile error.
+ *
+ * Process-local and therefore best-effort: serverless instances do not share
+ * it, and it is lost on cold start. That is fine - it is an optimisation, and
+ * the worst case is the behaviour we had before.
+ */
+const coolingUntil = new Map<string, number>();
+
+/** How long to leave a model alone, by what it complained about. */
+function cooldownMs(err: unknown): number {
+  const message = err instanceof Error ? err.message : String(err);
+  // A daily quota will not free up in a minute; stop asking for a good while.
+  if (/quota|resource_exhausted|daily/i.test(message)) return 15 * 60_000;
+  if (/\b429\b|rate.?limit|too many requests/i.test(message)) return 60_000;
+  // Overload, timeout, empty response: transient, worth another look soon.
+  return 30_000;
+}
+
+function isCooling(id: string): boolean {
+  const until = coolingUntil.get(id);
+  if (until === undefined) return false;
+  if (until <= Date.now()) {
+    coolingUntil.delete(id);
+    return false;
+  }
+  return true;
+}
 
 export async function generateWithFallback(req: GenerateRequest): Promise<FallbackResult> {
   const primary = resolveQualifiedModel(req.model);
@@ -82,20 +121,28 @@ export async function generateWithFallback(req: GenerateRequest): Promise<Fallba
     for (const group of groups) if (group[depth]) interleaved.push(group[depth]);
   }
 
-  const candidates = [{ provider: primary.provider, modelId: primary.modelId }, ...interleaved].slice(
-    0,
-    Math.max(1, MAX_ATTEMPTS),
-  );
+  const ordered = [{ provider: primary.provider, modelId: primary.modelId }, ...interleaved];
+
+  // Models that recently said no go to the back rather than being dropped: if
+  // everything is cooling we still try them, because a stale cooldown is a far
+  // smaller problem than refusing to build at all.
+  const ready = ordered.filter((c) => !isCooling(qualifyModel(c.provider.id, c.modelId)));
+  const cooling = ordered.filter((c) => isCooling(qualifyModel(c.provider.id, c.modelId)));
+  const candidates = [...ready, ...cooling].slice(0, Math.max(1, MAX_ATTEMPTS));
+
   const failures: string[] = [];
 
   for (const { provider, modelId } of candidates) {
+    const model = qualifyModel(provider.id, modelId);
     try {
       const res = await provider.generate({ ...req, model: modelId });
-      const model = qualifyModel(provider.id, modelId);
+      // It answered, so whatever we remembered about it is out of date.
+      coolingUntil.delete(model);
       return { ...res, model, switchedFrom: model === req.model ? undefined : req.model };
     } catch (err) {
       if (!isBusyError(err)) throw err;
-      failures.push(`${provider.id}:${modelId}: ${err instanceof Error ? err.message : String(err)}`);
+      coolingUntil.set(model, Date.now() + cooldownMs(err));
+      failures.push(`${model}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

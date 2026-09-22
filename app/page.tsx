@@ -1,5 +1,5 @@
 import { Workspace } from "@/components/Workspace";
-import { DEFAULT_MODEL } from "@/lib/config";
+import { DEFAULT_MODEL, MODELS } from "@/lib/config";
 import { getEnabledProviders, isAuthEnabled } from "@/lib/supabase/config";
 import { getUser } from "@/lib/supabase/server";
 import { TEMPLATE_CODE } from "@/lib/templateCode.generated";
@@ -9,6 +9,7 @@ export default async function Home() {
   return (
     <Workspace
       defaultModel={DEFAULT_MODEL}
+      models={MODELS}
       authEnabled={isAuthEnabled}
       providers={providers}
       bakedTemplates={Object.keys(TEMPLATE_CODE)}

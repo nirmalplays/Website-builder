@@ -94,3 +94,29 @@ Return the complete project again, one fenced block per file:
 \`\`\`tsx file=/App.tsx
 ...
 \`\`\``;
+
+/**
+ * A multi-file build fails most often not on bad syntax but on files the model
+ * referenced and never wrote - an App.tsx importing ./data, ./types and
+ * ./lib/storage that do not exist. The generic "fix the problems" repair does
+ * not reliably land that, because the model reads it as an instruction to edit
+ * what it already wrote. This asks for exactly the missing files and nothing
+ * else.
+ */
+export function missingFilesPrompt(
+  missing: { from: string; spec: string; resolved: string }[],
+): string {
+  return [
+    "Your project imports modules that you never wrote, so it cannot compile:",
+    "",
+    ...missing.map((m) => `- ${m.from} imports "${m.spec}" - no such file (expected around ${m.resolved}.ts or ${m.resolved}.tsx)`),
+    "",
+    "Write those missing files now. Rules:",
+    "- Output ONLY the missing files, one fenced block per file, same format.",
+    "- Do NOT re-output files that already exist and do NOT restate the others.",
+    "- Each file must export exactly the names the importing file expects,",
+    "  with types and data shaped to how they are already used there.",
+    "- Real content, not placeholders: if it is a data module, write the actual",
+    "  records the UI renders.",
+  ].join("\n");
+}

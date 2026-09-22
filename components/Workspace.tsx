@@ -8,6 +8,7 @@ import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
 import type { SessionUser } from "./AuthButton";
 import type { Usage } from "./UsageMeter";
+import type { ModelOption } from "@/lib/config";
 import type { Attachment } from "./Composer";
 import type { OAuthProvider } from "@/lib/supabase/config";
 import { TEMPLATES } from "@/lib/templates";
@@ -31,12 +32,14 @@ const MAX_CHAT = 560;
 
 export function Workspace({
   defaultModel,
+  models,
   authEnabled,
   providers,
   user,
   bakedTemplates,
 }: {
   defaultModel: string;
+  models: ModelOption[];
   authEnabled: boolean;
   providers: OAuthProvider[];
   user: SessionUser;
@@ -207,6 +210,16 @@ export function Workspace({
       const res = await fetch(`/api/template/${id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not open template.");
+
+      // The preview renders from `code`/`files`, so a template that only went
+      // into `history` opened to an empty pane: the code was fetched and then
+      // dropped on the floor. Templates are single-file, and Preview merges
+      // the base dependencies itself, so /App.tsx is the whole project.
+      setCode(data.code);
+      setFiles({ "/App.tsx": data.code });
+      setDependencies({});
+      setBuildNotes([]);
+
       setGeneration((g) => g + 1);
       setTab("preview");
       setProjectId(null);
@@ -272,7 +285,11 @@ Fix it and return the complete corrected file.`,
       const res = await fetch("/api/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, title: history[0]?.content ?? "ui-generator-export" }),
+        body: JSON.stringify({
+          code,
+          files: Object.keys(files).length > 0 ? files : undefined,
+          title: history[0]?.content ?? "ui-generator-export",
+        }),
       });
       if (!res.ok) throw new Error("Export failed.");
       const blob = await res.blob();
@@ -327,6 +344,9 @@ Fix it and return the complete corrected file.`,
           history: sentHistory,
           projectId,
           model,
+          // Send the current files so the server knows this is an edit and can
+          // provide the model with the existing project as context.
+          ...(isEdit ? { files } : {}),
           ...(sentImage?.kind === "text"
             ? { document: { name: sentImage.name, text: sentImage.text } }
             : sentImage
@@ -412,6 +432,7 @@ Fix it and return the complete corrected file.`,
             onInput={setInput}
             onSubmit={send}
             model={model}
+            models={models}
             onModelChange={setModel}
             loading={loading}
             outOfQuota={outOfQuota}
@@ -454,6 +475,7 @@ Fix it and return the complete corrected file.`,
                 onInput={setInput}
                 onSend={send}
                 model={model}
+                models={models}
                 onModelChange={setModel}
                 outOfQuota={outOfQuota}
                 isEdit={isEdit}

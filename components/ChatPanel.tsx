@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Composer, type Attachment } from "./Composer";
+import type { ModelOption } from "@/lib/config";
 
 /** `lines` is set when a turn is restored from history and the file body was not sent. */
 export type Turn = { role: "user" | "assistant"; content: string; lines?: number };
@@ -20,6 +21,7 @@ const STAGE_LABEL: Record<string, string> = {
   planning: "thinking about the design",
   planned: "plan ready",
   components: "fetching React Bits components",
+  "missing-files": "writing files the app referenced",
   editing: "reading the current app",
   building: "writing the code",
   wiring: "wiring up the controls",
@@ -27,7 +29,7 @@ const STAGE_LABEL: Record<string, string> = {
   fixing: "fixing what the browser found",
 };
 
-const STAGE_ORDER = ["planning", "components", "building", "wiring", "verifying", "fixing"];
+const STAGE_ORDER = ["planning", "components", "building", "missing-files", "wiring", "verifying", "fixing"];
 
 function elapsedLabel(ms: number): string {
   const total = Math.floor(ms / 1000);
@@ -104,6 +106,7 @@ export function ChatPanel({
   onInput,
   onSend,
   model,
+  models,
   onModelChange,
   outOfQuota,
   isEdit,
@@ -120,6 +123,7 @@ export function ChatPanel({
   onInput: (value: string) => void;
   onSend: (prompt: string) => void;
   model: string;
+  models: ModelOption[];
   onModelChange: (id: string) => void;
   outOfQuota: boolean;
   isEdit: boolean;
@@ -193,6 +197,7 @@ export function ChatPanel({
           onChange={onInput}
           onSubmit={onSend}
           model={model}
+          models={models}
           onModelChange={onModelChange}
           loading={loading}
           outOfQuota={outOfQuota}

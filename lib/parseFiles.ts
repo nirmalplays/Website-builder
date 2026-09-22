@@ -75,8 +75,17 @@ function resolveRelative(from: string, spec: string): string {
   return `/${parts.join("/")}`;
 }
 
-export function missingLocalImports(files: GeneratedFiles): string[] {
-  const missing = new Set<string>();
+/** An import of a project file that was never written, and who imported it. */
+export type MissingImport = { from: string; spec: string; resolved: string };
+
+/**
+ * Richer than missingLocalImports: keeps the importing file and the path the
+ * bundler would look for, so a repair can say "write /data.ts, /App.tsx wants
+ * it" rather than just naming a dangling specifier.
+ */
+export function missingLocalImportDetails(files: GeneratedFiles): MissingImport[] {
+  const missing: MissingImport[] = [];
+  const seen = new Set<string>();
   const have = new Set(Object.keys(files));
 
   for (const [from, content] of Object.entries(files)) {
@@ -93,11 +102,20 @@ export function missingLocalImports(files: GeneratedFiles): string[] {
         `${resolved}/index.tsx`,
         `${resolved}/index.ts`,
       ];
-      if (!candidates.some((c) => have.has(c))) missing.add(spec);
+      if (candidates.some((c) => have.has(c))) continue;
+
+      const key = `${from}>${spec}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      missing.push({ from, spec, resolved });
     }
   }
 
-  return [...missing];
+  return missing;
+}
+
+export function missingLocalImports(files: GeneratedFiles): string[] {
+  return [...new Set(missingLocalImportDetails(files).map((m) => m.spec))];
 }
 
 /** Bare npm specifiers imported anywhere in the project. */
