@@ -164,6 +164,11 @@ export async function POST(req: Request) {
    * that matters more than the caller: the interactivity pass yields to the
    * compile-fix rounds this way, because a button wired to nothing is a
    * blemish and a build that does not compile is a blank screen.
+   *
+   * Reserving a whole extra call turned out too cautious - a fix round only
+   * runs when the compile check actually finds something, and a clean build
+   * was skipping the interactivity pass with half its budget unspent. Half a
+   * call keeps the yield without paying for a round that usually never comes.
    */
   const canAfford = (reserve = 0) =>
     Date.now() - started + lastCallMs * 1.15 + reserve < BUILD_BUDGET_MS;
@@ -382,7 +387,7 @@ export async function POST(req: Request) {
     }
 
     const dead = findDeadControls(Object.values(files).join("\n"));
-    if (dead.length > 0 && !isEdit && !canAfford(lastCallMs)) {
+    if (dead.length > 0 && !isEdit && !canAfford(lastCallMs * 0.5)) {
       notes.push(
         `Skipped the interactivity pass to leave time for the compile check; ${dead.length} control(s) may do nothing yet. Ask for a fix and it will wire them up.`,
       );
