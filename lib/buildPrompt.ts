@@ -26,6 +26,12 @@ OUTPUT FORMAT - follow exactly:
 ARCHITECTURE:
 - Split the UI into real components, one per meaningful section, in /components/.
 - Shared types go in /types.ts, shared data in /data.ts, helpers in /lib/.
+- PRE-INSTALLED COMPONENTS: if the prompt lists React Bits components as already
+  present in /components/, those files exist and are already written. Import and
+  render them where they fit. Do not rewrite them, do not output a file with the
+  same name, and do not hand-roll an equivalent effect next to one. If a listed
+  component genuinely does not fit anywhere, leave it unused rather than forcing
+  it - but prefer using it, that is why it was installed.
 - No file over ~200 lines. If a section grows past that, split it.
 - Props are typed. Data flows down; callbacks flow up.
 

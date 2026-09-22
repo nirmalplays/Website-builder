@@ -1,10 +1,100 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Composer, type Attachment } from "./Composer";
 
 /** `lines` is set when a turn is restored from history and the file body was not sent. */
 export type Turn = { role: "user" | "assistant"; content: string; lines?: number };
+
+/** A progress event streamed by /api/generate while a build runs. */
+export type BuildStage = {
+  type: "stage";
+  stage: string;
+  detail?: string;
+  round?: number;
+  of?: number;
+};
+
+/** What each stage is actually doing, in the user's words. */
+const STAGE_LABEL: Record<string, string> = {
+  planning: "thinking about the design",
+  planned: "plan ready",
+  components: "fetching React Bits components",
+  editing: "reading the current app",
+  building: "writing the code",
+  wiring: "wiring up the controls",
+  verifying: "running it in a browser",
+  fixing: "fixing what the browser found",
+};
+
+const STAGE_ORDER = ["planning", "components", "building", "wiring", "verifying", "fixing"];
+
+function elapsedLabel(ms: number): string {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`;
+}
+
+/**
+ * Live build readout. Thinking is on and the result is checked in a real
+ * browser, so a build takes minutes rather than seconds - a bare spinner
+ * would look like a hang.
+ */
+function BuildProgress({ stage, startedAt, isEdit }: { stage: BuildStage | null; startedAt: number | null; isEdit: boolean }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const elapsed = startedAt ? now - startedAt : 0;
+  const current = stage?.stage ?? (isEdit ? "editing" : "planning");
+  const label = STAGE_LABEL[current] ?? current;
+  const stepIndex = STAGE_ORDER.indexOf(current === "planned" ? "planning" : current);
+
+  return (
+    <li className="ml-1 space-y-1.5" aria-busy="true" aria-live="polite">
+      <div className="flex items-center gap-2">
+        <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink" />
+        <span className="font-mono text-[11px] text-ink">{label}</span>
+        <span className="ml-auto font-mono text-[11px] tabular-nums text-faint">
+          {elapsedLabel(elapsed)}
+        </span>
+      </div>
+
+      {stage?.detail && (
+        <p className="pl-3.5 text-[11px] leading-snug text-faint">{stage.detail}</p>
+      )}
+      {stage?.round && stage.of && (
+        <p className="pl-3.5 text-[11px] leading-snug text-faint">
+          pass {stage.round} of {stage.of}
+        </p>
+      )}
+
+      {/* Which steps are done, which is running, which are still ahead. */}
+      <div className="flex gap-1 pl-3.5" aria-hidden="true">
+        {STAGE_ORDER.map((s, i) => (
+          <span
+            key={s}
+            title={STAGE_LABEL[s]}
+            className={`h-0.5 w-6 rounded-full transition-colors duration-500 ${
+              stepIndex < 0 ? "bg-line" : i < stepIndex ? "bg-success" : i === stepIndex ? "bg-ink" : "bg-line"
+            }`}
+          />
+        ))}
+      </div>
+
+      {elapsed > 45_000 && (
+        <p className="pl-3.5 text-[11px] leading-snug text-faint">
+          Taking its time on purpose - it plans, builds, then checks the result in a
+          real browser before handing it over.
+        </p>
+      )}
+    </li>
+  );
+}
 
 export function ChatPanel({
   history,
@@ -20,6 +110,8 @@ export function ChatPanel({
   buildNotes,
   attachment,
   onAttach,
+  stage,
+  buildStartedAt,
 }: {
   history: Turn[];
   loading: boolean;
@@ -34,6 +126,8 @@ export function ChatPanel({
   buildNotes: string[];
   attachment: Attachment | null;
   onAttach: (a: Attachment | null) => void;
+  stage: BuildStage | null;
+  buildStartedAt: number | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -79,12 +173,7 @@ export function ChatPanel({
             </li>
           )}
           {loading && (
-            <li className="flex items-center gap-2 pl-1" aria-busy="true">
-              <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink" />
-              <span className="font-mono text-[11px] text-muted">
-                {isEdit ? "editing the app" : "planning, building and checking it in a browser"}
-              </span>
-            </li>
+            <BuildProgress stage={stage} startedAt={buildStartedAt} isEdit={isEdit} />
           )}
         </ol>
 

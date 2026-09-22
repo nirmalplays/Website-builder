@@ -36,6 +36,12 @@ export type ModelOption = {
   id: string;
   label: string;
   note: string;
+  /**
+   * Per-model vision support, for vendors whose catalogue is mixed (Mistral
+   * serves vision-capable chat models alongside text-only Codestral).
+   * Falls back to the provider-level flag when unset.
+   */
+  supportsImage?: boolean;
 };
 
 export interface Provider {
@@ -43,6 +49,12 @@ export interface Provider {
   readonly label: string;
   /** False when the provider is missing its key or endpoint. */
   isConfigured(): boolean;
+  /**
+   * Vision input support. Fallback candidates that lack this are skipped
+   * up front when a request carries an image, instead of being tried and
+   * failing with a confusing "model does not accept images" error.
+   */
+  readonly supportsImage?: boolean;
   /** Models this provider offers; may be static config or discovered live. */
   listModels(): ModelOption[];
   generate(req: GenerateRequest): Promise<GenerateResult>;

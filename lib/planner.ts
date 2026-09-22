@@ -1,4 +1,5 @@
-import { getProvider } from "@/lib/providers";
+import { PLANNER_THINKING_BUDGET } from "@/lib/config";
+import { generateWithFallback } from "@/lib/providers";
 import { resolveComponents, type PageKind } from "@/lib/react-bits/resolver";
 import { getComponent, packageName } from "@/lib/react-bits/search";
 
@@ -30,6 +31,10 @@ export type BuildPlan = {
   /** Filled in after the plan, not by the model. */
   components?: { component: string; reason: string; section: string; weight: string }[];
   dependencies?: Record<string, string>;
+  /** The model that actually produced this plan. */
+  modelUsed?: string;
+  /** Set when the requested model was busy and a fallback model answered instead. */
+  switchedFrom?: string;
 };
 
 const PLANNER_SYSTEM = `You are the architect for a UI generation system. You do not write code in this step.
@@ -66,8 +71,12 @@ RULES:
   so the build step is not improvising.
 - Design must be specific. "Modern and clean" is a non-answer. Name the colours,
   the type scale, the one unusual detail that makes it memorable.
-- animationOpportunities should be empty for forms and mostly empty for
-  dashboards. Motion is for marketing surfaces and moments that reward it.
+- animationOpportunities is where motion genuinely helps. Marketing surfaces
+  reward it most, but an app or dashboard has them too: an empty state, a
+  metric that counts up, a list that staggers in, a hero header, a loading
+  surface. Name those. Keep it honest - a dense data table or a plain form
+  wants none, and [] is the right answer there. Do not decorate a working
+  tool into uselessness.
 - For an app, plan the data model and the operations on it, not just the layout.`;
 
 function extractJson(raw: string): unknown {
@@ -87,9 +96,7 @@ export async function buildPlan(options: {
   image?: { data: string; mimeType: string };
   allowHeavyComponents?: boolean;
 }): Promise<BuildPlan> {
-  const provider = getProvider();
-
-  const res = await provider.generate({
+  const res = await generateWithFallback({
     system: PLANNER_SYSTEM,
     history: [],
     prompt: options.prompt,
@@ -99,7 +106,7 @@ export async function buildPlan(options: {
     maxOutputTokens: 4096,
     temperature: 0.8,
     // Planning is exactly where reasoning earns its cost.
-    thinkingBudget: 2048,
+    thinkingBudget: PLANNER_THINKING_BUDGET,
   });
 
   const parsed = extractJson(res.text) as BuildPlan;
@@ -122,6 +129,8 @@ export async function buildPlan(options: {
     animationOpportunities: Array.isArray(parsed.animationOpportunities)
       ? parsed.animationOpportunities.map(String).slice(0, 6)
       : [],
+    modelUsed: res.model,
+    switchedFrom: res.switchedFrom,
   };
 
   if (!plan.files.some((f) => f.path === "/App.tsx")) {
@@ -136,6 +145,10 @@ export async function buildPlan(options: {
  * Nothing is forced: a plan with no opportunities gets no components.
  */
 export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = false) {
+  // A form with no animation opportunities genuinely wants none. But an app or
+  // dashboard that named some should get them: previously anything that wasn't
+  // "marketing" was refused outright, which switched React Bits off for every
+  // full-stack app the planner produced, however much motion it asked for.
   if (plan.animationOpportunities.length === 0 && plan.kind !== "marketing") {
     return { selections: [], dependencies: {}, notes: ["The plan asked for no motion."] };
   }
@@ -146,7 +159,11 @@ export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = f
     sections: plan.animationOpportunities.length
       ? plan.animationOpportunities.map(mapSection)
       : undefined,
-    maxWeight: allowHeavy ? "heavy" : "light",
+    // "light" excluded every medium component - MagicBento, ScrollReveal,
+    // DotGrid and most of the catalogue's best work - unless the prompt
+    // happened to say "3d" or "webgl". Medium is the sensible ceiling; heavy
+    // (WebGL, three.js) still has to be asked for.
+    maxWeight: allowHeavy ? "heavy" : "medium",
   });
 
   const dependencies: Record<string, string> = {};
@@ -201,9 +218,12 @@ export function planToPrompt(
   if (components.length) {
     lines.push(
       ``,
-      `REACT BITS COMPONENTS AVAILABLE IN THIS PROJECT:`,
-      `These files already exist. Import and use them where the plan calls for motion.`,
-      `Do not reimplement them and do not invent props they do not have.`,
+      `REACT BITS COMPONENTS ALREADY INSTALLED IN THIS PROJECT - USE THEM:`,
+      `These files are already written and sitting in /components/. They are the`,
+      `reason this app will look better than a hand-rolled one. Import each one`,
+      `and render it in the section named below.`,
+      `Do not rewrite them, do not emit a file with the same name, and do not`,
+      `invent props they do not have.`,
       ``,
     );
     for (const sel of components) {

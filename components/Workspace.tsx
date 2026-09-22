@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { ChatPanel, type Turn } from "./ChatPanel";
+import { ChatPanel, type BuildStage, type Turn } from "./ChatPanel";
 import { Landing } from "./Landing";
 import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
@@ -11,6 +11,20 @@ import type { Usage } from "./UsageMeter";
 import type { Attachment } from "./Composer";
 import type { OAuthProvider } from "@/lib/supabase/config";
 import { TEMPLATES } from "@/lib/templates";
+
+/** The payload /api/generate finishes with (the stream's "done" event). */
+type GenerateResponse = {
+  files?: Record<string, string>;
+  code?: string;
+  dependencies?: Record<string, string>;
+  components?: { component: string }[];
+  plan?: string | null;
+  notes?: string[];
+  projectId?: string | null;
+  model?: string;
+  usage?: Usage;
+  error?: string;
+};
 
 const MIN_CHAT = 320;
 const MAX_CHAT = 560;
@@ -40,6 +54,9 @@ export function Workspace({
   const [deviceWidth, setDeviceWidth] = useState<number | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  /** Live build progress streamed from /api/generate. */
+  const [stage, setStage] = useState<BuildStage | null>(null);
+  const [buildStartedAt, setBuildStartedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [chatWidth, setChatWidth] = useState(400);
@@ -281,6 +298,8 @@ Fix it and return the complete corrected file.`,
     setAttachment(null);
     setError(null);
     setLoading(true);
+    setStage(null);
+    setBuildStartedAt(Date.now());
     setMobileView("result");
     const sentHistory = history;
     const label =
@@ -315,7 +334,33 @@ Fix it and return the complete corrected file.`,
               : {}),
         }),
       });
-      const data = await res.json();
+      // The route streams newline-delimited progress events and finishes with
+      // a "done" (or "error") event carrying the payload. Anything that failed
+      // before streaming started is still a plain JSON error response.
+      let data: GenerateResponse | null = null;
+      if (res.headers.get("content-type")?.includes("ndjson") && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            const event = JSON.parse(line);
+            if (event.type === "stage") setStage(event);
+            else if (event.type === "error") throw new Error(event.error);
+            else if (event.type === "done") data = event;
+          }
+        }
+        if (!data) throw new Error("The build ended without returning a result.");
+      } else {
+        data = await res.json();
+      }
+      if (!data) throw new Error("The build returned no result.");
       if (data.usage) setUsage(data.usage);
       if (!res.ok) throw new Error(data.error ?? "Generation failed.");
 
@@ -333,13 +378,18 @@ Fix it and return the complete corrected file.`,
       setCode(data.code ?? data.files?.["/App.tsx"] ?? "");
       setGeneration((g) => g + 1);
       setTab("preview");
-      setHistory((h) => [...h, { role: "assistant", content: data.code }]);
+      setHistory((h) => [
+        ...h,
+        { role: "assistant", content: data.code ?? data.files?.["/App.tsx"] ?? "" },
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed.");
       setHistory((h) => h.slice(0, -1));
       setMobileView("chat");
     } finally {
       setLoading(false);
+      setStage(null);
+      setBuildStartedAt(null);
     }
   }
 
@@ -408,6 +458,8 @@ Fix it and return the complete corrected file.`,
                 outOfQuota={outOfQuota}
                 isEdit={isEdit}
                 buildNotes={buildNotes}
+                stage={stage}
+                buildStartedAt={buildStartedAt}
                 attachment={attachment}
                 onAttach={setAttachment}
               />

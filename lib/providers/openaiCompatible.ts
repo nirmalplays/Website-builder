@@ -1,3 +1,4 @@
+import { AI_CALL_TIMEOUT_MS } from "../config";
 import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./types";
 
 /**
@@ -39,6 +40,7 @@ type ChatMessage = {
 export const openAiCompatibleProvider: Provider = {
   id: "openai-compatible",
   label: "Local / OpenAI-compatible",
+  supportsImage: true,
 
   isConfigured() {
     return Boolean(process.env.AI_BASE_URL);
@@ -102,7 +104,7 @@ ${req.document.text}
         stream: false,
       }),
       // Local models on modest hardware are slow; do not cut them off early.
-      signal: AbortSignal.timeout(Number(process.env.AI_TIMEOUT_MS ?? 180_000)),
+      signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
     });
 
     if (!res.ok) {

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { DEFAULT_MODEL, HISTORY_TURNS, MAX_OUTPUT_TOKENS, isAllowedModel } from "@/lib/config";
-import { getProvider } from "@/lib/providers";
+import {
+  BUILD_DEADLINE_MS,
+  DEFAULT_MODEL,
+  HISTORY_TURNS,
+  MAX_OUTPUT_TOKENS,
+  THINKING_BUDGET,
+  isAllowedModel,
+} from "@/lib/config";
+import { generateWithFallback, listConfiguredProviders } from "@/lib/providers";
 import {
   BUILD_SYSTEM_PROMPT,
   dependencyNote,
@@ -26,8 +33,16 @@ import { getIdentity } from "@/lib/identity";
 import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
 
 export const runtime = "nodejs";
-// Plan, build, repair. This is deliberately allowed to take its time.
-export const maxDuration = 300;
+/*
+ * Plan, build, repair. This is deliberately allowed to take its time.
+ *
+ * 300 was not enough once the non-reasoning models were dropped: a measured
+ * kanban build took 413s (plan, install, write, then three browser-verified
+ * repair passes, each on a model that thinks first). Vercel needs fluid
+ * compute for anything above 300 - if a deploy caps out, lower
+ * MAX_FIX_ROUNDS rather than putting the fast non-thinking models back.
+ */
+export const maxDuration = 800;
 
 type Turn = { role: "user" | "assistant"; content: string };
 
@@ -51,12 +66,11 @@ function inferDependencies(files: GeneratedFiles): Record<string, string> {
 }
 
 export async function POST(req: Request) {
-  const provider = getProvider();
-  if (!provider.isConfigured()) {
+  if (listConfiguredProviders().length === 0) {
     return NextResponse.json(
       {
         error:
-          "No model provider configured. Set GEMINI_API_KEY for Google, or AI_PROVIDER=openai-compatible with AI_BASE_URL for a self-hosted model.",
+          "No model provider configured. Set GEMINI_API_KEY for Google, AI_PROVIDER=openai-compatible with AI_BASE_URL for a self-hosted model, or any of the free-tier keys in .env.example.",
       },
       { status: 500 },
     );
@@ -139,31 +153,53 @@ export async function POST(req: Request) {
 
   let inputTokens = 0;
   let outputTokens = 0;
+  // The model that actually answers. Starts as the requested model, but a
+  // busy/rate-limited response mid-request switches this for every call
+  // after it too - no point re-hitting a model that just said 503.
+  let activeModel = model;
+  const notes: string[] = [];
 
   const call = async (system: string, userPrompt: string) => {
-    const res = await provider.generate({
+    const res = await generateWithFallback({
       system,
       history,
       prompt: userPrompt,
       image,
       document,
-      model,
+      model: activeModel,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       temperature: 0.8,
-      thinkingBudget: 0,
+      thinkingBudget: THINKING_BUDGET,
     });
     inputTokens += res.inputTokens;
     outputTokens += res.outputTokens;
+    if (res.switchedFrom) {
+      notes.push(`${res.switchedFrom} was busy - switched to ${res.model}.`);
+      activeModel = res.model;
+    }
     return res.text;
   };
 
-  try {
+  // Progress is streamed as newline-delimited JSON. A build that plans, thinks,
+  // installs components, writes files and then runs the result in a browser can
+  // take minutes - the client needs to show what stage it is at, not a spinner.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const emit = (event: Record<string, unknown>) => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      };
+
+      try {
     let planBlock = "";
     let componentSelections: { component: string; reason: string; section: string }[] = [];
     let dependencies: Record<string, string> = { ...BASE_DEPENDENCIES };
     let reactBitsFiles: GeneratedFiles = {};
-    const notes: string[] = [];
     let planSummary: string | null = null;
+
+    emit({ type: "stage", stage: isEdit ? "editing" : "planning" });
 
     if (isEdit) {
       // The plan already exists as the current code.
@@ -179,8 +215,14 @@ export async function POST(req: Request) {
       ].join("\n");
     } else {
       // ---- 1. THINK ---------------------------------------------------
-      const plan = await buildPlan({ prompt, model, document, image });
+      const plan = await buildPlan({ prompt, model: activeModel, document, image });
       planSummary = plan.summary;
+      if (plan.switchedFrom) {
+        notes.push(`${plan.switchedFrom} was busy - switched to ${plan.modelUsed}.`);
+        activeModel = plan.modelUsed!;
+      }
+
+      emit({ type: "stage", stage: "planned", detail: plan.summary });
 
       const wantsHeavy = /\b(3d|webgl|three|particles?|shader|immersive)\b/i.test(prompt);
       const picked = selectComponents(plan, prompt, wantsHeavy);
@@ -188,6 +230,11 @@ export async function POST(req: Request) {
 
       // ---- 2. INSTALL COMPONENTS --------------------------------------
       if (picked.selections.length > 0) {
+        emit({
+          type: "stage",
+          stage: "components",
+          detail: picked.selections.map((s) => s.component).join(", "),
+        });
         const install = await installComponents(
           picked.selections.map((s) => s.component),
           { variant: "TS-TW" },
@@ -219,6 +266,8 @@ export async function POST(req: Request) {
       .join("\n\n");
 
     const userPrompt = `${planBlock}\n\n---\n\nUSER REQUEST: ${prompt}`;
+
+    emit({ type: "stage", stage: "building" });
 
     let files: GeneratedFiles;
     let repaired: string | null = null;
@@ -256,6 +305,7 @@ export async function POST(req: Request) {
 
     const dead = findDeadControls(Object.values(files).join("\n"));
     if (dead.length > 0 && !isEdit) {
+      emit({ type: "stage", stage: "wiring", detail: `${dead.length} dead control(s)` });
       try {
         const wired = parseFiles(
           await call(`${system}\n\n${deadControlRepairPrompt(dead)}`, userPrompt),
@@ -273,7 +323,7 @@ export async function POST(req: Request) {
     // ---- 5. RUN IT AND LOOK AT IT --------------------------------------
     // Static checks cannot see a white screen or a crash on mount. Render the
     // project in a real browser, then hand any findings back to the model.
-    const MAX_FIX_ROUNDS = Number(process.env.MAX_FIX_ROUNDS ?? 2);
+    const MAX_FIX_ROUNDS = Number(process.env.MAX_FIX_ROUNDS ?? 3);
     let report: VerifyReport | null = null;
     let fixRounds = 0;
 
@@ -284,6 +334,18 @@ export async function POST(req: Request) {
             new Set(externalImports(files)).has(pkg),
           ),
         );
+        // Never get killed mid-round. A working app already exists by now;
+        // being cut off by the platform would throw it away and return an
+        // error instead. Stop early and ship the best version we have.
+        const spent = Date.now() - started;
+        if (round > 0 && spent > BUILD_DEADLINE_MS) {
+          notes.push(
+            `Stopped after ${Math.round(spent / 1000)}s to return a working build rather than run out of time.`,
+          );
+          break;
+        }
+
+        emit({ type: "stage", stage: "verifying", round: round + 1, of: MAX_FIX_ROUNDS + 1 });
         report = await verifyProject(files, deps);
 
         const actionable = report.findings.filter((f) => f.severity !== "warning");
@@ -298,6 +360,12 @@ export async function POST(req: Request) {
         }
 
         try {
+          emit({
+            type: "stage",
+            stage: "fixing",
+            round: round + 1,
+            detail: actionable.map((f) => f.kind).join(", "),
+          });
           const fixed = parseFiles(await call(`${system}
 
 ${repairPrompt(report)}`, userPrompt));
@@ -330,7 +398,7 @@ ${repairPrompt(report)}`, userPrompt));
 
     const latencyMs = Date.now() - started;
     console.log(
-      `[generate] ${provider.id}/${model} ${latencyMs}ms ${Object.keys(files).length} files ` +
+      `[generate] ${activeModel} ${latencyMs}ms ${Object.keys(files).length} files ` +
         `in/out ${inputTokens}/${outputTokens}` +
         `${componentSelections.length ? ` rb:${componentSelections.map((s) => s.component).join("+")}` : ""}` +
         `${repaired ? ` repaired:${repaired}` : ""}`,
@@ -373,14 +441,14 @@ ${repairPrompt(report)}`, userPrompt));
         projectId: id,
         messageId: assistant.id,
         files,
-        model,
+        model: activeModel,
       });
 
       await db!.insert(schema.usage).values({
         projectId: id,
         sessionId: identity.sessionId,
         userId: identity.userId,
-        model,
+        model: activeModel,
         inputTokens,
         outputTokens,
         latencyMs,
@@ -391,7 +459,8 @@ ${repairPrompt(report)}`, userPrompt));
     });
 
     const usageAfter = await getUsage(identity);
-    return NextResponse.json({
+    emit({
+      type: "done",
       files,
       // Kept so older clients and the share page keep working.
       code: files["/App.tsx"] ?? "",
@@ -408,21 +477,32 @@ ${repairPrompt(report)}`, userPrompt));
         : null,
       notes,
       projectId,
-      model,
+      model: activeModel,
       usage: usageAfter,
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Generation failed.";
-    console.error("[generate] failed:", message);
-    const status = /quota|rate|429/i.test(message) ? 429 : 502;
-    return NextResponse.json(
-      {
-        error:
-          status === 429
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Generation failed.";
+        console.error("[generate] failed:", message);
+        const quota = /quota|rate|429/i.test(message);
+        emit({
+          type: "error",
+          error: quota
             ? "Daily quota or rate limit reached for this model. Try another model or wait."
             : `Generation failed: ${message}`,
-      },
-      { status },
-    );
-  }
+        });
+      } finally {
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      // Progress is useless if a proxy buffers the whole response.
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
