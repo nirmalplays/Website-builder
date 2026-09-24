@@ -19,9 +19,12 @@ import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./t
  * of these are slower now that they actually reason first.
  */
 const MODELS: ModelOption[] = [
-  { id: "gemini-3.1-pro-preview", label: "Pro 3.1", note: "thinks hardest · best output" },
+  // Flash 3.8 leads on observed quality, so it is both the default and the
+  // first the fallback chain tries. It has 503'd under load before; the chain
+  // moves to Pro 3.1 when it does, which is the point of having one.
+  { id: "gemini-3.8-flash", label: "Flash 3.8", note: "thinks · newest · default" },
+  { id: "gemini-3.1-pro-preview", label: "Pro 3.1", note: "thinks hardest · slowest" },
   { id: "gemini-3.5-flash", label: "Flash 3.5", note: "thinks · fast fallback" },
-  { id: "gemini-3.8-flash", label: "Flash 3.8", note: "thinks · newest · was 503ing under load" },
   { id: "gemini-2.5-pro", label: "Pro 2.5", note: "thinks · older pro tier" },
   { id: "gemini-2.5-flash", label: "Flash 2.5", note: "thinks · only 20/day on free tier" },
 ];

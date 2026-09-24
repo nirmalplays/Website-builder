@@ -153,32 +153,6 @@ export function Composer({
               <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
             </svg>
           </button>
-
-          {/* Grouped by provider: with two vendors configured the meaningful
-              choice is within one - Opus against Haiku differs more in cost and
-              speed than Opus against Gemini Pro. */}
-          <label htmlFor="model" className="sr-only">
-            Model
-          </label>
-          <select
-            id="model"
-            value={model}
-            onChange={(e) => onModelChange(e.target.value)}
-            title={models.find((m) => m.id === model)?.note}
-            className="h-8 max-w-[11rem] cursor-pointer truncate rounded-lg border border-line bg-raised px-2 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
-          >
-            {[...new Set(models.map((m) => m.group))].map((group) => (
-              <optgroup key={group} label={group}>
-                {models
-                  .filter((m) => m.group === group)
-                  .map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </select>
         </div>
       )}
 
@@ -206,6 +180,35 @@ export function Composer({
               <circle cx="8.5" cy="8.5" r="1.5" />
             </svg>
           </button>
+
+          <label htmlFor="model" className="sr-only">
+            Model
+          </label>
+          <select
+            id="model"
+            value={model}
+            onChange={(e) => onModelChange(e.target.value)}
+            title={models.find((m) => m.id === model)?.note}
+            className="h-8 max-w-[10rem] cursor-pointer truncate rounded-lg border border-line bg-raised px-2 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+          >
+            {[...new Set(models.map((m) => m.group))].map((group) => (
+              <optgroup key={group} label={group}>
+                {models
+                  .filter((m) => m.group === group)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+
+          {hero && (
+            <span className="hidden truncate font-mono text-[11px] text-faint sm:inline">
+              {models.find((m) => m.id === model)?.note}
+            </span>
+          )}
         </div>
 
         <button
