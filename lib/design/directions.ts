@@ -582,7 +582,9 @@ export const DIRECTIONS: Direction[] = [
     fits: [
       "photography", "photographer", "fashion", "model", "artist", "art", "gallery", "interior",
       "interior design", "film", "director", "cinematographer", "illustrator", "designer",
-      "portfolio", "stylist", "makeup", "furniture", "lookbook", "collection",
+      "portfolio", "stylist", "makeup", "furniture", "lookbook",
+      // Not "collection": it also means pickup, and matched a bakery.
+      "art collection",
     ],
     styleWords: ["minimal", "minimalist", "fashion", "artsy", "white", "sleek", "stark"],
     palette: {
@@ -799,10 +801,25 @@ export type DirectionPick = { direction: Direction; score: number; reason: strin
  */
 export function pickDirection(prompt: string, seed?: number): DirectionPick {
   const text = normalise(prompt);
+
+  /*
+   * Where a keyword lands matters as much as whether it appears. "A sourdough
+   * bakery with pre-order for collection" hit artisan on "bakery" and gallery
+   * on "collection" - pickup, not an art collection - and tied 3-3, so a
+   * bakery came out as a white-cube gallery half the time. The subject of a
+   * brief is almost always named in its opening words, so a match there counts
+   * double and a trailing clause cannot outvote it.
+   */
+  const position = (needle: string): number => {
+    const at = text.indexOf(` ${needle.toLowerCase()}`);
+    if (at < 0) return 1;
+    return at / text.length < 0.35 ? 2 : 1;
+  };
+
   const scored = DIRECTIONS.map((d) => {
     let score = 0;
-    for (const k of d.fits) if (hits(text, k)) score += k.includes(" ") ? 4 : 3;
-    for (const s of d.styleWords) if (hits(text, s)) score += 4;
+    for (const k of d.fits) if (hits(text, k)) score += (k.includes(" ") ? 4 : 3) * position(k);
+    for (const s of d.styleWords) if (hits(text, s)) score += 4 * position(s);
     return { direction: d, score };
   }).sort((a, b) => b.score - a.score);
 
@@ -815,10 +832,29 @@ export function pickDirection(prompt: string, seed?: number): DirectionPick {
     return { direction, score: 0, reason: "no subject match; picked a general-purpose direction" };
   }
 
-  // Anything within 2 points of the leader is a fair fit. Choosing between them
-  // is what keeps two bakery sites from looking identical.
-  const close = scored.filter((s) => s.score > 0 && top.score - s.score <= 2);
-  const chosen = close[Math.floor(rand * close.length)];
+  /*
+   * Anything within a few points of the leader is a fair fit, and choosing
+   * between them is what keeps two bakery sites from looking identical. The
+   * choice was uniform though, so a direction scoring 3 was as likely as one
+   * scoring 5 - variety bought at the cost of picking the wrong look.
+   * Weighting by the square of the margin leaves a genuine tie a coin flip
+   * while letting a clear leader win most of the time.
+   */
+  const window = 3;
+  const close = scored.filter((s) => s.score > 0 && top.score - s.score <= window);
+  const floor = top.score - window;
+  const weights = close.map((c) => (c.score - floor) ** 2);
+  const total = weights.reduce((a, b) => a + b, 0);
+
+  let ticket = rand * total;
+  let chosen = close[close.length - 1];
+  for (let i = 0; i < close.length; i++) {
+    ticket -= weights[i];
+    if (ticket <= 0) {
+      chosen = close[i];
+      break;
+    }
+  }
   return {
     direction: chosen.direction,
     score: chosen.score,
