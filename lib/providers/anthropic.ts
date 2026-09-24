@@ -15,7 +15,8 @@ import type { GenerateRequest, GenerateResult, ModelOption, Provider } from "./t
  * picker offers by default and what the fallback chain reaches for first.
  */
 const MODELS: ModelOption[] = [
-  { id: "claude-opus-5", label: "Opus 5", note: "thinks hardest · best judgement" },
+  { id: "claude-opus-5-5", label: "Opus 5.5", note: "thinks hardest · newest" },
+  { id: "claude-opus-5", label: "Opus 5", note: "thinks hard · best judgement" },
   { id: "claude-sonnet-5", label: "Sonnet 5", note: "thinks · fast, strong default" },
   { id: "claude-fable-5-1", label: "Fable 5.1", note: "thinks · newest" },
   { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", note: "quickest · lighter work" },

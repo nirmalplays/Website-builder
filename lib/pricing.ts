@@ -49,6 +49,7 @@ export const PRICES: Record<string, Price> = {
 
   // Anthropic, from anthropic.com/pricing. Output includes thinking tokens on
   // this API too, and usage.output_tokens already reflects that.
+  "claude-opus-5-5": { input: 5.0, output: 25.0, freeTier: false },
   "claude-opus-5": { input: 5.0, output: 25.0, freeTier: false },
   "claude-sonnet-5": { input: 3.0, output: 15.0, freeTier: false },
   "claude-fable-5-1": { input: 3.0, output: 15.0, freeTier: false },

@@ -39,7 +39,20 @@ function isBusyError(err: unknown): boolean {
     // A model that ran out of time is a model that is too slow or wedged right
     // now. Reasoning models make this common enough that failing the whole
     // build on one slow vendor would be the wrong call.
-    /timeout|timed out|aborted|AbortError/i.test(message)
+    /timeout|timed out|aborted|AbortError/i.test(message) ||
+    /*
+     * A vendor that cannot serve you is not a bad prompt.
+     *
+     * An unfunded Anthropic account answers 400 "Your credit balance is too
+     * low", and a wrong key answers 401 - neither matched anything above, so
+     * either would have failed the whole build rather than moving to a model
+     * that works. Both are conditions of the account, identical everywhere
+     * else in their effect to being rate limited: this provider is out, try
+     * the next one.
+     */
+    /credit balance|insufficient (?:credit|funds|balance)|billing|payment required|invalid x-api-key|authentication_error|invalid.{0,12}api.?key|unauthorized/i.test(
+      message,
+    )
   );
 }
 
@@ -71,6 +84,11 @@ const coolingUntil = new Map<string, number>();
 /** How long to leave a model alone, by what it complained about. */
 function cooldownMs(err: unknown): number {
   const message = err instanceof Error ? err.message : String(err);
+  // An unfunded or misconfigured account will not fix itself in a minute, and
+  // retrying it every build wastes a slot in the attempt budget.
+  if (/credit balance|billing|payment required|api.?key|authentication|unauthorized/i.test(message)) {
+    return 60 * 60_000;
+  }
   // A daily quota will not free up in a minute; stop asking for a good while.
   if (/quota|resource_exhausted|daily/i.test(message)) return 15 * 60_000;
   if (/\b429\b|rate.?limit|too many requests/i.test(message)) return 60_000;
