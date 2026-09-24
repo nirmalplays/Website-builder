@@ -1,202 +1,192 @@
+<div align="center">
+
 # ui/gen
 
-Describe an interface, get a working React app you can keep editing by chatting.
+### Describe an app. Get one that actually works.
 
-It plans before it writes, pulls in animated components where they earn their
-place, runs the result in a real browser, fixes what it finds, and shows you
-what the whole thing cost in tokens while it happens.
+Not a screenshot. Not a mockup. A real React application you can run, edit by
+chatting, connect to your database, and publish — in about two minutes.
 
-**Live:** https://website-builder-two-mu.vercel.app
+**[Try it →](https://website-builder-two-mu.vercel.app)**
 
----
-
-## What makes it different from a prompt box
-
-**It plans first.** A separate reasoning pass decides what is being built, what
-the sections are, which files exist and what the design direction is — before a
-line of JSX. The build step executes that plan rather than improvising.
-
-**It knows the industry.** The prompt is matched against 192 product categories,
-and the planner receives a palette, a page pattern and the pitfalls specific to
-that category. A cinema booking app arrives with a dark ground and a
-spotlight-gold accent instead of whatever the model reaches for by default.
-Below a confidence threshold nothing is injected — a florist handed the fintech
-palette is a confident wrong answer.
-
-**It has real typefaces.** 23 families load into the preview. Tailwind's default
-is the system UI stack, which is most of what "AI-generated" looks like.
-
-**It uses animated components.** 205 [React Bits](https://reactbits.dev)
-components are catalogued by role; the planner picks what fits and the installer
-fetches the real source into the project — one ambient backdrop behind the hero,
-kinetic text on the headline, pointer-reactive cards for features.
-
-**It checks its own work.** Every build is bundled with esbuild and mounted in
-headless Chromium. Compile errors, crashes on mount and dead controls are fed
-back to the model and repaired, up to a time budget.
-
-**It edits instead of rebuilding.** A follow-up turn gets a different contract:
-return only the files that changed, keep the existing palette and structure, and
-treat an unrequested improvement as a regression.
+</div>
 
 ---
 
-## Quick start
+## The problem with AI website builders
+
+They all produce the same page.
+
+A centred hero. A purple-to-blue gradient heading. Three equal cards in a row.
+The system font. Buttons that do nothing. Ask for a booking app and you get a
+picture of a booking app — no database, no accounts, nothing that survives a
+refresh.
+
+ui/gen was built against that, specifically.
+
+---
+
+## What you get
+
+### Designs that don't look generated
+
+The generator is given an art direction brief before it writes a line of code,
+with a list of clichés it is forbidden to produce — no gradient headings, no
+three-card grids, no identical section padding, no placeholder copy.
+
+Then it is told what your industry actually looks like. Your prompt is matched
+against **192 product categories**, each with a researched palette, page pattern
+and set of pitfalls. Ask for a cinema booking app and it arrives with a dark
+ground and a spotlight-gold accent — not whatever the model reaches for by
+default.
+
+**23 typefaces** load into every preview, deliberately excluding the five fonts
+every AI page already uses. Most "AI-generated" design is just the system font
+and nothing chosen.
+
+### Motion that came from a real library
+
+**205 [React Bits](https://reactbits.dev) components** — animated backdrops,
+kinetic text, pointer-reactive cards — catalogued by what they are *for*. The
+planner picks what fits and the real source is installed into your project: one
+ambient backdrop behind the hero, one kinetic headline, interactive surfaces for
+features. Not scattered everywhere, which reads as a demo rather than a product.
+
+### It checks its own work
+
+Every build is compiled and mounted in a real headless browser. Compile errors,
+crashes on mount and buttons wired to nothing are found and repaired before you
+see the result — and if something can't be fixed, it says so plainly instead of
+handing you a blank page and calling it done.
+
+### Conversation, not regeneration
+
+Say *"make it dark and add testimonials"* and it changes those things. Measured
+on a real build: **4 files untouched, 6 modified, 1 added, 0 deleted.** Your
+palette, structure and components survive. Follow-up edits are faster than the
+first build because there is nothing to re-plan.
+
+### Real backends, not fake ones
+
+Paste your **Supabase** keys and generated apps get genuine authentication and
+genuine database queries — real signups, real rows, real persistence. It even
+writes the SQL schema with Row Level Security policies for you to run.
+
+Keys are encrypted at rest and split by what is safe to expose: publishable keys
+go into the app, secrets never leave the server and are reached through a proxy.
+Also supports **Stripe** and **OpenWeather**, and any REST API you register.
+
+### Publish in one click
+
+Hit **Publish** and it deploys to your own Vercel account — your project, your
+domain, your billing. A build that doesn't compile is refused with the error
+rather than published broken.
+
+### You can see exactly what it costs
+
+A live counter during every build — `11,584 in · 2,635 out · $0.0548` — and a
+dashboard with per-model breakdowns and history.
+
+These are the provider's own token counts, including thinking tokens, which are
+usually the larger half and which most tools quietly omit. Set a daily spend cap
+and generation stops when it's hit.
+
+---
+
+## How it works
+
+```
+your prompt
+   ↓
+ PLAN        industry brief + art direction → structure, palette, files
+ COMPONENTS  animated components chosen by role, real source installed
+ BUILD       a complete multi-file React project
+ REPAIR      write what's missing, wire what's dead
+ VERIFY      compile, then run it in a real browser
+ FIX         feed the findings back and try again
+   ↓
+ a working app
+```
+
+Typical build: **80–210 seconds.** Slower than tools that answer instantly, and
+that is the point — it plans, builds, then checks.
+
+---
+
+## Run it yourself
 
 ```bash
 git clone https://github.com/nirmalplays/Website-builder.git
 cd Website-builder
 npm install
-cp .env.example .env.local     # add at minimum GEMINI_API_KEY
+cp .env.example .env.local     # add GEMINI_API_KEY
 npm run dev
 ```
 
-Open http://localhost:3000. Everything except the model is optional — with no
-database it still generates, it just does not remember.
+One API key is the only requirement. Everything else — database, auth,
+integrations, publishing — is optional and can be added later.
 
-Running locally is genuinely better than the hosted version in two ways: there
-is no function timeout, and Chromium exists, so the browser-verification loop
-actually runs.
+Running locally is *better* than hosted in two ways: no function timeout, and
+the browser-verification loop actually runs.
+
+### Deploy it
+
+Works on Vercel out of the box. See **[SELF-HOSTING.md](SELF-HOSTING.md)** to run
+every part on your own hardware — app, Postgres, auth, preview sandbox — with a
+local model via Ollama, vLLM or llama.cpp instead of a hosted API.
 
 ---
 
 ## Configuration
 
-`.env.example` documents every variable. The ones that matter:
-
 | Variable | Purpose |
 | --- | --- |
-| `GEMINI_API_KEY` | Required. Google AI Studio. |
-| `AI_PROVIDER` | Pin to one provider. Unset uses every configured one as fallback capacity. |
-| `DATABASE_URL` | Postgres. Without it nothing is saved and limits are not enforced. |
-| `CONNECTION_SECRET` | Encrypts user-supplied API keys. Required before the app accepts any. |
-| `DAILY_SPEND_CAP_USD` | Hard stop per UTC day. `0` disables. |
-| `NEXT_PUBLIC_SUPABASE_URL` / `_ANON_KEY` | Optional auth. Without them the app runs anonymously. |
+| `GEMINI_API_KEY` | Required. |
+| `DATABASE_URL` | Saves projects and enforces limits. Optional. |
+| `CONNECTION_SECRET` | Encrypts user API keys. Required before any are accepted. |
+| `DAILY_SPEND_CAP_USD` | Hard stop per day. `0` disables. |
+| `AI_PROVIDER` | Pin one model provider, or leave unset for automatic fallback. |
 
-**On Supabase:** use the *pooler* host, not `db.<ref>.supabase.co`. The direct
-host is IPv6-only and unreachable from most serverless platforms, and because
-persistence is fail-soft the failure is silent — saved projects and rate limits
-just quietly stop working. `SUPABASE_POOLER_HOST` rewrites the connection string
-onto Supavisor.
+Full reference in `.env.example`.
 
-```bash
-npm run db:migrate   # create the schema
-npm run db:check     # prove the connection and show what is stored
-npm run check        # verify the model key works
-```
+**Using Supabase?** Use the *pooler* host, not `db.<ref>.supabase.co` — the
+direct host is IPv6-only and unreachable from serverless platforms. Because
+persistence fails soft, the symptom is silent: saved projects just stop working.
+Set `SUPABASE_POOLER_HOST` and it is rewritten for you.
 
 ---
 
-## Integrations
+## Honest limits
 
-Users paste their own API keys at `/settings`; the app wires them into what it
-generates. Values are encrypted with AES-256-GCM and never readable back through
-the API.
+No product page should hide these.
 
-The split that makes this safe: **publishable** credentials go into the
-generated app, **secrets** never leave the server.
-
-A Supabase anon key is *designed* for browser code — Row Level Security protects
-the data, not secrecy of the key — so it is inlined and the generated app does
-real auth and real queries with no backend of its own. A service-role or Stripe
-secret key is reached through `/api/proxy`, which attaches it server-side,
-because anyone with a preview link can read the app's source. Visibility is a
-property of the field, not a decision made at generation time.
-
-Supported: **Supabase** (database + auth), **Stripe** (publishable only),
-**Vercel** (publishing), **OpenWeather**.
+- **Serverless has no Chromium.** Deployed on Vercel, builds get the compile
+  check but not the browser pass. The build tells you which it did.
+- **Function timeouts.** Vercel Hobby caps at 300s. Builds run 80–210s, so it
+  fits, but with less headroom than running locally.
+- **Very large prompts can exceed the model's output limit.** The entry point is
+  written first so truncation costs a section rather than the whole app, and
+  anything missing is stubbed with a visible marker.
+- **Generated apps have no server of their own.** They are real React apps in a
+  sandbox. Backends work through Supabase-from-the-browser or the API proxy —
+  not route handlers inside the generated project.
 
 ---
 
-## Publishing
+## Licence and attribution
 
-The **Publish** button deploys to the user's own Vercel account, using a token
-they save in Settings. It ships the already-verified bundle as two static files
-rather than sources plus a build step — nothing to install, and no build that
-can fail after the user was told it worked. A project that does not compile is
-refused with the compile error instead of published as a blank page.
+This project's own source is MIT.
 
----
+It builds on two others, with different terms:
 
-## Cost tracking
+- **[React Bits](https://github.com/DavidHDev/react-bits)** — MIT **+ Commons
+  Clause**. Component source is *not* redistributed here: the catalogue holds
+  metadata only, and real source is fetched from the official registry at
+  generation time into the end user's own project. Commons Clause restricts
+  selling software whose value derives substantially from it; anyone
+  commercialising a deployment should read those terms and take their own
+  advice.
+- **[ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)** —
+  MIT. Its palette, product and typography catalogues are included directly.
 
-`/usage` shows real token counts and spend. Counts come from the provider's own
-`usageMetadata`, never estimated from character counts, and the same numbers
-stream live during a build.
-
-Thinking tokens count as output, because that is how they are billed and because
-they are usually the larger half — one measured Pro call spent 75 visible output
-tokens against 1,065 thought.
-
----
-
-## Architecture
-
-```
-prompt
-  │
-  ├─ plan            industry brief + art direction → structure, palette, files
-  ├─ components      React Bits selected by role, source fetched into the project
-  ├─ build           one fenced block per file, /App.tsx first
-  ├─ missing files   write what was imported but never emitted
-  ├─ wiring          give dead controls something to do
-  ├─ verify          esbuild, then mount in headless Chromium
-  ├─ repair          feed findings back, up to the time budget
-  └─ stub            fake any module still missing, so the preview is never blank
-```
-
-Every model call is bounded by the time actually remaining, so no single call
-can outlive the request and lose a finished build. Optional passes are started
-only if the measured cost of the last call still fits the budget, ranked by what
-the user loses: missing files first (a dangling import is a blank screen), then
-compile fixes, then interactivity.
-
-| Path | What lives there |
-| --- | --- |
-| `lib/providers/` | Model abstraction, cross-provider fallback, per-call timeouts |
-| `lib/skills/` | Art direction, typography, React Bits manifest, industry briefs |
-| `lib/react-bits/` | Component catalogue (metadata only) and installer |
-| `lib/verify/` | esbuild bundling and headless browser checks |
-| `lib/connections/` | Encrypted user credentials and provider wiring |
-| `lib/publish/` | Static site build and Vercel deployment |
-| `lib/pricing.ts`, `lib/spend.ts` | Token cost and spend caps |
-
----
-
-## Licensing
-
-This project is MIT.
-
-**React Bits** is MIT + Commons Clause, which forbids redistributing the
-components. `lib/react-bits/registry.json` therefore holds metadata only; source
-is fetched from the official registry at generation time and delivered inside
-the user's own app, which the licence permits.
-
-**[ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)** is
-MIT, so its palette, product and typography catalogues are vendored in
-`lib/skills/uiuxData.generated.ts`. Regenerate with
-`node scripts/build-uiux-data.mjs`.
-
----
-
-## Self-hosting
-
-See [SELF-HOSTING.md](SELF-HOSTING.md). Every part runs on your own hardware —
-app, database, auth, preview sandbox — and the model swaps out via
-`AI_PROVIDER=openai-compatible` for Ollama, vLLM or llama.cpp.
-
----
-
-## Known limits
-
-- **Serverless has no Chromium.** On Vercel the browser-verification loop is
-  skipped and builds get the compile check only. The build says so rather than
-  claiming it looked.
-- **Function timeout.** Hobby caps at 300s; builds run 80–210s. Locally there is
-  no cap.
-- **Output tokens.** A very large prompt can exceed the model's output limit. The
-  entry point is written first so truncation costs a trailing section rather than
-  the whole build, and anything still missing is stubbed.
-- **Generated apps have no server.** They are real React apps in a browser
-  sandbox, so backends mean Supabase from the browser or the proxy — not route
-  handlers of their own.
+Fonts are served from Google Fonts under their respective open licences.
