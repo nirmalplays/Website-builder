@@ -46,6 +46,13 @@ export const PRICES: Record<string, Price> = {
     freeTier: true,
   },
   "gemini-3.5-flash": { input: 1.5, output: 9.0, freeTier: true },
+
+  // Anthropic, from anthropic.com/pricing. Output includes thinking tokens on
+  // this API too, and usage.output_tokens already reflects that.
+  "claude-opus-5": { input: 5.0, output: 25.0, freeTier: false },
+  "claude-sonnet-5": { input: 3.0, output: 15.0, freeTier: false },
+  "claude-fable-5-1": { input: 3.0, output: 15.0, freeTier: false },
+  "claude-haiku-4-5-20251001": { input: 1.0, output: 5.0, freeTier: false },
   "gemini-2.5-flash": { input: 0.3, output: 2.5, freeTier: true },
 };
 

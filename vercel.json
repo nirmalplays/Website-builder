@@ -3,8 +3,6 @@
   "env": {
     "SUPABASE_POOLER_HOST": "aws-0-ap-southeast-1.pooler.supabase.com",
     "SUPABASE_POOLER_PORT": "5432",
-    "AI_PROVIDER": "gemini-2",
-    "GEMINI_MODEL": "gemini-3.1-pro-preview",
     "DAILY_SPEND_CAP_USD": "0"
   }
 }

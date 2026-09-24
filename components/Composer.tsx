@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import type { PickerModel } from "@/lib/config";
 
 export type Attachment = {
   kind: "image" | "pdf" | "text";
@@ -27,6 +28,9 @@ export function Composer({
   isEdit,
   attachment,
   onAttach,
+  model,
+  models,
+  onModelChange,
   size = "panel",
 }: {
   value: string;
@@ -42,6 +46,9 @@ export function Composer({
   isEdit: boolean;
   attachment: Attachment | null;
   onAttach: (a: Attachment | null) => void;
+  model: string;
+  models: PickerModel[];
+  onModelChange: (id: string) => void;
   size?: "hero" | "panel";
 }) {
   const hero = size === "hero";
@@ -146,6 +153,32 @@ export function Composer({
               <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
             </svg>
           </button>
+
+          {/* Grouped by provider: with two vendors configured the meaningful
+              choice is within one - Opus against Haiku differs more in cost and
+              speed than Opus against Gemini Pro. */}
+          <label htmlFor="model" className="sr-only">
+            Model
+          </label>
+          <select
+            id="model"
+            value={model}
+            onChange={(e) => onModelChange(e.target.value)}
+            title={models.find((m) => m.id === model)?.note}
+            className="h-8 max-w-[11rem] cursor-pointer truncate rounded-lg border border-line bg-raised px-2 text-xs text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink"
+          >
+            {[...new Set(models.map((m) => m.group))].map((group) => (
+              <optgroup key={group} label={group}>
+                {models
+                  .filter((m) => m.group === group)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
       )}
 

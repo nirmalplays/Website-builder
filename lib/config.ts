@@ -17,17 +17,25 @@ export type { ModelOption } from "./providers";
  * Every model from every configured provider still participates in
  * automatic fallback when one is busy; see lib/providers/fallback.ts.
  */
-export const MODELS = listConfiguredProviders().flatMap((provider) => {
-  const [flagship] = provider.listModels();
-  if (!flagship) return [];
-  return [
-    {
-      id: qualifyModel(provider.id, flagship.id),
-      label: provider.label,
-      note: flagship.note,
-    },
-  ];
-});
+/**
+ * Every model the picker offers, grouped by provider.
+ *
+ * One flagship per provider was enough while the only real choice was which
+ * vendor to use. With Anthropic and Google both configured the interesting
+ * choice is within a vendor - Opus against Haiku is a bigger difference in cost
+ * and latency than Opus against Gemini Pro - so the whole catalogue is listed
+ * and the group label says where each model comes from.
+ */
+export type PickerModel = { id: string; label: string; group: string; note: string };
+
+export const MODELS: PickerModel[] = listConfiguredProviders().flatMap((provider) =>
+  provider.listModels().map((m) => ({
+    id: qualifyModel(provider.id, m.id),
+    label: m.label,
+    group: provider.label,
+    note: m.note,
+  })),
+);
 
 /**
  * GEMINI_MODEL still pins the default, but only if it names a model that is

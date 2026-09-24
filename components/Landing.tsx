@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CATEGORIES, QUICK_STARTS, TEMPLATES, type Category } from "@/lib/templates";
 import { TemplateCardImage } from "./TemplateCardImage";
 import { Composer, type Attachment } from "./Composer";
+import type { PickerModel } from "@/lib/config";
 
 export function Landing({
   input,
@@ -14,6 +15,9 @@ export function Landing({
   error,
   attachment,
   onAttach,
+  model,
+  models,
+  onModelChange,
   bakedTemplates,
   onOpenTemplate,
 }: {
@@ -25,6 +29,9 @@ export function Landing({
   error: string | null;
   attachment: Attachment | null;
   onAttach: (a: Attachment | null) => void;
+  model: string;
+  models: PickerModel[];
+  onModelChange: (id: string) => void;
   bakedTemplates: string[];
   onOpenTemplate: (id: string, title: string) => void;
 }) {
@@ -86,6 +93,9 @@ export function Landing({
               isEdit={false}
               attachment={attachment}
               onAttach={onAttach}
+              model={model}
+              models={models}
+              onModelChange={onModelChange}
               size="hero"
             />
           </div>

@@ -9,6 +9,7 @@ export default async function Home() {
   return (
     <Workspace
       defaultModel={DEFAULT_MODEL}
+      models={MODELS}
       authEnabled={isAuthEnabled}
       providers={providers}
       bakedTemplates={Object.keys(TEMPLATE_CODE)}

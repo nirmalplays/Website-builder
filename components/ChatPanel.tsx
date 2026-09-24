@@ -1,5 +1,7 @@
 "use client";
 
+import type { PickerModel } from "@/lib/config";
+
 import { useEffect, useRef, useState } from "react";
 import { Composer, type Attachment } from "./Composer";
 import { formatUsd } from "@/lib/pricing";
@@ -140,6 +142,9 @@ export function ChatPanel({
   onAttach,
   stage,
   buildStartedAt,
+  model,
+  models,
+  onModelChange,
   liveTokens,
 }: {
   history: Turn[];
@@ -155,6 +160,9 @@ export function ChatPanel({
   onAttach: (a: Attachment | null) => void;
   stage: BuildStage | null;
   buildStartedAt: number | null;
+  model: string;
+  models: PickerModel[];
+  onModelChange: (id: string) => void;
   liveTokens: LiveTokens | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -225,6 +233,9 @@ export function ChatPanel({
           isEdit={isEdit}
           attachment={attachment}
           onAttach={onAttach}
+          model={model}
+          models={models}
+          onModelChange={onModelChange}
         />
         <p className="mt-2 px-1 font-mono text-[10px] text-faint">
           Enter to send &middot; Shift+Enter for a newline &middot; Cmd/Ctrl+K to focus

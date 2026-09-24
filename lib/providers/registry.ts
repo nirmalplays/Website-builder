@@ -1,3 +1,4 @@
+import { anthropicProvider } from "./anthropic";
 import { geminiProvider, geminiProvider2 } from "./gemini";
 import { openAiCompatibleProvider } from "./openaiCompatible";
 import { FREE_TIER_PROVIDERS } from "./freeTier";
@@ -10,6 +11,7 @@ import type { Provider } from "./types";
  * https://github.com/mnfst/awesome-free-llm-apis.
  */
 const PROVIDER_LIST: Provider[] = [
+  anthropicProvider,
   geminiProvider,
   geminiProvider2,
   openAiCompatibleProvider,

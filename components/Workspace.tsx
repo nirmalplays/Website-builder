@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ChatPanel, type LiveTokens, type BuildStage, type Turn } from "./ChatPanel";
 import { isNewBuildRequest } from "@/lib/newBuildIntent";
+import type { PickerModel } from "@/lib/config";
 import { Landing } from "./Landing";
 import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
@@ -33,12 +34,14 @@ const MAX_CHAT = 560;
 
 export function Workspace({
   defaultModel,
+  models,
   authEnabled,
   providers,
   user,
   bakedTemplates,
 }: {
   defaultModel: string;
+  models: PickerModel[];
   authEnabled: boolean;
   providers: OAuthProvider[];
   user: SessionUser;
@@ -480,6 +483,9 @@ Fix it and return the complete corrected file.`,
             attachment={attachment}
             onAttach={setAttachment}
             bakedTemplates={bakedTemplates}
+            model={model}
+            models={models}
+            onModelChange={setModel}
             onOpenTemplate={openTemplate}
           />
         </main>
@@ -519,6 +525,9 @@ Fix it and return the complete corrected file.`,
                 buildNotes={buildNotes}
                 stage={stage}
                 buildStartedAt={buildStartedAt}
+                model={model}
+                models={models}
+                onModelChange={setModel}
                 liveTokens={liveTokens}
                 attachment={attachment}
                 onAttach={setAttachment}
