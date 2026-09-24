@@ -71,6 +71,14 @@ export function lintDesign(source: string, d: Direction | null): DesignFinding[]
     const displayToken = d.fonts.display.replace(/ /g, "_");
     if (!source.includes(displayToken) && !source.includes(d.fonts.display)) {
       add("no-display-face", 1, `The display face ${d.fonts.display} is never set. Apply the h1/h2 class strings from the contract.`);
+  }
+
+  // The body face going unset is the more damaging of the two and was not
+  // checked. Unstyled body copy falls back to the system UI stack, which is
+  // most of what "looks AI-generated" actually is - and it is the bulk of the
+  // page, so it reads as generic even when the headline is right.
+  if (!source.includes(`'${d.fonts.body}'`) && !source.includes(d.fonts.body)) {
+    add("no-body-face", 2, `The body face ${d.fonts.body} is never set, so body copy falls back to the system font. Apply the body/lead class strings from the contract.`);
     }
   }
 
