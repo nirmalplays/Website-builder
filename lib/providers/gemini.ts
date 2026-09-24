@@ -95,10 +95,25 @@ ${req.document.text}
       },
     });
 
+      /*
+       * Thinking counts as output, and it is most of it.
+       *
+       * Gemini reports candidatesTokenCount (the visible reply) and
+       * thoughtsTokenCount (the reasoning) separately, and totalTokenCount is
+       * the sum of those plus the prompt. Google bills output "including
+       * thinking tokens", so counting only candidates understated cost by
+       * whatever the model thought - measured on one Pro call, 75 visible
+       * against 1065 thought, a 14x undercount. These are reasoning models;
+       * the invisible half is the expensive half.
+       */
+      const usage = res.usageMetadata;
+      const visibleOut = usage?.candidatesTokenCount ?? 0;
+      const thoughtOut = usage?.thoughtsTokenCount ?? 0;
+
       return {
         text: res.text ?? "",
-        inputTokens: res.usageMetadata?.promptTokenCount ?? 0,
-        outputTokens: res.usageMetadata?.candidatesTokenCount ?? 0,
+        inputTokens: usage?.promptTokenCount ?? 0,
+        outputTokens: visibleOut + thoughtOut,
       };
     },
   };
