@@ -44,7 +44,11 @@ function startOfUtcDay(): Date {
 export async function getSpend(): Promise<SpendStatus> {
   const capUsd = DAILY_SPEND_CAP_USD;
 
-  if (!db || capUsd <= 0) {
+  // Only a missing database stops the figure being real. Turning the cap off
+  // switches off ENFORCEMENT, not measurement - short-circuiting here reported
+  // $0.00 spent on a day with builds in it, which is precisely the invented
+  // number this dashboard exists to avoid.
+  if (!db) {
     return { spentUsd: 0, capUsd, remainingUsd: capUsd, enforced: false, exceeded: false };
   }
 
@@ -63,12 +67,13 @@ export async function getSpend(): Promise<SpendStatus> {
       0,
     );
 
+    const capped = capUsd > 0;
     return {
       spentUsd,
       capUsd,
-      remainingUsd: Math.max(0, capUsd - spentUsd),
-      enforced: true,
-      exceeded: spentUsd >= capUsd,
+      remainingUsd: capped ? Math.max(0, capUsd - spentUsd) : 0,
+      enforced: capped,
+      exceeded: capped && spentUsd >= capUsd,
     };
   } catch (err) {
     // Persistence is fail-soft everywhere else, but a spend cap that silently
