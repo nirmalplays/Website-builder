@@ -40,6 +40,8 @@ import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/ins
 import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
 import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
+import { getSpend } from "@/lib/spend";
+import { formatUsd } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 /*
@@ -152,6 +154,27 @@ export async function POST(req: Request) {
       {
         error:
           "This app has hit its daily generation budget. It resets at midnight UTC - ready-made templates still open for free.",
+        usage: usageBefore,
+        limitReached: true,
+      },
+      { status: 429 },
+    );
+  }
+
+  /*
+   * Spend cap, checked before a single token is bought.
+   *
+   * The generation cap above counts requests, which was enough while every
+   * model had a free tier. Pro does not: it bills $2/1M in and $12/1M out, a
+   * build costs real money, and a heavy prompt costs several times a light
+   * one - so "ten generations" is not a bounded amount. A public URL with a
+   * request cap and no spend cap is a way to be surprised by a bill.
+   */
+  const spend = await getSpend();
+  if (spend.exceeded) {
+    return NextResponse.json(
+      {
+        error: `This app has reached its daily spend cap of ${formatUsd(spend.capUsd)} (${formatUsd(spend.spentUsd)} used). It resets at midnight UTC - raise DAILY_SPEND_CAP_USD to lift it.`,
         usage: usageBefore,
         limitReached: true,
       },

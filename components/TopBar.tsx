@@ -55,6 +55,12 @@ export function TopBar({
         >
           Projects
         </Link>
+        <Link
+          href="/usage"
+          className="rounded-md px-2.5 py-1.5 text-muted transition-colors duration-200 hover:text-ink"
+        >
+          Usage
+        </Link>
       </nav>
 
       <span aria-live="polite" className="sr-only">
