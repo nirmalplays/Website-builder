@@ -56,3 +56,37 @@ export const usage = pgTable("usage", {
 export type Project = typeof projects.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Version = typeof versions.$inferSelect;
+
+/**
+ * API credentials the user hands the app so generated projects can use them.
+ *
+ * Two kinds, and the difference is the whole design. A publishable credential -
+ * a Supabase anon key, a Stripe publishable key, a Mapbox public token - is
+ * meant to be in browser code and is protected by rules on the provider's side,
+ * so it can be handed straight to the generated app. A secret is not, and can
+ * only ever be used server-side through /api/proxy, because the generated app
+ * runs in a sandbox that anyone with the link can read.
+ *
+ * Secrets are stored encrypted. The database is a Supabase project whose
+ * connection string has been pasted into chat more than once; storing another
+ * service's keys there in plain text would make one leak into two.
+ */
+export const connections = pgTable("connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // Owned the same way projects are: session before sign-in, user after.
+  sessionId: text("session_id").notNull(),
+  userId: uuid("user_id"),
+  /** null means available to every project this owner has. */
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+  /** Provider slug: "supabase", "stripe", "openweather". */
+  provider: text("provider").notNull(),
+  /** Variable name as the generated app or the proxy will see it. */
+  name: text("name").notNull(),
+  /** "publishable" reaches the browser; "secret" never leaves the server. */
+  visibility: text("visibility").$type<"publishable" | "secret">().notNull(),
+  /** AES-256-GCM, iv:tag:ciphertext, base64. Never returned to a client. */
+  valueEncrypted: text("value_encrypted").notNull(),
+  /** Last 4 characters, so the UI can identify a key without revealing it. */
+  hint: text("hint").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

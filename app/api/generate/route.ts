@@ -35,6 +35,11 @@ import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
 import { UI_DESIGN_SKILL, UI_DESIGN_SKILL_EDIT } from "@/lib/skills/uiDesignSkill";
 import { upstreamManifest } from "@/lib/proxy/upstreams";
+import {
+  connectionDependencies,
+  connectionPrompt,
+  resolveForGeneration,
+} from "@/lib/connections/store";
 import { BundleError, bundleProject } from "@/lib/verify/bundle";
 import { verifyProject, repairPrompt, type VerifyReport } from "@/lib/verify/inspect";
 import { db, tryPersist, schema } from "@/lib/db";
@@ -182,6 +187,10 @@ export async function POST(req: Request) {
     );
   }
 
+  // What the user has wired up. Read before planning, because an app with a
+  // real database is a different plan from one faking it with useState.
+  const connections = await resolveForGeneration(identity, body.projectId ?? null);
+
   const history = (body.history ?? []).slice(-HISTORY_TURNS * 2);
   const existingFiles = body.files && Object.keys(body.files).length > 0 ? body.files : null;
   const isEdit = Boolean(existingFiles);
@@ -272,7 +281,12 @@ export async function POST(req: Request) {
       try {
     let planBlock = "";
     let componentSelections: { component: string; reason: string; section: string }[] = [];
-    let dependencies: Record<string, string> = { ...BASE_DEPENDENCIES };
+    // A wired integration needs its client library in the preview, or the
+    // generated import resolves to nothing and the app is blank.
+    let dependencies: Record<string, string> = {
+      ...BASE_DEPENDENCIES,
+      ...connectionDependencies(connections),
+    };
     let reactBitsFiles: GeneratedFiles = {};
     let planSummary: string | null = null;
 
@@ -356,6 +370,10 @@ export async function POST(req: Request) {
       // keeps the simulate-a-server behaviour rather than being told about
       // endpoints that do not exist.
       upstreamManifest(),
+      // Credentials the user gave the app. Publishable values are inlined into
+      // the generated source because the app has to contain them to work;
+      // secrets never appear here, only the fact that one exists.
+      connectionPrompt(connections),
       dependencyNote(dependencies),
       ICON_NOTE,
       image ? IMAGE_SUFFIX : "",
