@@ -100,9 +100,19 @@ function pickPairing(rule: ProductRule, promptWords: Set<string>): Pairing | und
  * of sameness for another - so the planner is told it may depart, provided it
  * decides to rather than drifts.
  */
-export function uiuxBrief(prompt: string): string {
+export function uiuxBrief(prompt: string, options: { visuals?: boolean } = {}): string {
   const match = matchProduct(prompt);
   if (!match) return "";
+
+  // With an art direction already chosen, the catalogue's palette and fonts
+  // would only contradict it. Its notes on the category are still useful.
+  if (options.visuals === false) {
+    return [
+      `INDUSTRY NOTES - closest match: ${match.rule.type}`,
+      `- Usual page content: ${match.rule.pattern}`,
+      `- Watch out for: ${match.rule.considerations}`,
+    ].join("\n");
+  }
 
   const lines = [
     `INDUSTRY REFERENCE - closest match: ${match.rule.type}`,

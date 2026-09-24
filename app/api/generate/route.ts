@@ -34,6 +34,21 @@ import { findDeadControls, deadControlRepairPrompt } from "@/lib/validateInterac
 import { buildPlan, selectComponents, planToPrompt } from "@/lib/planner";
 import { installComponents } from "@/lib/react-bits/install";
 import { UI_DESIGN_SKILL, UI_DESIGN_SKILL_EDIT } from "@/lib/skills/uiDesignSkill";
+import { getDirection, pickDirection, type Direction } from "@/lib/design/directions";
+import {
+  DESIGN_BASE_PATH,
+  designBaseFile,
+  directionContract,
+  directionIdFromFiles,
+  ensureDesignBaseImport,
+} from "@/lib/design/brief";
+import {
+  POLISH_THRESHOLD,
+  authoredSource,
+  designScore,
+  lintDesign,
+  polishPrompt,
+} from "@/lib/design/lint";
 import { upstreamManifest } from "@/lib/proxy/upstreams";
 import {
   connectionDependencies,
@@ -311,12 +326,17 @@ export async function POST(req: Request) {
     };
     let reactBitsFiles: GeneratedFiles = {};
     let planSummary: string | null = null;
+    // The art direction is chosen in code, before the model sees the brief.
+    // An edit keeps whichever direction the project was built with.
+    let direction: Direction | null = null;
+    let designContract = "";
 
     emit({ type: "stage", stage: isEdit ? "editing" : "planning" });
 
     if (isEdit) {
       // The plan already exists as the current code.
       dependencies = { ...dependencies, ...inferDependencies(existingFiles!) };
+      direction = getDirection(directionIdFromFiles(existingFiles!) ?? "") ?? null;
       planBlock = [
         "CURRENT PROJECT FILES - this is the app as it stands:",
         "",
@@ -328,11 +348,16 @@ export async function POST(req: Request) {
       ].join("\n");
     } else {
       // ---- 1. THINK ---------------------------------------------------
+      const pick = pickDirection(prompt);
+      direction = pick.direction;
+      notes.push(`Art direction: ${direction.name} (${pick.reason}).`);
+
       const plan = await buildPlan({
         prompt,
         model: activeModel,
         document,
         image,
+        direction,
         // Planning is one call of several; cap it so a slow plan cannot leave
         // the build with no time to actually write anything.
         timeoutMs: Math.min(60_000, FUNCTION_LIMIT_MS - (Date.now() - started) - 8_000),
@@ -346,7 +371,7 @@ export async function POST(req: Request) {
       emit({ type: "stage", stage: "planned", detail: plan.summary });
 
       const wantsHeavy = /\b(3d|webgl|three|particles?|shader|immersive)\b/i.test(prompt);
-      const picked = selectComponents(plan, prompt, wantsHeavy);
+      const picked = selectComponents(plan, prompt, wantsHeavy, direction.motion);
       notes.push(...picked.notes);
 
       // ---- 2. INSTALL COMPONENTS --------------------------------------
@@ -373,6 +398,10 @@ export async function POST(req: Request) {
       }
 
       planBlock = planToPrompt(plan, componentSelections);
+      designContract = directionContract(direction, {
+        hero: plan.hero,
+        sections: plan.sections.map((s) => s.layout).filter((l): l is string => Boolean(l)),
+      });
     }
 
     // ---- 3. BUILD -------------------------------------------------------
@@ -388,6 +417,9 @@ export async function POST(req: Request) {
       // conversation, including the repair rounds, which would otherwise
       // quietly rewrite a considered layout back towards the average.
       isEdit ? UI_DESIGN_SKILL_EDIT : UI_DESIGN_SKILL,
+      // The concrete design for this build: exact colours, type classes and
+      // layouts. Empty on an edit, where the existing code is the design.
+      designContract,
       // Empty string when nothing is configured, so an unwired deployment
       // keeps the simulate-a-server behaviour rather than being told about
       // endpoints that do not exist.
@@ -456,6 +488,11 @@ ${FILES_REPAIR_SUFFIX}`, userPrompt));
     // Component source is merged after generation so the model cannot mangle it.
     files = { ...reactBitsFiles, ...files };
     if (isEdit) files = { ...existingFiles!, ...files };
+    // The base stylesheet is ours, written after the model's files so a stray
+    // model-written /designBase.ts cannot replace it. An edit keeps the one the
+    // project already has.
+    if (direction && !isEdit) files[DESIGN_BASE_PATH] = designBaseFile(direction);
+    files = ensureDesignBaseImport(files);
 
     // ---- 4. VERIFY ------------------------------------------------------
     // Per-file repair must never fail the whole build: a component defined in a
@@ -526,6 +563,52 @@ ${FILES_REPAIR_SUFFIX}`, userPrompt));
         }
       } catch {
         notes.push("Interactivity repair failed; shipping the first version.");
+      }
+    }
+
+    // ---- 4b. DESIGN REVIEW -----------------------------------------------
+    // The prompt asks for a specific design; this checks whether it got one.
+    // Gradient text, purple utilities, glow blobs, cliché copy and a palette
+    // that was ignored are cheap to detect and are what make a page look
+    // generated, so one targeted pass fixing exactly those is worth a call.
+    // Not on edits: an edit changes what was asked and nothing more.
+    const installedPaths = Object.keys(reactBitsFiles);
+    const designFindings = lintDesign(authoredSource(files, installedPaths), direction);
+    const designBefore = designScore(designFindings);
+    if (
+      !isEdit &&
+      process.env.DISABLE_DESIGN_POLISH !== "1" &&
+      designBefore >= POLISH_THRESHOLD
+    ) {
+      if (!canAfford(lastCallMs * 0.5)) {
+        notes.push(
+          `Skipped the design review pass to leave time for the compile check (${designFindings.map((f) => f.id).join(", ")}).`,
+        );
+      } else {
+        emit({
+          type: "stage",
+          stage: "polishing",
+          detail: designFindings.map((f) => f.id).join(", "),
+        });
+        try {
+          const polished = parseFiles(
+            await call(`${system}\n\n${polishPrompt(designFindings, direction)}`, userPrompt),
+            false,
+          );
+          // Never let the review rewrite files it has no business in.
+          for (const path of [...installedPaths, DESIGN_BASE_PATH]) delete polished[path];
+          const merged = ensureDesignBaseImport({ ...files, ...polished });
+          const after = designScore(lintDesign(authoredSource(merged, installedPaths), direction));
+          const brokeImports =
+            missingLocalImportDetails(merged).length > missingLocalImportDetails(files).length;
+          if (after < designBefore && !brokeImports) {
+            files = merged;
+            repaired = repaired ? `${repaired}+design` : "design";
+            notes.push(`Design review fixed: ${designFindings.map((f) => f.id).join(", ")}.`);
+          }
+        } catch {
+          notes.push("The design review pass did not return usable files; keeping the first version.");
+        }
       }
     }
 
@@ -602,6 +685,9 @@ ${repairPrompt(report)}`, userPrompt), false);
       }
 
     }
+
+    // A repair round may have re-emitted /App.tsx without the base import.
+    files = ensureDesignBaseImport(files);
 
     // Last resort, once the repair rounds have had their chance: a dangling
     // import is a blank preview, so fake the module rather than lose the app.

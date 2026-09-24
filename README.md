@@ -30,15 +30,27 @@ ui/gen was built against that, specifically.
 
 ### Designs that don't look generated
 
-The generator is given an art direction brief before it writes a line of code,
-with a list of clichés it is forbidden to produce — no gradient headings, no
-three-card grids, no identical section padding, no placeholder copy.
+Telling a model to "be creative" and listing what to avoid still gets you the
+average page. So the design is decided in code, before the model writes anything.
 
-Then it is told what your industry actually looks like. Your prompt is matched
-against **192 product categories**, each with a researched palette, page pattern
-and set of pitfalls. Ask for a cinema booking app and it arrives with a dark
-ground and a spotlight-gold accent — not whatever the model reaches for by
-default.
+Your prompt is matched to one of **14 art directions** (editorial broadsheet,
+warm artisan, quiet luxury, Swiss grid, technical instrument, clinical calm,
+loud poster, and others). Each is a complete design system: exact hex palette,
+a font pairing, Tailwind class strings for every level of type, button and
+input styles, a shape language, a copy voice, and the hero and section layouts
+it is allowed to use. A bakery gets cream paper, Fraunces and a menu with
+dotted price leaders. A plumber gets safety yellow, heavy condensed capitals and
+a quote form above the fold. The planner picks layouts from that direction, and
+the build is given the exact values to copy.
+
+A small managed stylesheet (`/designBase.ts`) sets the direction's fonts,
+colours, selection and focus styles, so even a heading the model forgot to
+style lands in the right face on the right ground.
+
+After the build, a **design linter** checks the code for the tells of a
+generated page: gradient text, indigo/purple utilities, glow blobs, emoji
+icons, "Elevate / Unlock / Seamless" copy, "Get Started + Learn More", a palette
+that was ignored. If it finds enough, one targeted pass fixes exactly those.
 
 **23 typefaces** load into every preview, deliberately excluding the five fonts
 every AI page already uses. Most "AI-generated" design is just the system font
@@ -50,7 +62,10 @@ and nothing chosen.
 kinetic text, pointer-reactive cards — catalogued by what they are *for*. The
 planner picks what fits and the real source is installed into your project: one
 ambient backdrop behind the hero, one kinetic headline, interactive surfaces for
-features. Not scattered everywhere, which reads as a demo rather than a product.
+features. Motion follows the art direction: only directions that suit it get an
+animated backdrop, because a backdrop and a kinetic headline on every page had
+become the clearest sign that a page was generated. Ask for animation and you
+get it anyway.
 
 ### It checks its own work
 
@@ -98,10 +113,12 @@ and generation stops when it's hit.
 ```
 your prompt
    ↓
- PLAN        industry brief + art direction → structure, palette, files
+ DIRECTION   prompt → one of 14 art directions (palette, type, layouts, voice)
+ PLAN        industry notes + direction → sections, layouts, real copy, files
  COMPONENTS  animated components chosen by role, real source installed
  BUILD       a complete multi-file React project
  REPAIR      write what's missing, wire what's dead
+ REVIEW      lint for generated-looking design, fix what it finds
  VERIFY      compile, then run it in a real browser
  FIX         feed the findings back and try again
    ↓
@@ -146,6 +163,8 @@ local model via Ollama, vLLM or llama.cpp instead of a hosted API.
 | `CONNECTION_SECRET` | Encrypts user API keys. Required before any are accepted. |
 | `DAILY_SPEND_CAP_USD` | Hard stop per day. `0` disables. |
 | `AI_PROVIDER` | Pin one model provider, or leave unset for automatic fallback. |
+| `DISABLE_DESIGN_POLISH` | `1` skips the design review pass (saves one model call). |
+| `DESIGN_POLISH_THRESHOLD` | How many lint points trigger the review pass. Default `3`. |
 
 Full reference in `.env.example`.
 

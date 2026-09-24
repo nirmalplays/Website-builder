@@ -33,11 +33,12 @@ const STAGE_LABEL: Record<string, string> = {
   editing: "reading the current app",
   building: "writing the code",
   wiring: "wiring up the controls",
+  polishing: "reviewing the design",
   verifying: "running it in a browser",
   fixing: "fixing what the browser found",
 };
 
-const STAGE_ORDER = ["planning", "components", "building", "missing-files", "wiring", "verifying", "fixing"];
+const STAGE_ORDER = ["planning", "components", "building", "missing-files", "wiring", "polishing", "verifying", "fixing"];
 
 function elapsedLabel(ms: number): string {
   const total = Math.floor(ms / 1000);

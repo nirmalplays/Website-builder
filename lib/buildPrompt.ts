@@ -65,7 +65,8 @@ IT MUST WORK, NOT JUST RENDER:
 - Show empty, loading, error and success states.
 
 DESIGN - this is what separates a good result from a generic one:
-- Execute the palette, typography and signature details from the plan exactly.
+- Execute the DESIGN CONTRACT exactly: its hex values, its type class strings,
+  its hero and section layouts, its signature moves and its copy voice.
 - Build a real type scale: a display size for the hero, clear steps down to body.
   Weight contrast beats size contrast alone.
 - Space deliberately. Sections breathe; related things sit close.

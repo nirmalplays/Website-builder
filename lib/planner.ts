@@ -3,6 +3,9 @@ import { generateWithFallback } from "@/lib/providers";
 import { resolveComponents, type PageKind } from "@/lib/react-bits/resolver";
 import { getComponent, packageName, searchComponents } from "@/lib/react-bits/search";
 import { uiuxBrief } from "@/lib/skills/uiuxBrief";
+import { directionForPlanner } from "@/lib/design/brief";
+import { HEROES, SECTIONS } from "@/lib/design/compositions";
+import type { Direction, Motion } from "@/lib/design/directions";
 
 /**
  * The thinking step.
@@ -24,7 +27,11 @@ export type BuildPlan = {
     /** Concrete things that make this look specific rather than templated. */
     signatureDetails: string[];
   };
-  sections: { name: string; purpose: string; content: string }[];
+  sections: { name: string; purpose: string; content: string; layout?: string }[];
+  /** Hero composition id from lib/design/compositions.ts. */
+  hero?: string;
+  /** The art direction this plan was written for. */
+  direction?: string;
   files: { path: string; purpose: string }[];
   state: string[];
   /** Page regions where an animated component would genuinely help. */
@@ -39,35 +46,33 @@ export type BuildPlan = {
 };
 
 /**
- * The art direction the planner works to.
+ * What the planner is told about design.
  *
- * The plan is where a page stops being generic or fails to: it fixes the mood,
- * the palette and which animated components get installed, and the build step
- * can only execute what the plan asked for. Putting the direction only in the
- * build prompt was too late - by then the component list was already decided.
+ * The identity itself (palette, type, layouts) now comes from a Direction
+ * chosen in code; see lib/design/directions.ts. Asking the planner to invent
+ * one produced the same few safe choices on every build. What the planner
+ * still decides is which layouts to use, what the copy says, and where the
+ * signature moves go.
  */
-const ART_DIRECTION_BRIEF = `ART DIRECTION - the plan is where a page stops being generic.
+const ART_DIRECTION_BRIEF = `DESIGN - the plan is where a page stops being generic.
 
-Choose ONE identity and let it decide every value you write below. Dark luxury,
-editorial, technical density, brutalist, soft physical - or something the brief
-itself implies, which beats all of them.
+The art direction is given below. Your job is to apply it to THIS subject:
+- Pick the hero layout and a layout per section from the lists given.
+  Different adjacent layouts; a varied rhythm of tall, tight and full-bleed.
+- signatureDetails: say where each signature move goes, in concrete terms
+  specific to this subject ("the menu's prices in mono with dotted leaders").
+- Write the real copy now, in the direction's voice. Specific facts, numbers,
+  names, places and prices. No marketing clichés ("elevate", "unlock",
+  "seamless", "transform your", "welcome to"), no "Lorem", no "Acme".
+- Label actions by what they do for this subject ("Book a table", "Get a
+  fixed quote"), never "Get Started" / "Learn More".
 
-The design block is not decoration, it is the contract the build step follows:
-- palette: 4-6 real hex values, each with a job. One accent, used sparingly.
-- typography: a real scale with obvious contrast between display and body, and
-  a decision about tracking. Timid steps read as a template.
-- signatureDetails: concrete and specific to THIS subject. "Modern and clean"
-  is not a detail. "Prices set in tabular figures against a hairline rule" is.
+Do not plan: gradient headings, three equal cards in a row, a row of three
+testimonial cards with stars, a "New" pill above the headline, identical
+padding on every section, or a centred hero with two side-by-side buttons.
 
-Do not plan: purple-to-blue gradient headings, three equal cards in a row,
-identical padding on every section, rounded-xl everywhere, or a centred hero
-with two side-by-side buttons. These are the average, and the average is what
-we are trying to avoid.
-
-Ask for animated components where they carry weight: one ambient backdrop
-behind the hero, one kinetic treatment on the primary headline, pointer-
-reactive surfaces for a feature or pricing cluster. Not everywhere - a page
-that animates in every section reads as a showcase rather than a product.`;
+Motion: only where the direction allows it. A still page that is well set
+beats an animated one that is not.`;
 
 const PLANNER_SYSTEM = `You are the architect for a UI generation system. You do not write code in this step.
 
@@ -83,12 +88,13 @@ Return ONLY a JSON object, no fences, no commentary, with exactly these keys:
   "kind": "marketing" | "app" | "dashboard" | "form" | "content",
   "design": {
     "mood": "the feeling this should give, in a few words",
-    "palette": "specific colours with hex values and where each is used",
-    "typography": "type treatment - scale, weight contrast, any display choice",
+    "palette": "how the given palette is deployed: what gets the accent, which section gets the band colour",
+    "typography": "where the display face is used and how big",
     "signatureDetails": ["3-5 concrete details that make this look designed, not templated"]
   },
+  "hero": "one hero layout id from the list",
   "sections": [
-    { "name": "hero", "purpose": "what it does for the user", "content": "the actual copy and data it shows" }
+    { "name": "hero", "layout": "a section layout id, or custom", "purpose": "what it does for the user", "content": "the actual copy and data it shows" }
   ],
   "files": [
     { "path": "/App.tsx", "purpose": "composes the page" },
@@ -103,8 +109,9 @@ RULES:
   plus a component file per meaningful section or reusable piece.
 - Be concrete in "content": invent the real copy, names, prices and numbers now,
   so the build step is not improvising.
-- Design must be specific. "Modern and clean" is a non-answer. Name the colours,
-  the type scale, the one unusual detail that makes it memorable.
+- Design must be specific. "Modern and clean" is a non-answer. Say where the
+  accent goes, which section gets the band colour, and the one detail people
+  will remember.
 - animationOpportunities is where motion genuinely helps. Marketing surfaces
   reward it most, but an app or dashboard has them too: an empty state, a
   metric that counts up, a list that staggers in, a hero header, a loading
@@ -131,17 +138,28 @@ export async function buildPlan(options: {
   allowHeavyComponents?: boolean;
   /** Time left in the request. Planning must not eat the build's whole budget. */
   timeoutMs?: number;
+  /** The art direction chosen for this build. */
+  direction?: Direction;
 }): Promise<BuildPlan> {
   // Industry reference for this specific brief, matched from a catalogue of 192
-  // product types. Empty when nothing matches confidently, because a florist
-  // handed the fintech palette is a confident wrong answer and the model does
-  // better inventing a direction than following a misapplied one.
-  const brief = uiuxBrief(options.prompt);
+  // product types. Empty when nothing matches confidently. With a direction
+  // chosen, only its industry notes are kept: its palette and font pairing
+  // would contradict the direction's.
+  const direction = options.direction;
+  const brief = uiuxBrief(options.prompt, { visuals: !direction });
+  const system = [
+    PLANNER_SYSTEM,
+    direction ? directionForPlanner(direction) : "",
+    options.image && direction
+      ? "An image is attached. Where it shows a clear visual style, follow the image over the art direction."
+      : "",
+    brief,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const res = await generateWithFallback({
-    system: brief ? `${PLANNER_SYSTEM}
-
-${brief}` : PLANNER_SYSTEM,
+    system,
     history: [],
     prompt: options.prompt,
     document: options.document,
@@ -168,7 +186,18 @@ ${brief}` : PLANNER_SYSTEM,
         ? parsed.design.signatureDetails.map(String).slice(0, 6)
         : [],
     },
-    sections: Array.isArray(parsed.sections) ? parsed.sections.slice(0, 14) : [],
+    sections: Array.isArray(parsed.sections)
+      ? parsed.sections.slice(0, 14).map((sec) => ({
+          name: String(sec?.name ?? ""),
+          purpose: String(sec?.purpose ?? ""),
+          content: String(sec?.content ?? ""),
+          // An unknown id is dropped rather than passed on: the build expands
+          // each id into a layout description, and a made-up id expands to nothing.
+          layout: sec?.layout && SECTIONS[String(sec.layout)] ? String(sec.layout) : undefined,
+        }))
+      : [],
+    hero: pickHero(parsed.hero, direction),
+    direction: direction?.id,
     files: Array.isArray(parsed.files) ? parsed.files.slice(0, 16) : [{ path: "/App.tsx", purpose: "the app" }],
     state: Array.isArray(parsed.state) ? parsed.state.map(String).slice(0, 12) : [],
     animationOpportunities: Array.isArray(parsed.animationOpportunities)
@@ -185,11 +214,27 @@ ${brief}` : PLANNER_SYSTEM,
   return plan;
 }
 
+/** The planner's hero choice if the direction allows it, else the direction's first. */
+function pickHero(raw: unknown, direction: Direction | undefined): string | undefined {
+  const id = typeof raw === "string" ? raw : "";
+  if (!direction) return HEROES[id] ? id : undefined;
+  return direction.heroes.includes(id) ? id : direction.heroes[0];
+}
+
 /**
  * Match the plan's animation opportunities against the React Bits catalogue.
  * Nothing is forced: a plan with no opportunities gets no components.
+ *
+ * `motion` is how much movement the art direction wants. An animated backdrop
+ * plus a kinetic headline on every page had become a sign that a page was
+ * generated, so only "ambient" directions get them unless the prompt asks.
  */
-export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = false) {
+export function selectComponents(
+  plan: BuildPlan,
+  prompt: string,
+  allowHeavy = false,
+  motion: Motion = "ambient",
+) {
   // A form with no animation opportunities genuinely wants none. But an app or
   // dashboard that named some should get them: previously anything that wasn't
   // "marketing" was refused outright, which switched React Bits off for every
@@ -214,9 +259,28 @@ export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = f
     maxWeight: allowHeavy ? "heavy" : "medium",
   });
 
-  const selections = [...resolved.selections];
-  const newDependencies = [...resolved.newDependencies];
+  const askedForMotion =
+    /\b(animat\w*|motion|particles?|3d|webgl|shader|parallax|interactive background)\b/i.test(prompt);
+  const allowed = (name: string) => {
+    if (askedForMotion || motion === "ambient") return true;
+    const meta = getComponent(name);
+    if (!meta || meta.layer === "background") return false;
+    if (motion === "none") return meta.category === "Micro" || meta.category === "Components";
+    return meta.category !== "Backgrounds";
+  };
+
+  const selections = resolved.selections.filter((sel) => allowed(sel.component));
+  const dropped = resolved.selections.filter((sel) => !allowed(sel.component));
+  // Rebuilt from what survived, so a dropped component leaves no package behind.
+  const newDependencies = [
+    ...new Set(selections.flatMap((sel) => getComponent(sel.component)?.dependencies ?? [])),
+  ];
   const notes = [...resolved.notes];
+  if (dropped.length) {
+    notes.push(
+      `Left out ${dropped.map((d) => d.component).join(", ")}: this art direction keeps motion ${motion === "none" ? "to a minimum" : "restrained"}.`,
+    );
+  }
 
   /*
    * An ambient backdrop behind the hero is the single biggest difference
@@ -232,7 +296,7 @@ export function selectComponents(plan: BuildPlan, prompt: string, allowHeavy = f
    */
   const hasBackdrop = selections.some((sel) => getComponent(sel.component)?.layer === "background");
 
-  if (!hasBackdrop && !allowHeavy && plan.kind !== "form") {
+  if (!hasBackdrop && !allowHeavy && plan.kind !== "form" && (motion === "ambient" || askedForMotion)) {
     // Searched rather than resolved: the resolver has no layer filter, and a
     // backdrop is exactly the one axis that has to be pinned here.
     const [hit] = searchComponents({
@@ -301,8 +365,12 @@ export function planToPrompt(
     `- Typography: ${plan.design.typography}`,
     ...plan.design.signatureDetails.map((d) => `- Signature detail: ${d}`),
     ``,
-    `SECTIONS:`,
-    ...plan.sections.map((s) => `- ${s.name}: ${s.purpose}\n    content: ${s.content}`),
+    ...(plan.hero ? [``, `HERO LAYOUT: ${plan.hero} (described in the design contract)`] : []),
+    ``,
+    `SECTIONS, in order:`,
+    ...plan.sections.map(
+      (s) => `- ${s.name}${s.layout ? ` [layout: ${s.layout}]` : ""}: ${s.purpose}\n    content: ${s.content}`,
+    ),
     ``,
     `FILES TO WRITE:`,
     ...plan.files.map((f) => `- ${f.path}: ${f.purpose}`),

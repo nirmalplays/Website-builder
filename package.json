@@ -10,6 +10,7 @@
     "check": "node scripts/check-gemini.mjs",
     "test:prompts": "node scripts/test-prompts.mjs",
     "test:edit": "node scripts/test-edit.mjs",
+    "test:design": "node scripts/test-design.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
     "db:check": "node scripts/db-check.mjs"
