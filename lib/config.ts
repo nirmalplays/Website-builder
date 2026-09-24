@@ -21,10 +21,10 @@ export type { ModelOption } from "./providers";
  * Every model the picker offers, grouped by provider.
  *
  * One flagship per provider was enough while the only real choice was which
- * vendor to use. With Anthropic and Google both configured the interesting
- * choice is within a vendor - Opus against Haiku is a bigger difference in cost
- * and latency than Opus against Gemini Pro - so the whole catalogue is listed
- * and the group label says where each model comes from.
+ * vendor to use. The interesting choice is usually within a vendor - Pro
+ * against Flash differs more in cost and latency than one vendor's flagship
+ * does from another's - so the whole catalogue is listed and the group label
+ * says where each model comes from.
  */
 export type PickerModel = { id: string; label: string; group: string; note: string };
 
