@@ -61,6 +61,12 @@ export function TopBar({
         >
           Usage
         </Link>
+        <Link
+          href="/settings"
+          className="rounded-md px-2.5 py-1.5 text-muted transition-colors duration-200 hover:text-ink"
+        >
+          Settings
+        </Link>
       </nav>
 
       <span aria-live="polite" className="sr-only">
