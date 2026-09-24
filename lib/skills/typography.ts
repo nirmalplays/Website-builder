@@ -44,6 +44,16 @@ export const FONTS: Family[] = [
   { name: "Sora", role: "body", weights: [400, 600], note: "squarish sans; fintech, serious" },
   { name: "Archivo", role: "body", weights: [400, 500, 700], note: "grotesque with real weight range; dense UI" },
   { name: "Inter Tight", role: "body", weights: [400, 500, 700], note: "tighter Inter; use when neutral is genuinely right" },
+  // Added to cover the ui-ux-pro-max pairing catalogue: only 7 of its 74
+  // pairings were usable against the original list, which made most of its
+  // typography advice unfollowable. These five are the distinctive families it
+  // reaches for most; Inter, Roboto, Poppins and Open Sans are still excluded,
+  // and pairings naming Inter are served by Inter Tight above.
+  { name: "Plus Jakarta Sans", role: "body", weights: [400, 500, 700], note: "modern geometric; product, fintech" },
+  { name: "DM Sans", role: "body", weights: [400, 500, 700], note: "low-contrast geometric; calm, friendly" },
+  { name: "IBM Plex Sans", role: "body", weights: [400, 500, 600], note: "engineered humanist; technical, editorial" },
+  { name: "Atkinson Hyperlegible", role: "body", weights: [400, 700], note: "designed for legibility; accessibility-first" },
+  { name: "Cormorant Garamond", role: "display", weights: [400, 600, 700], note: "delicate garalde; literary, refined" },
 
   // Mono - metadata, figures, code. Tabular numerals matter for data.
   { name: "JetBrains Mono", role: "mono", weights: [400, 700], note: "code and technical metadata" },

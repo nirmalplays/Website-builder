@@ -2,6 +2,7 @@ import { PLANNER_THINKING_BUDGET } from "@/lib/config";
 import { generateWithFallback } from "@/lib/providers";
 import { resolveComponents, type PageKind } from "@/lib/react-bits/resolver";
 import { getComponent, packageName, searchComponents } from "@/lib/react-bits/search";
+import { uiuxBrief } from "@/lib/skills/uiuxBrief";
 
 /**
  * The thinking step.
@@ -131,8 +132,16 @@ export async function buildPlan(options: {
   /** Time left in the request. Planning must not eat the build's whole budget. */
   timeoutMs?: number;
 }): Promise<BuildPlan> {
+  // Industry reference for this specific brief, matched from a catalogue of 192
+  // product types. Empty when nothing matches confidently, because a florist
+  // handed the fintech palette is a confident wrong answer and the model does
+  // better inventing a direction than following a misapplied one.
+  const brief = uiuxBrief(options.prompt);
+
   const res = await generateWithFallback({
-    system: PLANNER_SYSTEM,
+    system: brief ? `${PLANNER_SYSTEM}
+
+${brief}` : PLANNER_SYSTEM,
     history: [],
     prompt: options.prompt,
     document: options.document,
