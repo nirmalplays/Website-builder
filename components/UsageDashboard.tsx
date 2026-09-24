@@ -78,7 +78,8 @@ export function UsageDashboard({
     return () => clearInterval(id);
   }, [live, hours, load]);
 
-  const pct = spend.capUsd > 0 ? Math.min(100, (spend.spentUsd / spend.capUsd) * 100) : 0;
+  const noCap = spend.capUsd <= 0;
+  const pct = noCap ? 0 : Math.min(100, (spend.spentUsd / spend.capUsd) * 100);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
@@ -153,23 +154,39 @@ export function UsageDashboard({
                 Daily spend cap
               </span>
               <span className="font-mono text-xs text-muted tabular-nums">
-                {formatUsd(spend.spentUsd)} / {formatUsd(spend.capUsd)}
+                {noCap
+                  ? `${formatUsd(spend.spentUsd)} today · no cap`
+                  : `${formatUsd(spend.spentUsd)} / ${formatUsd(spend.capUsd)}`}
               </span>
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-raised">
-              <div
-                className={`h-full transition-[width] duration-500 ${
-                  pct > 90 ? "bg-red-500" : pct > 70 ? "bg-amber-400" : "bg-emerald-400"
-                }`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+
+            {/* No bar when there is no cap: a track with nothing to fill reads
+                as "plenty left" rather than "nothing is stopping this". */}
+            {!noCap && (
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-raised">
+                <div
+                  className={`h-full transition-[width] duration-500 ${
+                    pct > 90 ? "bg-red-500" : pct > 70 ? "bg-amber-400" : "bg-emerald-400"
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            )}
+
             <p className="mt-2 text-xs text-muted">
-              {!spend.enforced
-                ? "Not enforced — no database, or the cap is set to 0."
-                : spend.exceeded
-                  ? "Reached. Generation is blocked until midnight UTC."
-                  : `${formatUsd(spend.remainingUsd)} left today. Resets at midnight UTC.`}
+              {noCap ? (
+                <>
+                  No cap set. Spend is tracked but nothing is stopping it — set{" "}
+                  <code className="font-mono text-[11px]">DAILY_SPEND_CAP_USD</code> to a dollar
+                  amount to put a hard stop back.
+                </>
+              ) : !spend.enforced ? (
+                "Cannot be enforced — spend is unreadable without a database."
+              ) : spend.exceeded ? (
+                "Reached. Generation is blocked until midnight UTC."
+              ) : (
+                `${formatUsd(spend.remainingUsd)} left today. Resets at midnight UTC.`
+              )}
             </p>
           </section>
 
