@@ -46,7 +46,7 @@ import { db, tryPersist, schema } from "@/lib/db";
 import { getIdentity } from "@/lib/identity";
 import { GLOBAL_DAILY_CAP, getGlobalUsage, getUsage } from "@/lib/limits";
 import { getSpend } from "@/lib/spend";
-import { formatUsd } from "@/lib/pricing";
+import { costOf, formatUsd } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 /*
@@ -224,6 +224,14 @@ export async function POST(req: Request) {
   // pessimistic 60s so the first decision is not made on no evidence at all.
   let lastCallMs = 45_000;
 
+  /** Set once the stream exists, so token totals can be pushed to the client. */
+  let onTokens: ((t: {
+    inputTokens: number;
+    outputTokens: number;
+    model: string;
+    costUsd: number;
+  }) => void) | null = null;
+
   const call = async (system: string, userPrompt: string) => {
     const callStarted = Date.now();
     const res = await generateWithFallback({
@@ -248,6 +256,17 @@ export async function POST(req: Request) {
     lastCallMs = Math.max(lastCallMs, Date.now() - callStarted);
     inputTokens += res.inputTokens;
     outputTokens += res.outputTokens;
+
+    // Report the running total after every call rather than only at the end.
+    // A build makes up to five calls over three minutes, and the usage row is
+    // written last, so until now the only honest answer to "how much has this
+    // cost so far" was unavailable until it no longer mattered.
+    onTokens?.({
+      inputTokens,
+      outputTokens,
+      model: res.model,
+      costUsd: costOf(res.model, inputTokens, outputTokens).total,
+    });
     if (res.switchedFrom) {
       notes.push(`${res.switchedFrom} was busy - switched to ${res.model}.`);
       activeModel = res.model;
@@ -266,6 +285,9 @@ export async function POST(req: Request) {
         if (closed) return;
         controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
       };
+
+      // Now that a stream exists, let each model call push its running total.
+      onTokens = (t) => emit({ type: "tokens", ...t });
 
       /*
        * A single model call can think for minutes without producing a byte,

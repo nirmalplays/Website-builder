@@ -82,6 +82,73 @@ function ShareButton({ onShare }: { onShare: () => Promise<string | null> }) {
   );
 }
 
+/**
+ * Publishes to the user's own Vercel account.
+ *
+ * Deliberately shows the failure rather than swallowing it: a publish button
+ * that silently does nothing is worse than no button, and the two real reasons
+ * it fails - no token saved, or a build that does not compile - are both
+ * things the user can act on.
+ */
+function PublishButton({
+  onPublish,
+}: {
+  onPublish: () => Promise<{ url?: string; error?: string; needsToken?: boolean }>;
+}) {
+  const [state, setState] = useState<"idle" | "working" | "done" | "failed">("idle");
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={async () => {
+          setState("working");
+          setError(null);
+          const res = await onPublish();
+          if (res.url) {
+            setUrl(res.url);
+            setState("done");
+            try {
+              await navigator.clipboard.writeText(res.url);
+            } catch {
+              // The link is on screen either way.
+            }
+            setTimeout(() => setState("idle"), 6000);
+          } else {
+            setError(res.error ?? "Publish failed.");
+            setState("failed");
+            setTimeout(() => setState("idle"), 8000);
+          }
+        }}
+        disabled={state === "working"}
+        className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-line px-2 font-mono text-[11px] text-muted transition-colors duration-200 hover:border-line-strong hover:text-ink disabled:cursor-not-allowed"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2 2 20h20L12 2z" strokeLinejoin="round" />
+        </svg>
+        {state === "working" ? "Publishing" : state === "done" ? "Published" : state === "failed" ? "Failed" : "Publish"}
+      </button>
+
+      {state === "done" && url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute right-0 top-9 z-20 w-max max-w-[22rem] truncate rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1.5 font-mono text-[11px] text-emerald-200 underline-offset-2 hover:underline"
+        >
+          {url.replace(/^https:\/\//, "")} - copied
+        </a>
+      )}
+      {state === "failed" && error && (
+        <p className="absolute right-0 top-9 z-20 w-max max-w-[24rem] rounded-md border border-red-500/40 bg-red-500/10 px-2 py-1.5 text-[11px] leading-snug text-red-200">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function PreviewPanel({
   code,
   files,
@@ -100,6 +167,7 @@ export function PreviewPanel({
   fullscreen,
   onFullscreenChange,
   onShare,
+  onPublish,
   onDownload,
 }: {
   code: string;
@@ -119,6 +187,7 @@ export function PreviewPanel({
   fullscreen: boolean;
   onFullscreenChange: (on: boolean) => void;
   onShare: () => Promise<string | null>;
+  onPublish: () => Promise<{ url?: string; error?: string; needsToken?: boolean }>;
   onDownload: () => void;
 }) {
   return (
@@ -184,6 +253,7 @@ export function PreviewPanel({
           )}
           {code && <CopyButton code={code} />}
           {code && <ShareButton onShare={onShare} />}
+          {code && <PublishButton onPublish={onPublish} />}
           {code && (
             <IconButton label="Download project as ZIP" onClick={onDownload}>
               <path d="M12 3v12m0 0 4-4m-4 4-4-4" strokeLinecap="round" strokeLinejoin="round" />

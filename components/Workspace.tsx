@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { ChatPanel, type BuildStage, type Turn } from "./ChatPanel";
+import { ChatPanel, type LiveTokens, type BuildStage, type Turn } from "./ChatPanel";
 import { Landing } from "./Landing";
 import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
@@ -57,6 +57,8 @@ export function Workspace({
   const [loading, setLoading] = useState(false);
   /** Live build progress streamed from /api/generate. */
   const [stage, setStage] = useState<BuildStage | null>(null);
+  /** Running token total for the build in flight, pushed after every model call. */
+  const [liveTokens, setLiveTokens] = useState<LiveTokens | null>(null);
   const [buildStartedAt, setBuildStartedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
@@ -258,6 +260,26 @@ Fix it and return the complete corrected file.`,
     }
   }
 
+  /** Publishes the current build to the user's own Vercel account. */
+  async function publish(): Promise<{ url?: string; error?: string; needsToken?: boolean }> {
+    try {
+      const res = await fetch("/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: Object.keys(files).length > 0 ? files : { "/App.tsx": code },
+          dependencies,
+          title: history[0]?.content?.slice(0, 60) ?? "ui-gen app",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error ?? "Publish failed.", needsToken: data.needsToken };
+      return { url: data.url };
+    } catch {
+      return { error: "Could not reach the publish endpoint." };
+    }
+  }
+
   async function share(): Promise<string | null> {
     if (!projectId) {
       setError("Nothing to share yet - generate something first.");
@@ -314,6 +336,7 @@ Fix it and return the complete corrected file.`,
     setError(null);
     setLoading(true);
     setStage(null);
+    setLiveTokens(null);
     setBuildStartedAt(Date.now());
     setMobileView("result");
     const sentHistory = history;
@@ -370,6 +393,7 @@ Fix it and return the complete corrected file.`,
             if (!line.trim()) continue;
             const event = JSON.parse(line);
             if (event.type === "stage") setStage(event);
+            else if (event.type === "tokens") setLiveTokens(event);
             else if (event.type === "error") throw new Error(event.error);
             else if (event.type === "done") data = event;
           }
@@ -474,6 +498,7 @@ Fix it and return the complete corrected file.`,
                 buildNotes={buildNotes}
                 stage={stage}
                 buildStartedAt={buildStartedAt}
+                liveTokens={liveTokens}
                 attachment={attachment}
                 onAttach={setAttachment}
               />
@@ -517,6 +542,7 @@ Fix it and return the complete corrected file.`,
                 fullscreen={fullscreen}
                 onFullscreenChange={setFullscreen}
                 onShare={share}
+                onPublish={publish}
                 onDownload={download}
               />
             </div>

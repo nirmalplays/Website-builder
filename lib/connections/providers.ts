@@ -141,6 +141,33 @@ needs the secret key and therefore a server, which this sandbox does not have -
 so build the UI up to the redirect and stop there rather than pretending.`,
   },
   {
+    slug: "vercel",
+    label: "Vercel",
+    blurb: "Publish a finished project to your own Vercel account.",
+    fields: [
+      {
+        name: "VERCEL_TOKEN",
+        label: "Access token",
+        visibility: "secret",
+        required: true,
+        placeholder: "vercel_…",
+        help: "vercel.com/account/tokens. Used only to publish, on your account, never sent to the generated app.",
+      },
+      {
+        name: "VERCEL_TEAM_ID",
+        label: "Team ID (optional)",
+        visibility: "secret",
+        required: false,
+        placeholder: "team_…",
+        help: "Only if you publish into a team rather than your personal account.",
+      },
+    ],
+    dependencies: {},
+    // Publishing is done by this app, not by the generated one, so the model
+    // is never told about it - there is nothing for it to write.
+    usage: () => "",
+  },
+  {
     slug: "openweather",
     label: "OpenWeather",
     blurb: "Weather data by city or coordinates.",

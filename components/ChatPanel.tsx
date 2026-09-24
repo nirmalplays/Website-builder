@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Composer, type Attachment } from "./Composer";
+import { formatUsd } from "@/lib/pricing";
 
 /** `lines` is set when a turn is restored from history and the file body was not sent. */
 export type Turn = { role: "user" | "assistant"; content: string; lines?: number };
@@ -13,6 +14,14 @@ export type BuildStage = {
   detail?: string;
   round?: number;
   of?: number;
+};
+
+/** Running token total, pushed by the server after each model call. */
+export type LiveTokens = {
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
+  costUsd: number;
 };
 
 /** What each stage is actually doing, in the user's words. */
@@ -42,7 +51,17 @@ function elapsedLabel(ms: number): string {
  * browser, so a build takes minutes rather than seconds - a bare spinner
  * would look like a hang.
  */
-function BuildProgress({ stage, startedAt, isEdit }: { stage: BuildStage | null; startedAt: number | null; isEdit: boolean }) {
+function BuildProgress({
+  stage,
+  startedAt,
+  isEdit,
+  tokens,
+}: {
+  stage: BuildStage | null;
+  startedAt: number | null;
+  isEdit: boolean;
+  tokens: LiveTokens | null;
+}) {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -64,6 +83,15 @@ function BuildProgress({ stage, startedAt, isEdit }: { stage: BuildStage | null;
           {elapsedLabel(elapsed)}
         </span>
       </div>
+
+      {/* Real counts from the provider, updated after every call rather than
+          only once the build finishes and writes its usage row. */}
+      {tokens && (
+        <p className="pl-3.5 font-mono text-[11px] leading-snug tabular-nums text-faint">
+          {tokens.inputTokens.toLocaleString()} in · {tokens.outputTokens.toLocaleString()} out ·{" "}
+          <span className="text-muted">{formatUsd(tokens.costUsd)}</span>
+        </p>
+      )}
 
       {stage?.detail && (
         <p className="pl-3.5 text-[11px] leading-snug text-faint">{stage.detail}</p>
@@ -111,6 +139,7 @@ export function ChatPanel({
   onAttach,
   stage,
   buildStartedAt,
+  liveTokens,
 }: {
   history: Turn[];
   loading: boolean;
@@ -125,6 +154,7 @@ export function ChatPanel({
   onAttach: (a: Attachment | null) => void;
   stage: BuildStage | null;
   buildStartedAt: number | null;
+  liveTokens: LiveTokens | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -170,7 +200,7 @@ export function ChatPanel({
             </li>
           )}
           {loading && (
-            <BuildProgress stage={stage} startedAt={buildStartedAt} isEdit={isEdit} />
+            <BuildProgress stage={stage} startedAt={buildStartedAt} isEdit={isEdit} tokens={liveTokens} />
           )}
         </ol>
 

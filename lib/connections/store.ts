@@ -203,3 +203,40 @@ export function connectionDependencies(resolved: ResolvedConnections): Record<st
   }
   return deps;
 }
+
+/**
+ * Reads one secret, server-side only.
+ *
+ * resolveForGeneration deliberately never returns a secret's value, because
+ * everything it produces ends up in a prompt or in generated source. Publishing
+ * is different: the value is used by this app to call another API and never
+ * goes near the model or the browser. Kept as a separate function so that
+ * distinction is visible at every call site rather than being a flag.
+ */
+export async function readSecret(
+  identity: Identity,
+  provider: string,
+  name: string,
+): Promise<string | null> {
+  if (!db || !isEncryptionConfigured()) return null;
+
+  const [row] = await db
+    .select()
+    .from(schema.connections)
+    .where(
+      and(
+        owns(identity),
+        eq(schema.connections.provider, provider),
+        eq(schema.connections.name, name),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return null;
+  try {
+    return decrypt(row.valueEncrypted);
+  } catch {
+    // Usually CONNECTION_SECRET was rotated. Absent is the honest answer.
+    return null;
+  }
+}
