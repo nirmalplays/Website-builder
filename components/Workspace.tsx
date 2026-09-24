@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ChatPanel, type LiveTokens, type BuildStage, type Turn } from "./ChatPanel";
+import { isNewBuildRequest } from "@/lib/newBuildIntent";
 import { Landing } from "./Landing";
 import { PreviewPanel } from "./PreviewPanel";
 import { TopBar } from "./TopBar";
@@ -339,7 +340,17 @@ Fix it and return the complete corrected file.`,
     setLiveTokens(null);
     setBuildStartedAt(Date.now());
     setMobileView("result");
-    const sentHistory = history;
+    /*
+     * A fresh brief starts a fresh build, even with something on screen.
+     *
+     * Anything rendered made the next prompt an edit, so opening a template to
+     * look at it and then typing an unrelated brief sent that template along as
+     * context to be preserved - and the new subject came back as the template
+     * re-themed. Templates are a showcase; looking at one should not decide
+     * what the next build is based on.
+     */
+    const startsFresh = isEdit && isNewBuildRequest(trimmed);
+    const sentHistory = startsFresh ? [] : history;
     const label =
       trimmed ||
       (sentImage?.kind === "text"
@@ -348,9 +359,17 @@ Fix it and return the complete corrected file.`,
           ? `Build what ${sentImage.name} describes`
           : "Build this screenshot");
     setHistory((h) => [
-      ...h,
+      ...(startsFresh ? [] : h),
       { role: "user", content: sentImage ? `${label}  [${sentImage.name}]` : label },
     ]);
+    if (startsFresh) {
+      // Clear the old project out of the panel too, so the preview is not
+      // showing the previous build while a different one is being written.
+      setFiles({});
+      setCode("");
+      setBuildNotes([]);
+      setProjectId(null);
+    }
 
     try {
       const res = await fetch("/api/generate", {
@@ -363,11 +382,13 @@ Fix it and return the complete corrected file.`,
               ? "Recreate the attached screenshot as a React component."
               : "Build the app described in the attached file."),
           history: sentHistory,
-          projectId,
+          // A new build belongs in its own project rather than as another
+          // version of the one on screen.
+          projectId: startsFresh ? null : projectId,
           model,
           // Send the current files so the server knows this is an edit and can
           // provide the model with the existing project as context.
-          ...(isEdit ? { files } : {}),
+          ...(isEdit && !startsFresh ? { files } : {}),
           ...(sentImage?.kind === "text"
             ? { document: { name: sentImage.name, text: sentImage.text } }
             : sentImage
